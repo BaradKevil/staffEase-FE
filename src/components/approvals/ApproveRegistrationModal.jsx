@@ -20,8 +20,16 @@ import {
 import { useApproveRegistration } from '../../Api/Api';
 import { toast } from 'react-toastify';
 
+const getAvatarFullUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const backendBase = (import.meta.env.VITE_BASEURL || 'http://localhost:5000/api/v1')
+    .replace(/\/api\/v1\/?$/, '')
+    .replace(/\/api\/?$/, '');
+  return `${backendBase}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 export default function ApproveRegistrationModal({ open, onClose, employee, onSuccess }) {
-  const [employeeId, setEmployeeId] = useState('');
   const approveMutation = useApproveRegistration();
 
   if (!employee) return null;
@@ -30,20 +38,18 @@ export default function ApproveRegistrationModal({ open, onClose, employee, onSu
     try {
       await approveMutation.mutateAsync({
         id: employee.id,
-        employee_id: employeeId.trim() || undefined
       });
       toast.success(
         `Registration for ${employee.first_name} ${employee.last_name} approved! Entitlements initialized.`
       );
       if (onSuccess) onSuccess();
-      handleClose();
+      onClose();
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to approve employee registration');
     }
   };
 
   const handleClose = () => {
-    setEmployeeId('');
     onClose();
   };
 
@@ -136,7 +142,7 @@ export default function ApproveRegistrationModal({ open, onClose, employee, onSu
           }}
         >
           <Avatar
-            src={employee.avatar_url || ''}
+            src={getAvatarFullUrl(employee.avatar_url || employee.profile_photo)}
             sx={{ width: 44, height: 44, bgcolor: '#23A4E8', fontWeight: 700 }}
           >
             {employee.first_name ? employee.first_name[0] : 'U'}
@@ -146,37 +152,18 @@ export default function ApproveRegistrationModal({ open, onClose, employee, onSu
               {employee.first_name} {employee.last_name}
             </Typography>
             <Typography sx={{ color: '#64748B', fontSize: '12.5px' }}>
-              {employee.work_email}
+              {employee.work_email || employee.email}
             </Typography>
             <Typography sx={{ color: '#94A3B8', fontSize: '12px' }}>
-              {employee.designation || 'Team Member'} • {employee.department?.name || 'Department'}
+              {employee.designation || 'Team Member'}
             </Typography>
           </Box>
         </Box>
 
-        <Alert severity="success" sx={{ mb: 2.5, borderRadius: '10px', fontSize: '12.5px', bgcolor: '#ECFDF5', color: '#065F46' }}>
+        <Alert severity="success" sx={{ borderRadius: '10px', fontSize: '12.5px', bgcolor: '#ECFDF5', color: '#065F46' }}>
           Approving will activate this employee's credentials and automatically initialize their{' '}
           <strong>prorated annual leave entitlement</strong> (1.0 CL + 0.5 SL per remaining month) in an atomic transaction.
         </Alert>
-
-        <Box>
-          <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
-            Confirm or Assign Employee ID <span style={{ color: '#94A3B8', fontWeight: 400 }}>(Optional)</span>
-          </Typography>
-          <TextField
-            placeholder={employee.employee_id || 'e.g. EMP-1042'}
-            fullWidth
-            size="small"
-            value={employeeId}
-            onChange={(e) => setEmployeeId(e.target.value)}
-            helperText={
-              employee.employee_id
-                ? `Current ID: ${employee.employee_id} (Leave blank to keep)`
-                : 'Assign a company employee ID'
-            }
-            sx={inputStyle}
-          />
-        </Box>
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2, bgcolor: '#FAFCFE', borderTop: '1px solid #F1F5F9', flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1 }}>

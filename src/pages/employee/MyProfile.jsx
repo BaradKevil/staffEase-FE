@@ -15,8 +15,6 @@ import {
   PhotoCamera as CameraIcon,
   DeleteOutlineRounded as DeleteIcon,
   LockOutlined as LockIcon,
-  BadgeOutlined as BadgeIcon,
-  CorporateFareOutlined as DeptIcon,
   CalendarTodayOutlined as CalendarIcon,
   EmailOutlined as EmailIcon
 } from '@mui/icons-material';
@@ -29,6 +27,15 @@ import {
 import StatusBadge from '../../common/custom/StatusBadge';
 import { toast } from 'react-toastify';
 
+const getAvatarFullUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const backendBase = (import.meta.env.VITE_BASEURL || 'http://localhost:5000/api/v1')
+    .replace(/\/api\/v1\/?$/, '')
+    .replace(/\/api\/?$/, '');
+  return `${backendBase}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 export default function MyProfile() {
   const fileInputRef = useRef(null);
 
@@ -37,7 +44,18 @@ export default function MyProfile() {
   const removePhotoMutation = useRemoveProfilePhoto();
   const changePasswordMutation = useChangePassword();
 
-  const employee = profileData?.data || {};
+  // Safely extract employee whether returned directly or nested under data
+  const rawEmployee = (profileData && (profileData.id || profileData.first_name || profileData.email))
+    ? profileData
+    : (profileData?.data && (profileData.data.id || profileData.data.first_name)
+      ? profileData.data
+      : (profileData || {}));
+
+  const employee = {
+    ...rawEmployee,
+    avatar_url: rawEmployee.profile_photo || rawEmployee.avatar_url,
+    email: rawEmployee.email || rawEmployee.work_email,
+  };
 
   const [passwordData, setPasswordData] = useState({
     current_password: '',
@@ -70,12 +88,18 @@ export default function MyProfile() {
       const res = await uploadPhotoMutation.mutateAsync(formData);
       toast.success('Profile photograph updated successfully');
 
-      // Update localStorage user avatar so Navbar updates immediately
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      currentUser.avatar_url = res?.data?.avatar_url;
-      localStorage.setItem('user', JSON.stringify(currentUser));
+      const photoUrl = res?.profile_photo || res?.avatar_url || res?.data?.profile_photo || res?.data?.avatar_url;
 
-      refetch();
+      // Update localStorage user avatar so Navbar and rest of app updates immediately
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (photoUrl) {
+        currentUser.profile_photo = photoUrl;
+        currentUser.avatar_url = photoUrl;
+        localStorage.setItem('user', JSON.stringify(currentUser));
+        window.dispatchEvent(new Event('storage'));
+      }
+
+      await refetch();
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to upload photo');
     } finally {
@@ -90,10 +114,12 @@ export default function MyProfile() {
       toast.success('Profile photo removed');
 
       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      currentUser.profile_photo = null;
       currentUser.avatar_url = null;
       localStorage.setItem('user', JSON.stringify(currentUser));
+      window.dispatchEvent(new Event('storage'));
 
-      refetch();
+      await refetch();
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Failed to remove photo');
     }
@@ -179,7 +205,7 @@ export default function MyProfile() {
         >
           <Box sx={{ position: 'relative', display: 'inline-block', mb: 2 }}>
             <Avatar
-              src={employee.avatar_url || ''}
+              src={getAvatarFullUrl(employee.avatar_url)}
               sx={{
                 width: 104,
                 height: 104,
@@ -254,23 +280,9 @@ export default function MyProfile() {
               <EmailIcon sx={{ color: '#94A3B8', fontSize: 20 }} />
               <Box>
                 <Typography sx={{ color: '#64748B', fontSize: '12px' }}>Email</Typography>
-                <Typography sx={{ fontWeight: 600, color: '#0F172A', fontSize: '13.5px' }}>{employee.work_email}</Typography>
-              </Box>
-            </Box>
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <BadgeIcon sx={{ color: '#94A3B8', fontSize: 20 }} />
-              <Box>
-                <Typography sx={{ color: '#64748B', fontSize: '12px' }}>Employee ID</Typography>
-                <Typography sx={{ fontWeight: 600, color: '#0F172A', fontSize: '13.5px' }}>{employee.employee_id || '—'}</Typography>
-              </Box>
-            </Box>
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <DeptIcon sx={{ color: '#94A3B8', fontSize: 20 }} />
-              <Box>
-                <Typography sx={{ color: '#64748B', fontSize: '12px' }}>Department</Typography>
-                <Typography sx={{ fontWeight: 600, color: '#0F172A', fontSize: '13.5px' }}>{employee.department?.name || 'Unassigned'}</Typography>
+                <Typography sx={{ fontWeight: 600, color: '#0F172A', fontSize: '13.5px' }}>
+                  {employee.email || employee.work_email || '—'}
+                </Typography>
               </Box>
             </Box>
 

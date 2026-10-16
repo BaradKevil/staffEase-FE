@@ -243,9 +243,6 @@ export default function RegisterEmployee() {
               {invitation.designation && (
                 <Chip size="small" label={invitation.designation} sx={{ bgcolor: '#E0F2FE', color: '#0284C7', fontWeight: 600, fontSize: '11px', height: 22 }} />
               )}
-              {invitation.department?.name && (
-                <Chip size="small" label={invitation.department.name} sx={{ bgcolor: '#E2E8F0', color: '#334155', fontWeight: 600, fontSize: '11px', height: 22 }} />
-              )}
             </Stack>
           </Box>
 

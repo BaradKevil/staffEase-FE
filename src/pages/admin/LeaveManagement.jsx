@@ -25,11 +25,20 @@ import {
   VisibilityOutlined as ViewIcon,
   TuneRounded as TuneIcon
 } from '@mui/icons-material';
-import { useLeaveRequests, useDepartments } from '../../Api/Api';
+import { useLeaveRequests } from '../../Api/Api';
 import StatusBadge from '../../common/custom/StatusBadge';
 import CustomTableLoader from '../../common/custom/CustomTableLoader';
 import CustomPagination from '../../common/custom/CustomPagination';
 import LeaveApprovalModal from '../../components/leaves/LeaveApprovalModal';
+
+const getAvatarFullUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const backendBase = (import.meta.env.VITE_BASEURL || 'http://localhost:5000/api/v1')
+    .replace(/\/api\/v1\/?$/, '')
+    .replace(/\/api\/?$/, '');
+  return `${backendBase}${url.startsWith('/') ? '' : '/'}${url}`;
+};
 
 export default function LeaveManagement() {
   const [tab, setTab] = useState('all'); // 'all' | 'pending' | 'approved' | 'rejected' | 'cancelled'
@@ -37,8 +46,6 @@ export default function LeaveManagement() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [selectedLeave, setSelectedLeave] = useState(null);
-
-  const { data: deptData } = useDepartments();
 
   const { data: leavesData, isLoading, refetch } = useLeaveRequests({
     page,
@@ -191,7 +198,7 @@ export default function LeaveManagement() {
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <Avatar
-                          src={leave.employee?.avatar_url || ''}
+                          src={getAvatarFullUrl(leave.employee?.avatar_url || leave.employee?.profile_photo)}
                           sx={{ width: 36, height: 36, bgcolor: '#23A4E8', fontWeight: 700, fontSize: '0.85rem' }}
                         >
                           {leave.employee?.first_name ? leave.employee.first_name[0] : 'E'}
@@ -201,7 +208,7 @@ export default function LeaveManagement() {
                             {leave.employee?.first_name} {leave.employee?.last_name}
                           </Typography>
                           <Typography variant="caption" sx={{ color: '#64748B' }}>
-                            {leave.employee?.department?.name || 'Staff'} • {leave.employee?.employee_id || ''}
+                            {leave.employee?.designation || 'Staff'} • {leave.employee?.work_email || leave.employee?.email}
                           </Typography>
                         </Box>
                       </Box>

@@ -48,10 +48,8 @@ export default function ReportsAndAudit() {
     }
 
     const headers = [
-      'Employee ID',
       'Name',
       'Email',
-      'Department',
       'Designation',
       'CL Entitled',
       'CL Used',
@@ -63,10 +61,8 @@ export default function ReportsAndAudit() {
     ];
 
     const rows = report.map((emp) => [
-      `"${emp.employee_id || ''}"`,
       `"${emp.name}"`,
       `"${emp.email}"`,
-      `"${emp.department || ''}"`,
       `"${emp.designation || ''}"`,
       emp.casual_leave?.entitled || 0,
       emp.casual_leave?.used || 0,
@@ -169,7 +165,6 @@ export default function ReportsAndAudit() {
               <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>EMPLOYEE</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>DEPARTMENT</TableCell>
                   <TableCell align="center" sx={{ fontWeight: 700, color: '#0284C7', fontSize: '0.75rem' }}>CL ENTITLED</TableCell>
                   <TableCell align="center" sx={{ fontWeight: 700, color: '#0284C7', fontSize: '0.75rem' }}>CL USED</TableCell>
                   <TableCell align="center" sx={{ fontWeight: 700, color: '#0284C7', fontSize: '0.75rem' }}>CL BALANCE</TableCell>
@@ -181,10 +176,10 @@ export default function ReportsAndAudit() {
               </TableHead>
               <TableBody>
                 {reportLoading ? (
-                  <CustomTableLoader rows={6} colSpan={9} />
+                  <CustomTableLoader rows={6} colSpan={8} />
                 ) : report.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} align="center" sx={{ py: 6, color: '#94A3B8' }}>
+                    <TableCell colSpan={8} align="center" sx={{ py: 6, color: '#94A3B8' }}>
                       No leave balance records found.
                     </TableCell>
                   </TableRow>
@@ -198,13 +193,7 @@ export default function ReportsAndAudit() {
                             {emp.name}
                           </Typography>
                           <Typography variant="caption" sx={{ color: '#64748B' }}>
-                            {emp.email} • ID: {emp.employee_id || '—'}
-                          </Typography>
-                        </TableCell>
-
-                        <TableCell>
-                          <Typography variant="body2" sx={{ color: '#334155' }}>
-                            {emp.department || '—'}
+                            {emp.email}
                           </Typography>
                         </TableCell>
 

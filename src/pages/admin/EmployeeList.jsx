@@ -27,32 +27,36 @@ import {
   VisibilityOutlined as ViewIcon,
   FilterList as FilterIcon
 } from '@mui/icons-material';
-import { useEmployees, useDepartments } from '../../Api/Api';
+import { useEmployees } from '../../Api/Api';
 import StatusBadge from '../../common/custom/StatusBadge';
 import CustomTableLoader from '../../common/custom/CustomTableLoader';
 import CustomPagination from '../../common/custom/CustomPagination';
 import EmployeeDrawerDetails from '../../components/employees/EmployeeDrawerDetails';
 import InviteEmployeeModal from '../../components/employees/InviteEmployeeModal';
 
+const getAvatarFullUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const backendBase = (import.meta.env.VITE_BASEURL || 'http://localhost:5000/api/v1')
+    .replace(/\/api\/v1\/?$/, '')
+    .replace(/\/api\/?$/, '');
+  return `${backendBase}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 export default function EmployeeList() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
-  const [departmentId, setDepartmentId] = useState('');
 
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [inviteOpen, setInviteOpen] = useState(false);
-
-  const { data: deptData } = useDepartments();
-  const departments = deptData?.data || [];
 
   const { data: empData, isLoading, refetch } = useEmployees({
     page,
     limit,
     search: search.trim() || undefined,
     status: status || undefined,
-    department_id: departmentId || undefined
   });
 
   const employees = empData?.data || [];
@@ -124,7 +128,7 @@ export default function EmployeeList() {
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
           <TextField
             size="small"
-            placeholder="Search by name, email, employee ID..."
+            placeholder="Search by name, email, designation..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -156,34 +160,6 @@ export default function EmployeeList() {
           />
 
           <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 180 } }}>
-            <Select
-              value={departmentId}
-              displayEmpty
-              onChange={(e) => {
-                setDepartmentId(e.target.value);
-                setPage(1);
-              }}
-              sx={{
-                height: 42,
-                borderRadius: '10px',
-                bgcolor: '#F8FAFC',
-                fontSize: '13.5px',
-                color: departmentId ? '#0F172A' : '#64748B',
-                '& fieldset': { borderColor: '#E2E8F0', transition: 'border-color 0.2s' },
-                '&:hover fieldset': { borderColor: '#23A4E8' },
-                '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
-              }}
-            >
-              <MenuItem value="">All Departments</MenuItem>
-              {departments.map((dept) => (
-                <MenuItem key={dept.id} value={dept.id}>
-                  {dept.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 160 } }}>
             <Select
               value={status}
               displayEmpty
@@ -223,12 +199,10 @@ export default function EmployeeList() {
         }}
       >
         <TableContainer sx={{ overflowX: 'auto', width: '100%' }}>
-          <Table sx={{ minWidth: 700 }}>
+          <Table sx={{ minWidth: 650 }}>
             <TableHead sx={{ bgcolor: '#F8FAFC' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>EMPLOYEE</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>EMPLOYEE ID</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>DEPARTMENT</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>DESIGNATION</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>STATUS</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>JOINED DATE</TableCell>
@@ -237,10 +211,10 @@ export default function EmployeeList() {
             </TableHead>
             <TableBody>
               {isLoading ? (
-                <CustomTableLoader rows={6} colSpan={7} />
+                <CustomTableLoader rows={6} colSpan={5} />
               ) : employees.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 6, color: '#94A3B8' }}>
+                  <TableCell colSpan={5} align="center" sx={{ py: 6, color: '#94A3B8' }}>
                     No employees found matching the selected criteria.
                   </TableCell>
                 </TableRow>
@@ -258,7 +232,7 @@ export default function EmployeeList() {
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <Avatar
-                          src={emp.avatar_url || ''}
+                          src={getAvatarFullUrl(emp.avatar_url || emp.profile_photo)}
                           sx={{ width: 38, height: 38, bgcolor: '#23A4E8', fontWeight: 700, fontSize: '0.9rem' }}
                         >
                           {emp.first_name ? emp.first_name[0] : 'U'}
@@ -268,22 +242,10 @@ export default function EmployeeList() {
                             {emp.first_name} {emp.last_name}
                           </Typography>
                           <Typography variant="caption" sx={{ color: '#64748B' }}>
-                            {emp.work_email}
+                            {emp.work_email || emp.email}
                           </Typography>
                         </Box>
                       </Box>
-                    </TableCell>
-
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
-                        {emp.employee_id || '—'}
-                      </Typography>
-                    </TableCell>
-
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: '#334155' }}>
-                        {emp.department?.name || 'Unassigned'}
-                      </Typography>
                     </TableCell>
 
                     <TableCell>

@@ -4,7 +4,7 @@
  * ===========================================
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -39,17 +39,33 @@ const Navbar = ({ toggleSidebar, onLogoutClick }) => {
   const navigate = useNavigate();
   const role = localStorage.getItem('role') || 'employee';
 
-  // Current user info cached in localStorage
-  let user = {};
-  try {
-    user = JSON.parse(localStorage.getItem('user') || '{}');
-  } catch {
-    user = {};
-  }
+  // Current user info cached in localStorage with live updates
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || '{}');
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        setUser(JSON.parse(localStorage.getItem('user') || '{}'));
+      } catch {
+        setUser({});
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ') || (role === 'admin' ? 'Administrator' : 'Employee');
-  const avatarUrl = user.profile_photo
-    ? `${import.meta.env.VITE_BASEURL?.replace('/api/v1', '')}${user.profile_photo}`
+  const photo = user.profile_photo || user.avatar_url;
+  const avatarUrl = photo
+    ? (photo.startsWith('http://') || photo.startsWith('https://')
+        ? photo
+        : `${(import.meta.env.VITE_BASEURL || 'http://localhost:5000/api/v1').replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '')}${photo.startsWith('/') ? '' : '/'}${photo}`)
     : null;
 
   // Profile Menu

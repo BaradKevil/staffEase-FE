@@ -24,6 +24,15 @@ import { useReviewLeaveRequest } from '../../Api/Api';
 import StatusBadge from '../../common/custom/StatusBadge';
 import { toast } from 'react-toastify';
 
+const getAvatarFullUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const backendBase = (import.meta.env.VITE_BASEURL || 'http://localhost:5000/api/v1')
+    .replace(/\/api\/v1\/?$/, '')
+    .replace(/\/api\/?$/, '');
+  return `${backendBase}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) {
   const [action, setAction] = useState('approved'); // 'approved' | 'rejected'
   const [comments, setComments] = useState('');
@@ -126,7 +135,7 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
           }}
         >
           <Avatar
-            src={employee.avatar_url || ''}
+            src={getAvatarFullUrl(employee.avatar_url || employee.profile_photo)}
             sx={{
               width: 48,
               height: 48,
@@ -142,10 +151,10 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
               {employee.first_name} {employee.last_name}
             </Typography>
             <Typography sx={{ color: '#64748B', fontSize: '13px', mt: 0.25 }}>
-              {employee.designation || 'Team Member'} • {employee.department?.name || 'Department'}
+              {employee.designation || 'Team Member'}
             </Typography>
             <Typography sx={{ color: '#94A3B8', fontSize: '12px' }}>
-              {employee.work_email} • ID: {employee.employee_id || 'N/A'}
+              {employee.work_email || employee.email}
             </Typography>
           </Box>
         </Box>

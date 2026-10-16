@@ -35,6 +35,15 @@ import CustomTableLoader from '../../common/custom/CustomTableLoader';
 import LeaveApprovalModal from '../../components/leaves/LeaveApprovalModal';
 import InviteEmployeeModal from '../../components/employees/InviteEmployeeModal';
 
+const getAvatarFullUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const backendBase = (import.meta.env.VITE_BASEURL || 'http://localhost:5000/api/v1')
+    .replace(/\/api\/v1\/?$/, '')
+    .replace(/\/api\/?$/, '');
+  return `${backendBase}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { data: dashData, isLoading, refetch } = useAdminDashboard();
@@ -239,7 +248,7 @@ export default function AdminDashboard() {
                   }}
                 >
                   <Avatar
-                    src={item.employee?.avatar_url || ''}
+                    src={getAvatarFullUrl(item.employee?.avatar_url || item.employee?.profile_photo)}
                     sx={{ width: 40, height: 40, bgcolor: '#8B5CF6', fontWeight: 700, fontSize: '0.9rem' }}
                   >
                     {item.employee?.first_name ? item.employee.first_name[0] : 'E'}
@@ -249,7 +258,7 @@ export default function AdminDashboard() {
                       {item.employee?.first_name} {item.employee?.last_name}
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
-                      {item.employee?.department?.name || 'Department'}
+                      {item.employee?.designation || 'Team Member'}
                     </Typography>
                   </Box>
                   <Chip

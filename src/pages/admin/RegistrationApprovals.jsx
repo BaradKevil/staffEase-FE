@@ -25,6 +25,15 @@ import CustomTableLoader from '../../common/custom/CustomTableLoader';
 import ApproveRegistrationModal from '../../components/approvals/ApproveRegistrationModal';
 import RejectRegistrationModal from '../../components/approvals/RejectRegistrationModal';
 
+const getAvatarFullUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const backendBase = (import.meta.env.VITE_BASEURL || 'http://localhost:5000/api/v1')
+    .replace(/\/api\/v1\/?$/, '')
+    .replace(/\/api\/?$/, '');
+  return `${backendBase}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 export default function RegistrationApprovals() {
   const [approvingEmployee, setApprovingEmployee] = useState(null);
   const [rejectingEmployee, setRejectingEmployee] = useState(null);
@@ -64,12 +73,10 @@ export default function RegistrationApprovals() {
         }}
       >
         <TableContainer sx={{ overflowX: 'auto', width: '100%' }}>
-          <Table sx={{ minWidth: 700 }}>
+          <Table sx={{ minWidth: 650 }}>
             <TableHead sx={{ bgcolor: '#F8FAFC' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>APPLICANT</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>EMPLOYEE ID</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>DEPARTMENT</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>DESIGNATION</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>JOINING DATE</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>SUBMITTED AT</TableCell>
@@ -78,10 +85,10 @@ export default function RegistrationApprovals() {
             </TableHead>
             <TableBody>
               {isLoading ? (
-                <CustomTableLoader rows={4} colSpan={7} />
+                <CustomTableLoader rows={4} colSpan={5} />
               ) : pendingEmployees.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 6, color: '#94A3B8' }}>
+                  <TableCell colSpan={5} align="center" sx={{ py: 6, color: '#94A3B8' }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                       <RegIcon sx={{ fontSize: 40, color: '#CBD5E1' }} />
                       <Typography variant="body2" sx={{ fontWeight: 600, color: '#64748B' }}>
@@ -99,7 +106,7 @@ export default function RegistrationApprovals() {
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <Avatar
-                          src={emp.avatar_url || ''}
+                          src={getAvatarFullUrl(emp.avatar_url || emp.profile_photo)}
                           sx={{ width: 38, height: 38, bgcolor: '#23A4E8', fontWeight: 700, fontSize: '0.9rem' }}
                         >
                           {emp.first_name ? emp.first_name[0] : 'U'}
@@ -109,22 +116,10 @@ export default function RegistrationApprovals() {
                             {emp.first_name} {emp.last_name}
                           </Typography>
                           <Typography variant="caption" sx={{ color: '#64748B' }}>
-                            {emp.work_email}
+                            {emp.work_email || emp.email}
                           </Typography>
                         </Box>
                       </Box>
-                    </TableCell>
-
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
-                        {emp.employee_id || 'Not set'}
-                      </Typography>
-                    </TableCell>
-
-                    <TableCell>
-                      <Typography variant="body2" sx={{ color: '#334155' }}>
-                        {emp.department?.name || 'Unassigned'}
-                      </Typography>
                     </TableCell>
 
                     <TableCell>

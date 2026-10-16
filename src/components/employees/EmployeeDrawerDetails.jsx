@@ -15,8 +15,6 @@ import {
   Close as CloseIcon,
   EmailOutlined as EmailIcon,
   PhoneOutlined as PhoneIcon,
-  BadgeOutlined as BadgeIcon,
-  CorporateFareOutlined as DeptIcon,
   CalendarTodayOutlined as CalendarIcon,
   TuneRounded as TuneIcon,
   Block as BlockIcon,
@@ -26,6 +24,15 @@ import StatusBadge from '../../common/custom/StatusBadge';
 import AdjustBalanceModal from '../leaves/AdjustBalanceModal';
 import { useUpdateEmployeeStatus } from '../../Api/Api';
 import { toast } from 'react-toastify';
+
+const getAvatarFullUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const backendBase = (import.meta.env.VITE_BASEURL || 'http://localhost:5000/api/v1')
+    .replace(/\/api\/v1\/?$/, '')
+    .replace(/\/api\/?$/, '');
+  return `${backendBase}${url.startsWith('/') ? '' : '/'}${url}`;
+};
 
 export default function EmployeeDrawerDetails({ open, onClose, employee, onRefresh }) {
   const [adjustOpen, setAdjustOpen] = useState(false);
@@ -102,7 +109,7 @@ export default function EmployeeDrawerDetails({ open, onClose, employee, onRefre
           {/* Profile overview */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, mb: 3 }}>
             <Avatar
-              src={employee.avatar_url || ''}
+              src={getAvatarFullUrl(employee.avatar_url || employee.profile_photo)}
               sx={{
                 width: 72,
                 height: 72,
@@ -148,37 +155,13 @@ export default function EmployeeDrawerDetails({ open, onClose, employee, onRefre
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.75, mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <BadgeIcon sx={{ color: '#94A3B8', fontSize: 20 }} />
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
-                  Employee ID
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A' }}>
-                  {employee.employee_id || 'Not Assigned'}
-                </Typography>
-              </Box>
-            </Box>
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <EmailIcon sx={{ color: '#94A3B8', fontSize: 20 }} />
               <Box sx={{ flex: 1 }}>
                 <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
                   Work Email
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A' }}>
-                  {employee.work_email}
-                </Typography>
-              </Box>
-            </Box>
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <DeptIcon sx={{ color: '#94A3B8', fontSize: 20 }} />
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
-                  Department
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A' }}>
-                  {employee.department?.name || 'Unassigned'}
+                  {employee.work_email || employee.email}
                 </Typography>
               </Box>
             </Box>
