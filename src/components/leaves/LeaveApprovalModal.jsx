@@ -78,7 +78,9 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
           borderTop: '5px solid #23A4E8',
           boxShadow: '0 20px 40px rgba(15, 23, 42, 0.12)',
           overflow: 'hidden',
-          bgcolor: '#FFFFFF'
+          bgcolor: '#FFFFFF',
+          width: { xs: 'calc(100% - 32px)', sm: '100%' },
+          m: { xs: 2, sm: 'auto' }
         }
       }}
     >
@@ -359,7 +361,7 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
         )}
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2, bgcolor: '#FAFCFE', borderTop: '1px solid #F1F5F9' }}>
+      <DialogActions sx={{ px: 3, py: 2, bgcolor: '#FAFCFE', borderTop: '1px solid #F1F5F9', flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1 }}>
         <Button
           onClick={handleClose}
           sx={{
@@ -367,7 +369,8 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
             fontWeight: 600,
             textTransform: 'none',
             px: 2.5,
-            borderRadius: '10px'
+            borderRadius: '10px',
+            width: { xs: '100%', sm: 'auto' }
           }}
         >
           {isPending ? 'Cancel' : 'Close'}
@@ -386,7 +389,8 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
               px: 3,
               py: 1,
               fontWeight: 600,
-              textTransform: 'none'
+              textTransform: 'none',
+              width: { xs: '100%', sm: 'auto' }
             }}
           >
             {reviewMutation.isPending ? (

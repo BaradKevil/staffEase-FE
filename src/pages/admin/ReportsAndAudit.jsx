@@ -121,7 +121,8 @@ export default function ReportsAndAudit() {
               borderRadius: '10px',
               px: 2.5,
               fontWeight: 600,
-              textTransform: 'none'
+              textTransform: 'none',
+              width: { xs: '100%', sm: 'auto' }
             }}
           >
             Export Report (CSV)
@@ -142,6 +143,9 @@ export default function ReportsAndAudit() {
         <Tabs
           value={activeTab}
           onChange={(e, val) => setActiveTab(val)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
           textColor="primary"
           indicatorColor="primary"
           sx={{
@@ -160,8 +164,8 @@ export default function ReportsAndAudit() {
         </Tabs>
 
         {activeTab === 'summary' ? (
-          <TableContainer>
-            <Table>
+          <TableContainer sx={{ overflowX: 'auto', width: '100%' }}>
+            <Table sx={{ minWidth: 750 }}>
               <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>EMPLOYEE</TableCell>
@@ -254,8 +258,8 @@ export default function ReportsAndAudit() {
           </TableContainer>
         ) : (
           <>
-            <TableContainer>
-              <Table>
+            <TableContainer sx={{ overflowX: 'auto', width: '100%' }}>
+              <Table sx={{ minWidth: 700 }}>
                 <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>ACTION</TableCell>

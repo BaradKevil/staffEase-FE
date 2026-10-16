@@ -150,14 +150,16 @@ export default function LeaveCalendar() {
           border: '1px solid #EEF2F6',
           boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)',
           bgcolor: '#FFFFFF',
-          overflow: 'hidden'
+          overflowX: 'auto',
+          width: '100%'
         }}
       >
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(7, 1fr)',
-            bgcolor: '#F8FAFC',
+        <Box sx={{ minWidth: 650 }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(7, 1fr)',
+              bgcolor: '#F8FAFC',
             borderBottom: '1px solid #E2E8F0',
             textAlign: 'center',
             py: 1.5
@@ -278,6 +280,7 @@ export default function LeaveCalendar() {
               </Box>
             );
           })}
+        </Box>
         </Box>
       </Card>
     </Box>

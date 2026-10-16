@@ -109,7 +109,7 @@ const Navbar = ({ toggleSidebar, onLogoutClick }) => {
                 boxShadow: '0 2px 6px rgba(35, 164, 232, 0.35)',
               }}
             >
-              L
+              S
             </Box>
             <Typography
               sx={{
@@ -120,7 +120,7 @@ const Navbar = ({ toggleSidebar, onLogoutClick }) => {
                 display: { xs: 'none', sm: 'block' },
               }}
             >
-              Leave<span style={{ color: '#23A4E8' }}>Flow</span>
+              staff<span style={{ color: '#23A4E8' }}>Ease</span>
             </Typography>
           </Box>
         </Box>

@@ -169,10 +169,12 @@ export default function LeaveCalendarAdmin() {
           border: '1px solid #EEF2F6',
           boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)',
           bgcolor: '#FFFFFF',
-          overflow: 'hidden'
+          overflowX: 'auto',
+          width: '100%'
         }}
       >
-        {/* Days of week header */}
+        <Box sx={{ minWidth: 650 }}>
+          {/* Days of week header */}
         <Box
           sx={{
             display: 'grid',
@@ -308,6 +310,7 @@ export default function LeaveCalendarAdmin() {
               </Box>
             );
           })}
+        </Box>
         </Box>
       </Card>
     </Box>

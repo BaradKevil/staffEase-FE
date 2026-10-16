@@ -102,7 +102,8 @@ export default function EmployeeList() {
             py: 1,
             fontWeight: 600,
             textTransform: 'none',
-            boxShadow: '0 4px 14px rgba(35, 164, 232, 0.25)'
+            boxShadow: '0 4px 14px rgba(35, 164, 232, 0.25)',
+            width: { xs: '100%', sm: 'auto' }
           }}
         >
           Invite Employee
@@ -221,8 +222,8 @@ export default function EmployeeList() {
           overflow: 'hidden'
         }}
       >
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ overflowX: 'auto', width: '100%' }}>
+          <Table sx={{ minWidth: 700 }}>
             <TableHead sx={{ bgcolor: '#F8FAFC' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>EMPLOYEE</TableCell>

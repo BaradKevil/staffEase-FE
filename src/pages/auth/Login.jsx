@@ -82,22 +82,25 @@ export default function Login() {
     <Box
       sx={{
         minHeight: '100dvh',
+        width: '100%',
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         bgcolor: '#F4F7FA',
-        py: { xs: 3, sm: 4 },
-        px: 2,
+        py: { xs: 3, sm: 5, md: 6 },
+        px: { xs: 2, sm: 3 },
+        overflowY: 'auto',
       }}
     >
       <Card
         sx={{
+          my: 'auto',
           borderRadius: '16px',
           maxWidth: 440,
           width: '100%',
-          mb: { xs: 2, sm: 2.5 },
+          mb: { xs: 2.5, sm: 3 },
           boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
           overflow: 'hidden',
           borderTop: '5px solid #23A4E8',

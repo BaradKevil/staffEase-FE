@@ -57,7 +57,8 @@ const CustomActionModal = ({
           borderTop: isDestructive ? '5px solid #EF4444' : '5px solid #23A4E8',
           padding: '6px',
           maxWidth: maxWidth,
-          width: '100%',
+          width: { xs: 'calc(100% - 32px)', sm: '100%' },
+          m: { xs: 2, sm: 'auto' },
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
         },
       }}
@@ -111,7 +112,7 @@ const CustomActionModal = ({
 
         {children && <Box sx={{ my: 2, textAlign: 'left' }}>{children}</Box>}
 
-        <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center', mt: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1.5, justifyContent: 'center', mt: 3 }}>
           <Button
             fullWidth
             onClick={onClose}

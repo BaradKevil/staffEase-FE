@@ -62,7 +62,9 @@ export default function RejectRegistrationModal({ open, onClose, employee, onSuc
           borderTop: '5px solid #EF4444',
           boxShadow: '0 20px 40px rgba(15, 23, 42, 0.12)',
           overflow: 'hidden',
-          bgcolor: '#FFFFFF'
+          bgcolor: '#FFFFFF',
+          width: { xs: 'calc(100% - 32px)', sm: '100%' },
+          m: { xs: 2, sm: 'auto' }
         }
       }}
     >
@@ -171,7 +173,7 @@ export default function RejectRegistrationModal({ open, onClose, employee, onSuc
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2, bgcolor: '#FAFCFE', borderTop: '1px solid #F1F5F9' }}>
+      <DialogActions sx={{ px: 3, py: 2, bgcolor: '#FAFCFE', borderTop: '1px solid #F1F5F9', flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1 }}>
         <Button
           onClick={handleClose}
           sx={{
@@ -179,7 +181,8 @@ export default function RejectRegistrationModal({ open, onClose, employee, onSuc
             fontWeight: 600,
             textTransform: 'none',
             px: 2.5,
-            borderRadius: '10px'
+            borderRadius: '10px',
+            width: { xs: '100%', sm: 'auto' }
           }}
         >
           Cancel
@@ -195,7 +198,8 @@ export default function RejectRegistrationModal({ open, onClose, employee, onSuc
             fontWeight: 600,
             textTransform: 'none',
             bgcolor: '#EF4444',
-            '&:hover': { bgcolor: '#DC2626' }
+            '&:hover': { bgcolor: '#DC2626' },
+            width: { xs: '100%', sm: 'auto' }
           }}
         >
           {rejectMutation.isPending ? <CircularProgress size={20} color="inherit" /> : 'Confirm Rejection'}

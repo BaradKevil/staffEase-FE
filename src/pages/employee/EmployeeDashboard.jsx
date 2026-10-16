@@ -89,7 +89,8 @@ export default function EmployeeDashboard() {
             py: 1.1,
             fontWeight: 600,
             textTransform: 'none',
-            boxShadow: '0 4px 14px rgba(35, 164, 232, 0.25)'
+            boxShadow: '0 4px 14px rgba(35, 164, 232, 0.25)',
+            width: { xs: '100%', sm: 'auto' }
           }}
         >
           Apply for Leave
@@ -310,8 +311,8 @@ export default function EmployeeDashboard() {
             </Button>
           </Box>
 
-          <TableContainer sx={{ border: '1px solid #F1F5F9', borderRadius: '12px', width: '100%' }}>
-            <Table size="small">
+          <TableContainer sx={{ border: '1px solid #F1F5F9', borderRadius: '12px', width: '100%', overflowX: 'auto' }}>
+            <Table size="small" sx={{ minWidth: 500 }}>
               <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '12px', py: 1.5 }}>TYPE</TableCell>

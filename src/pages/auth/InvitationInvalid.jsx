@@ -7,16 +7,22 @@ export default function InvitationInvalid({ message }) {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
+        width: '100%',
         bgcolor: '#F8FAFC',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
-        p: 2
+        justifyContent: 'flex-start',
+        py: { xs: 3, sm: 5, md: 6 },
+        px: { xs: 2, sm: 3 },
+        boxSizing: 'border-box',
+        overflowY: 'auto'
       }}
     >
       <Card
         sx={{
+          my: 'auto',
           width: '100%',
           maxWidth: 480,
           p: { xs: 3, sm: 5 },

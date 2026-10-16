@@ -63,8 +63,8 @@ export default function RegistrationApprovals() {
           overflow: 'hidden'
         }}
       >
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ overflowX: 'auto', width: '100%' }}>
+          <Table sx={{ minWidth: 700 }}>
             <TableHead sx={{ bgcolor: '#F8FAFC' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>APPLICANT</TableCell>

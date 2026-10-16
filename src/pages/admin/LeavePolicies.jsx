@@ -238,8 +238,10 @@ export default function LeavePolicies() {
           sx={{
             p: 2.5,
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'center' },
             justifyContent: 'space-between',
+            gap: 1.5,
             borderBottom: '1px solid #F1F5F9'
           }}
         >
@@ -264,15 +266,16 @@ export default function LeavePolicies() {
               textTransform: 'none',
               fontWeight: 600,
               px: 2,
-              py: 0.8
+              py: 0.8,
+              width: { xs: '100%', sm: 'auto' }
             }}
           >
             Add Holiday
           </Button>
         </Box>
 
-        <TableContainer sx={{ width: '100%' }}>
-          <Table>
+        <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
+          <Table sx={{ minWidth: 600 }}>
             <TableHead sx={{ bgcolor: '#F8FAFC' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '12px', py: 1.5 }}>HOLIDAY NAME</TableCell>

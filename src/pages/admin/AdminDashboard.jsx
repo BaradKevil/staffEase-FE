@@ -107,7 +107,7 @@ export default function AdminDashboard() {
           </Typography>
         </Box>
 
-        <Stack direction="row" spacing={1.5}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ width: { xs: '100%', sm: 'auto' } }}>
           <Button
             variant="contained"
             startIcon={<InviteIcon />}
@@ -118,7 +118,8 @@ export default function AdminDashboard() {
               borderRadius: '10px',
               px: 2.25,
               fontWeight: 600,
-              textTransform: 'none'
+              textTransform: 'none',
+              width: { xs: '100%', sm: 'auto' }
             }}
           >
             Invite Employee
@@ -135,7 +136,8 @@ export default function AdminDashboard() {
               textTransform: 'none',
               borderColor: '#E2E8F0',
               color: '#334155',
-              '&:hover': { borderColor: '#CBD5E1', bgcolor: '#F8FAFC' }
+              '&:hover': { borderColor: '#CBD5E1', bgcolor: '#F8FAFC' },
+              width: { xs: '100%', sm: 'auto' }
             }}
           >
             Company Calendar
@@ -296,8 +298,8 @@ export default function AdminDashboard() {
             </Button>
           </Box>
 
-          <TableContainer sx={{ border: '1px solid #F1F5F9', borderRadius: '12px', flex: 1 }}>
-            <Table size="small">
+          <TableContainer sx={{ border: '1px solid #F1F5F9', borderRadius: '12px', flex: 1, overflowX: 'auto', width: '100%' }}>
+            <Table size="small" sx={{ minWidth: 550 }}>
               <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>EMPLOYEE</TableCell>

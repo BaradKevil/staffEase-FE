@@ -77,7 +77,8 @@ export default function MyLeaves() {
             px: 2.5,
             fontWeight: 600,
             textTransform: 'none',
-            boxShadow: '0 4px 14px rgba(35, 164, 232, 0.25)'
+            boxShadow: '0 4px 14px rgba(35, 164, 232, 0.25)',
+            width: { xs: '100%', sm: 'auto' }
           }}
         >
           Apply for Leave
@@ -97,6 +98,9 @@ export default function MyLeaves() {
         <Tabs
           value={tab}
           onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
           textColor="primary"
           indicatorColor="primary"
           sx={{
@@ -117,8 +121,8 @@ export default function MyLeaves() {
           <Tab value="cancelled" label="Cancelled" />
         </Tabs>
 
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ overflowX: 'auto', width: '100%' }}>
+          <Table sx={{ minWidth: 700 }}>
             <TableHead sx={{ bgcolor: '#F8FAFC' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>LEAVE TYPE</TableCell>

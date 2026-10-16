@@ -29,20 +29,26 @@ const NotAuthorized = () => {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
+        width: '100%',
         bgcolor: '#F8FAFC',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
-        p: 3,
+        justifyContent: 'flex-start',
+        py: { xs: 3, sm: 5, md: 6 },
+        px: { xs: 2, sm: 3 },
+        boxSizing: 'border-box',
+        overflowY: 'auto'
       }}
     >
       <Card
         sx={{
+          my: 'auto',
           maxWidth: 480,
           width: '100%',
           textAlign: 'center',
-          p: 4,
+          p: { xs: 3, sm: 4 },
           borderRadius: '16px',
           boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
         }}

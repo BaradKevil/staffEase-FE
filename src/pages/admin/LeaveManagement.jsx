@@ -110,6 +110,9 @@ export default function LeaveManagement() {
           <Tabs
             value={tab}
             onChange={handleTabChange}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
             textColor="primary"
             indicatorColor="primary"
             sx={{
@@ -140,7 +143,7 @@ export default function LeaveManagement() {
                   setPage(1);
                 }}
                 sx={{
-                  height: 40,
+                  height: 42,
                   borderRadius: '10px',
                   bgcolor: '#F8FAFC',
                   fontSize: '13.5px',
@@ -159,8 +162,8 @@ export default function LeaveManagement() {
         </Box>
 
         {/* Table */}
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ overflowX: 'auto', width: '100%' }}>
+          <Table sx={{ minWidth: 650 }}>
             <TableHead sx={{ bgcolor: '#F8FAFC' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>EMPLOYEE</TableCell>

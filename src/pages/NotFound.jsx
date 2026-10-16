@@ -7,17 +7,24 @@ export default function NotFound() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
+        width: '100%',
         bgcolor: '#F8FAFC',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
-        p: 2
+        justifyContent: 'flex-start',
+        py: { xs: 3, sm: 5, md: 6 },
+        px: { xs: 2, sm: 3 },
+        boxSizing: 'border-box',
+        overflowY: 'auto'
       }}
     >
       <Card
         sx={{
+          my: 'auto',
           maxWidth: 480,
+          width: '100%',
           p: { xs: 3, sm: 5 },
           borderRadius: '20px',
           boxShadow: '0 20px 40px rgba(15, 23, 42, 0.08)',

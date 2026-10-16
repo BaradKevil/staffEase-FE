@@ -110,7 +110,9 @@ export default function AdjustBalanceModal({ open, onClose, employee, onSuccess 
           borderTop: '5px solid #23A4E8',
           boxShadow: '0 20px 40px rgba(15, 23, 42, 0.12)',
           overflow: 'hidden',
-          bgcolor: '#FFFFFF'
+          bgcolor: '#FFFFFF',
+          width: { xs: 'calc(100% - 32px)', sm: '100%' },
+          m: { xs: 2, sm: 'auto' }
         }
       }}
     >
