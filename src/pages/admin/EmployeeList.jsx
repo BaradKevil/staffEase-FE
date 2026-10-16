@@ -69,7 +69,7 @@ export default function EmployeeList() {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
       {/* Header bar */}
       <Box
         sx={{
@@ -77,7 +77,8 @@ export default function EmployeeList() {
           flexDirection: { xs: 'column', sm: 'row' },
           alignItems: { xs: 'flex-start', sm: 'center' },
           justifyContent: 'space-between',
-          gap: 2
+          gap: 2,
+          width: '100%'
         }}
       >
         <Box>
@@ -98,8 +99,10 @@ export default function EmployeeList() {
             '&:hover': { bgcolor: '#1D8BC4' },
             borderRadius: '10px',
             px: 2.5,
+            py: 1,
             fontWeight: 600,
-            textTransform: 'none'
+            textTransform: 'none',
+            boxShadow: '0 4px 14px rgba(35, 164, 232, 0.25)'
           }}
         >
           Invite Employee
@@ -113,7 +116,8 @@ export default function EmployeeList() {
           borderRadius: '16px',
           border: '1px solid #EEF2F6',
           boxShadow: '0 4px 12px rgba(15, 23, 42, 0.02)',
-          bgcolor: '#FFFFFF'
+          bgcolor: '#FFFFFF',
+          width: '100%'
         }}
       >
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
@@ -132,20 +136,42 @@ export default function EmployeeList() {
                   <SearchIcon sx={{ color: '#94A3B8', fontSize: 20 }} />
                 </InputAdornment>
               ),
-              sx: { borderRadius: '10px' }
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                height: 42,
+                borderRadius: '10px',
+                bgcolor: '#F8FAFC',
+                '& fieldset': { borderColor: '#E2E8F0', transition: 'border-color 0.2s' },
+                '&:hover fieldset': { borderColor: '#23A4E8' },
+                '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
+              },
+              '& .MuiOutlinedInput-input': {
+                fontSize: '13.5px',
+                color: '#0F172A',
+                '&::placeholder': { color: '#94A3B8', opacity: 1 }
+              }
             }}
           />
 
           <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 180 } }}>
-            <InputLabel>Department</InputLabel>
             <Select
               value={departmentId}
-              label="Department"
+              displayEmpty
               onChange={(e) => {
                 setDepartmentId(e.target.value);
                 setPage(1);
               }}
-              sx={{ borderRadius: '10px' }}
+              sx={{
+                height: 42,
+                borderRadius: '10px',
+                bgcolor: '#F8FAFC',
+                fontSize: '13.5px',
+                color: departmentId ? '#0F172A' : '#64748B',
+                '& fieldset': { borderColor: '#E2E8F0', transition: 'border-color 0.2s' },
+                '&:hover fieldset': { borderColor: '#23A4E8' },
+                '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
+              }}
             >
               <MenuItem value="">All Departments</MenuItem>
               {departments.map((dept) => (
@@ -157,15 +183,23 @@ export default function EmployeeList() {
           </FormControl>
 
           <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 160 } }}>
-            <InputLabel>Status</InputLabel>
             <Select
               value={status}
-              label="Status"
+              displayEmpty
               onChange={(e) => {
                 setStatus(e.target.value);
                 setPage(1);
               }}
-              sx={{ borderRadius: '10px' }}
+              sx={{
+                height: 42,
+                borderRadius: '10px',
+                bgcolor: '#F8FAFC',
+                fontSize: '13.5px',
+                color: status ? '#0F172A' : '#64748B',
+                '& fieldset': { borderColor: '#E2E8F0', transition: 'border-color 0.2s' },
+                '&:hover fieldset': { borderColor: '#23A4E8' },
+                '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
+              }}
             >
               <MenuItem value="">All Statuses</MenuItem>
               <MenuItem value="active">Active</MenuItem>

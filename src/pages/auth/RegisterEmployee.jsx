@@ -46,19 +46,28 @@ export default function RegisterEmployee() {
   const { data: invitationData, isLoading, isError, error } = useVerifyInvitation(token);
   const registerMutation = useRegisterEmployee();
 
-  const invitation = invitationData?.data;
+  const invitation = invitationData?.data || invitationData;
 
   // Pre-fill full name if available once invitation loads
   React.useEffect(() => {
     if (invitation && !formData.first_name) {
-      const parts = (invitation.full_name || '').trim().split(' ');
-      setFormData((prev) => ({
-        ...prev,
-        first_name: parts[0] || '',
-        last_name: parts.slice(1).join(' ') || ''
-      }));
+      if (invitation.first_name || invitation.last_name) {
+        setFormData((prev) => ({
+          ...prev,
+          first_name: invitation.first_name || '',
+          last_name: invitation.last_name || ''
+        }));
+      } else if (invitation.full_name) {
+        const parts = (invitation.full_name || '').trim().split(' ');
+        setFormData((prev) => ({
+          ...prev,
+          first_name: parts[0] || '',
+          last_name: parts.slice(1).join(' ') || ''
+        }));
+      }
     }
   }, [invitation]);
+
 
   if (!token) {
     return <InvitationInvalid message="No invitation token was provided in the URL." />;
@@ -222,7 +231,7 @@ export default function RegisterEmployee() {
               </Typography>
             </Box>
             <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '14px' }}>
-              {invitation.work_email}
+              {invitation.work_email || invitation.email}
             </Typography>
             <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
               {invitation.designation && (
@@ -508,7 +517,7 @@ export default function RegisterEmployee() {
         ))}
       </Box>
       <Typography sx={{ fontSize: '12px', color: '#94A3B8', textAlign: 'center' }}>
-        © {new Date().getFullYear()} LeaveFlow. All rights reserved.
+        © {new Date().getFullYear()} staffEase. All rights reserved.
       </Typography>
     </Box>
   );

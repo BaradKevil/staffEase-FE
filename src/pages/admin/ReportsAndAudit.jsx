@@ -81,7 +81,7 @@ export default function ReportsAndAudit() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `LeaveFlow_Leave_Report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `staffEase_Leave_Report_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -89,7 +89,7 @@ export default function ReportsAndAudit() {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
       {/* Header */}
       <Box
         sx={{
@@ -97,7 +97,8 @@ export default function ReportsAndAudit() {
           flexDirection: { xs: 'column', sm: 'row' },
           alignItems: { xs: 'flex-start', sm: 'center' },
           justifyContent: 'space-between',
-          gap: 2
+          gap: 2,
+          width: '100%'
         }}
       >
         <Box>

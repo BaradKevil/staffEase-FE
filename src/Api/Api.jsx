@@ -170,8 +170,13 @@ export const useUpdateEmployee = (onSuccess, onError) => {
 export const useApproveRegistration = (onSuccess, onError) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data = {} }) => {
-      const res = await apiClient.post(`/employees/${id}/approve`, data);
+    mutationFn: async ({ id, data = {}, employee_id, ...rest }) => {
+      const payload = {
+        ...data,
+        ...rest,
+        ...(employee_id ? { employee_id } : {}),
+      };
+      const res = await apiClient.post(`/employees/${id}/approve`, payload);
       return unwrap(res);
     },
     onSuccess: (data, variables, context) => {
@@ -186,8 +191,10 @@ export const useApproveRegistration = (onSuccess, onError) => {
 export const useRejectRegistration = (onSuccess, onError) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, reason }) => {
-      const res = await apiClient.post(`/employees/${id}/reject`, { reason });
+    mutationFn: async ({ id, reason, rejection_reason }) => {
+      const res = await apiClient.post(`/employees/${id}/reject`, {
+        reason: reason || rejection_reason || 'Registration rejected',
+      });
       return unwrap(res);
     },
     onSuccess: (data, variables, context) => {
@@ -280,7 +287,13 @@ export const useCreateInvitation = (onSuccess, onError) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data) => {
-      const res = await apiClient.post('/invitations', data);
+      const email = data.email || data.work_email;
+      const payload = {
+        ...data,
+        email,
+        work_email: email,
+      };
+      const res = await apiClient.post('/invitations', payload);
       return unwrap(res);
     },
     onSuccess: (data, variables, context) => {
@@ -497,7 +510,16 @@ export const useCreateHoliday = (onSuccess, onError) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data) => {
-      const res = await apiClient.post('/calendar/holidays', data);
+      const holidayName = data.holiday_name || data.name;
+      const payload = {
+        ...data,
+        holiday_name: holidayName,
+        name: holidayName,
+        holiday_date: data.holiday_date,
+        description: data.description,
+        leave_year: data.leave_year || (data.holiday_date ? new Date(data.holiday_date).getFullYear() : new Date().getFullYear()),
+      };
+      const res = await apiClient.post('/calendar/holidays', payload);
       return unwrap(res);
     },
     onSuccess: (data, variables, context) => {

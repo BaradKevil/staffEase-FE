@@ -92,7 +92,7 @@ export default function LeaveCalendarAdmin() {
   const monthName = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
       {/* Header bar */}
       <Box
         sx={{
@@ -100,7 +100,8 @@ export default function LeaveCalendarAdmin() {
           flexDirection: { xs: 'column', sm: 'row' },
           alignItems: { xs: 'flex-start', sm: 'center' },
           justifyContent: 'space-between',
-          gap: 2
+          gap: 2,
+          width: '100%'
         }}
       >
         <Box>
@@ -262,7 +263,7 @@ export default function LeaveCalendarAdmin() {
 
                 {/* Holiday Badge */}
                 {cell.isHoliday && (
-                  <Tooltip title={cell.isHoliday.description || cell.isHoliday.name}>
+                  <Tooltip title={cell.isHoliday.description || cell.isHoliday.holiday_name || cell.isHoliday.name}>
                     <Box
                       sx={{
                         p: 0.5,
@@ -276,7 +277,7 @@ export default function LeaveCalendarAdmin() {
                         textOverflow: 'ellipsis'
                       }}
                     >
-                      ★ {cell.isHoliday.name}
+                      ★ {cell.isHoliday.holiday_name || cell.isHoliday.name}
                     </Box>
                   </Tooltip>
                 )}

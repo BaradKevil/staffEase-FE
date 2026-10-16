@@ -264,7 +264,7 @@ const Navbar = ({ toggleSidebar, onLogoutClick }) => {
                 {fullName}
               </Typography>
               <Typography sx={{ fontSize: '11px', color: '#64748B' }}>
-                {user.email || 'user@leaveflow.internal'}
+                {user.email || 'user@staffEase.internal'}
               </Typography>
             </Box>
           </Box>

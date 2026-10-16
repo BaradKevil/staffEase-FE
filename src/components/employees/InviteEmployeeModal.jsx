@@ -8,10 +8,6 @@ import {
   Typography,
   Box,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   CircularProgress,
   Alert,
   IconButton,
@@ -23,15 +19,13 @@ import {
   Check as CheckIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
-import { useInviteEmployee, useDepartments } from '../../Api/Api';
+import { useInviteEmployee } from '../../Api/Api';
 import { toast } from 'react-toastify';
 
 export default function InviteEmployeeModal({ open, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     full_name: '',
     work_email: '',
-    employee_id: '',
-    department_id: '',
     designation: '',
     joining_date: new Date().toISOString().split('T')[0]
   });
@@ -40,8 +34,6 @@ export default function InviteEmployeeModal({ open, onClose, onSuccess }) {
   const [copied, setCopied] = useState(false);
 
   const inviteMutation = useInviteEmployee();
-  const { data: deptData } = useDepartments();
-  const departments = deptData?.data || [];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -51,25 +43,38 @@ export default function InviteEmployeeModal({ open, onClose, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.full_name.trim() || !formData.work_email.trim()) {
+    const fullName = formData.full_name.trim();
+    const workEmail = formData.work_email.trim().toLowerCase();
+
+    if (!fullName || !workEmail) {
       toast.error('Full name and work email are required');
       return;
     }
 
     try {
+      const parts = fullName.split(' ');
       const payload = {
-        full_name: formData.full_name.trim(),
-        work_email: formData.work_email.trim().toLowerCase(),
-        employee_id: formData.employee_id.trim() || undefined,
-        department_id: formData.department_id ? Number(formData.department_id) : undefined,
+        email: workEmail,
+        work_email: workEmail,
+        full_name: fullName,
+        first_name: parts[0],
+        last_name: parts.slice(1).join(' ') || '',
         designation: formData.designation.trim() || undefined,
         joining_date: formData.joining_date || undefined
       };
 
       const res = await inviteMutation.mutateAsync(payload);
-      const invitation = res?.data || {};
+      const invitation = res?.data || res || {};
 
-      toast.success('Invitation generated and email sent successfully!');
+      if (invitation.email_sent) {
+        toast.success(`Invitation created and email sent successfully to ${workEmail}!`);
+      } else {
+        toast.warn(
+          invitation.email_error
+            ? `Invitation created, but email failed: ${invitation.email_error}`
+            : 'Invitation created, but email could not be delivered. Please share the link manually.'
+        );
+      }
       setInvitationResult(invitation);
       if (onSuccess) onSuccess();
     } catch (err) {
@@ -90,14 +95,28 @@ export default function InviteEmployeeModal({ open, onClose, onSuccess }) {
     setFormData({
       full_name: '',
       work_email: '',
-      employee_id: '',
-      department_id: '',
       designation: '',
       joining_date: new Date().toISOString().split('T')[0]
     });
     setInvitationResult(null);
     setCopied(false);
     onClose();
+  };
+
+  const inputStyle = {
+    '& .MuiOutlinedInput-root': {
+      height: 44,
+      borderRadius: '10px',
+      bgcolor: '#F8FAFC',
+      '& fieldset': { borderColor: '#E2E8F0', transition: 'border-color 0.2s' },
+      '&:hover fieldset': { borderColor: '#23A4E8' },
+      '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
+    },
+    '& .MuiOutlinedInput-input': {
+      fontSize: '13.5px',
+      color: '#0F172A',
+      '&::placeholder': { color: '#94A3B8', opacity: 1 }
+    }
   };
 
   return (
@@ -109,60 +128,70 @@ export default function InviteEmployeeModal({ open, onClose, onSuccess }) {
       PaperProps={{
         sx: {
           borderRadius: '16px',
-          boxShadow: '0 20px 40px rgba(15, 23, 42, 0.15)',
-          overflow: 'hidden'
+          borderTop: '5px solid #23A4E8',
+          boxShadow: '0 20px 40px rgba(15, 23, 42, 0.12)',
+          overflow: 'hidden',
+          bgcolor: '#FFFFFF'
         }
       }}
     >
       <DialogTitle
         sx={{
           px: 3,
-          pt: 3,
+          pt: 2.8,
           pb: 1.5,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          borderBottom: '1px solid #F1F5F9'
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box
             sx={{
-              width: 40,
-              height: 40,
-              borderRadius: '10px',
-              bgcolor: '#E0F2FE',
+              width: 44,
+              height: 44,
+              borderRadius: '12px',
+              bgcolor: '#EFF6FF',
+              color: '#23A4E8',
+              border: '1px solid #DBEAFE',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              color: '#0284C7'
+              justifyContent: 'center'
             }}
           >
-            <InviteIcon />
+            <InviteIcon sx={{ fontSize: 24 }} />
           </Box>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#0F172A', fontSize: '1.125rem' }}>
+            <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '17px', lineHeight: 1.3 }}>
               Invite New Employee
             </Typography>
-            <Typography variant="caption" sx={{ color: '#64748B' }}>
-              Send an onboarding invitation link to join LeaveFlow
+            <Typography sx={{ color: '#64748B', fontSize: '13px' }}>
+              Send an onboarding invitation link to join staffEase
             </Typography>
           </Box>
         </Box>
-        <IconButton onClick={handleClose} size="small" sx={{ color: '#94A3B8' }}>
+        <IconButton onClick={handleClose} size="small" sx={{ color: '#94A3B8', '&:hover': { color: '#0F172A' } }}>
           <CloseIcon fontSize="small" />
         </IconButton>
       </DialogTitle>
 
       {invitationResult ? (
         <Box sx={{ p: 3 }}>
-          <Alert severity="success" sx={{ mb: 3, borderRadius: '12px' }}>
-            Invitation created for <strong>{formData.full_name}</strong> ({formData.work_email})! An email has been sent.
-          </Alert>
+          {invitationResult.email_sent ? (
+            <Alert severity="success" sx={{ mb: 3, borderRadius: '10px', fontSize: '13.5px' }}>
+              Invitation created for <strong>{formData.full_name}</strong> ({formData.work_email})! An email has been sent.
+            </Alert>
+          ) : (
+            <Alert severity="warning" sx={{ mb: 3, borderRadius: '10px', fontSize: '13.5px', bgcolor: '#FEF3C7', color: '#92400E' }}>
+              <strong>Notice:</strong> Invitation was saved, but <strong>the email could not be sent</strong> {invitationResult.email_error ? `(${invitationResult.email_error})` : '(SMTP not configured)'}. Please copy the direct registration link below and share it with the employee manually.
+            </Alert>
+          )}
 
           {invitationResult.invitation_link && (
             <Box sx={{ mb: 3 }}>
-              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, display: 'block', mb: 1 }}>
-                SECURE ONBOARDING LINK (Direct Registration URL)
+              <Typography sx={{ fontSize: '12px', color: '#64748B', fontWeight: 700, display: 'block', mb: 1, textTransform: 'uppercase' }}>
+                Secure Onboarding Link (Direct Registration URL)
               </Typography>
               <TextField
                 fullWidth
@@ -177,10 +206,15 @@ export default function InviteEmployeeModal({ open, onClose, onSuccess }) {
                       </IconButton>
                     </InputAdornment>
                   ),
-                  sx: { bgcolor: '#F8FAFC', borderRadius: '10px', fontFamily: 'monospace', fontSize: '0.8125rem' }
+                  sx: {
+                    bgcolor: '#F8FAFC',
+                    borderRadius: '10px',
+                    fontFamily: 'monospace',
+                    fontSize: '13px'
+                  }
                 }}
               />
-              <Typography variant="caption" sx={{ color: '#94A3B8', mt: 0.5, display: 'block' }}>
+              <Typography sx={{ fontSize: '12px', color: '#94A3B8', mt: 0.75, display: 'block' }}>
                 Expires in 7 days. Once the employee submits registration, it will be routed to your Approval queue.
               </Typography>
             </Box>
@@ -194,7 +228,9 @@ export default function InviteEmployeeModal({ open, onClose, onSuccess }) {
               bgcolor: '#23A4E8',
               borderRadius: '10px',
               py: 1.25,
-              fontWeight: 600
+              fontWeight: 600,
+              textTransform: 'none',
+              '&:hover': { bgcolor: '#1D8BC4' }
             }}
           >
             Done
@@ -202,93 +238,88 @@ export default function InviteEmployeeModal({ open, onClose, onSuccess }) {
         </Box>
       ) : (
         <Box component="form" onSubmit={handleSubmit}>
-          <DialogContent sx={{ px: 3, py: 2 }}>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-              <TextField
-                label="Full Name *"
-                name="full_name"
-                size="small"
-                fullWidth
-                required
-                value={formData.full_name}
-                onChange={handleChange}
-                placeholder="e.g. Alex Morgan"
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
-              />
-
-              <TextField
-                label="Work Email *"
-                name="work_email"
-                type="email"
-                size="small"
-                fullWidth
-                required
-                value={formData.work_email}
-                onChange={handleChange}
-                placeholder="e.g. alex@company.com"
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
-              />
-
-              <TextField
-                label="Employee ID (Optional)"
-                name="employee_id"
-                size="small"
-                fullWidth
-                value={formData.employee_id}
-                onChange={handleChange}
-                placeholder="e.g. EMP-1042"
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
-              />
-
-              <FormControl fullWidth size="small">
-                <InputLabel>Department</InputLabel>
-                <Select
-                  name="department_id"
-                  value={formData.department_id}
-                  label="Department"
+          <DialogContent sx={{ px: 3, py: 2.5 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2.2 }}>
+              {/* Full Name */}
+              <Box>
+                <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
+                  Full Name <span style={{ color: '#EF4444' }}>*</span>
+                </Typography>
+                <TextField
+                  name="full_name"
+                  fullWidth
+                  required
+                  value={formData.full_name}
                   onChange={handleChange}
-                  sx={{ borderRadius: '10px' }}
-                >
-                  <MenuItem value="">None / Unassigned</MenuItem>
-                  {departments.map((dept) => (
-                    <MenuItem key={dept.id} value={dept.id}>
-                      {dept.name} ({dept.code})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                  placeholder="e.g. Alex Morgan"
+                  sx={inputStyle}
+                />
+              </Box>
 
-              <TextField
-                label="Designation / Title"
-                name="designation"
-                size="small"
-                fullWidth
-                value={formData.designation}
-                onChange={handleChange}
-                placeholder="e.g. Senior Frontend Engineer"
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
-              />
+              {/* Work Email */}
+              <Box>
+                <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
+                  Work Email <span style={{ color: '#EF4444' }}>*</span>
+                </Typography>
+                <TextField
+                  name="work_email"
+                  type="email"
+                  fullWidth
+                  required
+                  value={formData.work_email}
+                  onChange={handleChange}
+                  placeholder="e.g. alex@company.com"
+                  sx={inputStyle}
+                />
+              </Box>
 
-              <TextField
-                label="Expected Joining Date"
-                name="joining_date"
-                type="date"
-                size="small"
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                value={formData.joining_date}
-                onChange={handleChange}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px' } }}
-              />
+              {/* Designation */}
+              <Box>
+                <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
+                  Designation / Title
+                </Typography>
+                <TextField
+                  name="designation"
+                  fullWidth
+                  value={formData.designation}
+                  onChange={handleChange}
+                  placeholder="e.g. Senior Frontend Engineer"
+                  sx={inputStyle}
+                />
+              </Box>
+
+              {/* Expected Joining Date */}
+              <Box>
+                <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
+                  Expected Joining Date
+                </Typography>
+                <TextField
+                  name="joining_date"
+                  type="date"
+                  fullWidth
+                  value={formData.joining_date}
+                  onChange={handleChange}
+                  sx={inputStyle}
+                />
+              </Box>
             </Box>
 
-            <Alert severity="info" sx={{ mt: 2.5, borderRadius: '10px', fontSize: '0.8125rem' }}>
-              The joining date determines prorated annual leave entitlements (1.0 CL + 0.5 SL per remaining month) when the employee registration is approved.
+            <Alert severity="info" sx={{ mt: 2.5, borderRadius: '10px', fontSize: '12.5px', color: '#0369A1', bgcolor: '#F0F9FF' }}>
+              The joining date automatically calculates prorated annual leave entitlements (1.0 CL + 0.5 SL per remaining month) when the employee registration is approved.
             </Alert>
           </DialogContent>
 
           <DialogActions sx={{ px: 3, py: 2, bgcolor: '#FAFCFE', borderTop: '1px solid #F1F5F9' }}>
-            <Button onClick={handleClose} sx={{ color: '#64748B', fontWeight: 600 }}>
+            <Button
+              onClick={handleClose}
+              sx={{
+                color: '#64748B',
+                fontWeight: 600,
+                textTransform: 'none',
+                px: 2.5,
+                borderRadius: '10px'
+              }}
+            >
               Cancel
             </Button>
             <Button
@@ -298,7 +329,9 @@ export default function InviteEmployeeModal({ open, onClose, onSuccess }) {
               sx={{
                 borderRadius: '10px',
                 px: 3,
+                py: 1,
                 fontWeight: 600,
+                textTransform: 'none',
                 bgcolor: '#23A4E8',
                 '&:hover': { bgcolor: '#1D8BC4' }
               }}

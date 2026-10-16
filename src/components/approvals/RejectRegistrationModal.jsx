@@ -10,9 +10,13 @@ import {
   TextField,
   Avatar,
   CircularProgress,
-  Alert
+  Alert,
+  IconButton
 } from '@mui/material';
-import { CancelOutlined as RejectIcon } from '@mui/icons-material';
+import {
+  CancelOutlined as RejectIcon,
+  Close as CloseIcon
+} from '@mui/icons-material';
 import { useRejectRegistration } from '../../Api/Api';
 import { toast } from 'react-toastify';
 
@@ -55,46 +59,55 @@ export default function RejectRegistrationModal({ open, onClose, employee, onSuc
       PaperProps={{
         sx: {
           borderRadius: '16px',
-          boxShadow: '0 20px 40px rgba(15, 23, 42, 0.15)',
-          overflow: 'hidden'
+          borderTop: '5px solid #EF4444',
+          boxShadow: '0 20px 40px rgba(15, 23, 42, 0.12)',
+          overflow: 'hidden',
+          bgcolor: '#FFFFFF'
         }
       }}
     >
       <DialogTitle
         sx={{
           px: 3,
-          pt: 3,
+          pt: 2.8,
           pb: 1.5,
           display: 'flex',
           alignItems: 'center',
-          gap: 1.5
+          justifyContent: 'space-between',
+          borderBottom: '1px solid #F1F5F9'
         }}
       >
-        <Box
-          sx={{
-            width: 40,
-            height: 40,
-            borderRadius: '10px',
-            bgcolor: '#FEF2F2',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#EF4444'
-          }}
-        >
-          <RejectIcon />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: '12px',
+              bgcolor: '#FEF2F2',
+              color: '#EF4444',
+              border: '1px solid #FEE2E2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <RejectIcon sx={{ fontSize: 24 }} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '17px', lineHeight: 1.3 }}>
+              Reject Registration
+            </Typography>
+            <Typography sx={{ color: '#64748B', fontSize: '12.5px' }}>
+              Deny employee account activation
+            </Typography>
+          </Box>
         </Box>
-        <Box>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: '#0F172A', fontSize: '1.125rem' }}>
-            Reject Registration
-          </Typography>
-          <Typography variant="caption" sx={{ color: '#64748B' }}>
-            Deny employee account activation
-          </Typography>
-        </Box>
+        <IconButton onClick={handleClose} size="small" sx={{ color: '#94A3B8', '&:hover': { color: '#0F172A' } }}>
+          <CloseIcon fontSize="small" />
+        </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ px: 3, py: 2 }}>
+      <DialogContent sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
             display: 'flex',
@@ -114,49 +127,73 @@ export default function RejectRegistrationModal({ open, onClose, employee, onSuc
             {employee.first_name ? employee.first_name[0] : 'U'}
           </Avatar>
           <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
+            <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '14.5px' }}>
               {employee.first_name} {employee.last_name}
             </Typography>
-            <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
+            <Typography sx={{ color: '#64748B', fontSize: '12.5px' }}>
               {employee.work_email}
             </Typography>
           </Box>
         </Box>
 
-        <Alert severity="error" sx={{ mb: 2.5, borderRadius: '10px', fontSize: '0.8125rem' }}>
-          Rejecting will mark the account as rejected and block access to LeaveFlow. The employee will receive an email explanation.
+        <Alert severity="error" sx={{ mb: 2.5, borderRadius: '10px', fontSize: '12.5px', bgcolor: '#FEF2F2', color: '#991B1B' }}>
+          Rejecting will mark the account as rejected and block access to staffEase. The employee will receive an email explanation.
         </Alert>
 
-        <TextField
-          label="Reason for Rejection *"
-          placeholder="State the reason (e.g. invalid information, redundant invitation)..."
-          fullWidth
-          required
-          multiline
-          rows={3}
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              borderRadius: '10px'
-            }
-          }}
-        />
+        <Box>
+          <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
+            Reason for Rejection <span style={{ color: '#EF4444' }}>*</span>
+          </Typography>
+          <TextField
+            placeholder="State the reason (e.g. invalid information, redundant invitation)..."
+            fullWidth
+            required
+            multiline
+            rows={3}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '10px',
+                bgcolor: '#F8FAFC',
+                p: 1.5,
+                '& fieldset': { borderColor: '#E2E8F0', transition: 'border-color 0.2s' },
+                '&:hover fieldset': { borderColor: '#23A4E8' },
+                '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
+              },
+              '& .MuiOutlinedInput-input': {
+                fontSize: '13.5px',
+                color: '#0F172A',
+                '&::placeholder': { color: '#94A3B8', opacity: 1 }
+              }
+            }}
+          />
+        </Box>
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2, bgcolor: '#FAFCFE', borderTop: '1px solid #F1F5F9' }}>
-        <Button onClick={handleClose} sx={{ color: '#64748B', fontWeight: 600 }}>
+        <Button
+          onClick={handleClose}
+          sx={{
+            color: '#64748B',
+            fontWeight: 600,
+            textTransform: 'none',
+            px: 2.5,
+            borderRadius: '10px'
+          }}
+        >
           Cancel
         </Button>
         <Button
           variant="contained"
-          color="error"
           onClick={handleReject}
           disabled={rejectMutation.isPending}
           sx={{
             borderRadius: '10px',
             px: 3,
+            py: 1,
             fontWeight: 600,
+            textTransform: 'none',
             bgcolor: '#EF4444',
             '&:hover': { bgcolor: '#DC2626' }
           }}

@@ -167,7 +167,7 @@ export default function ResetPassword() {
               Set New Password
             </Typography>
             <Typography sx={{ fontSize: '13.5px', color: '#64748B', textAlign: 'center' }}>
-              Choose a secure password for your LeaveFlow account
+              Choose a secure password for your staffEase account
             </Typography>
           </Box>
 
@@ -400,7 +400,7 @@ export default function ResetPassword() {
         ))}
       </Box>
       <Typography sx={{ fontSize: '12px', color: '#94A3B8', textAlign: 'center' }}>
-        © {new Date().getFullYear()} LeaveFlow. All rights reserved.
+        © {new Date().getFullYear()} staffEase. All rights reserved.
       </Typography>
     </Box>
   );

@@ -65,7 +65,7 @@ export default function LeaveManagement() {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
       {/* Header */}
       <Box
         sx={{
@@ -73,7 +73,8 @@ export default function LeaveManagement() {
           flexDirection: { xs: 'column', sm: 'row' },
           alignItems: { xs: 'flex-start', sm: 'center' },
           justifyContent: 'space-between',
-          gap: 2
+          gap: 2,
+          width: '100%'
         }}
       >
         <Box>
@@ -92,7 +93,8 @@ export default function LeaveManagement() {
           borderRadius: '16px',
           border: '1px solid #EEF2F6',
           boxShadow: '0 4px 12px rgba(15, 23, 42, 0.02)',
-          bgcolor: '#FFFFFF'
+          bgcolor: '#FFFFFF',
+          width: '100%'
         }}
       >
         <Box
@@ -130,17 +132,25 @@ export default function LeaveManagement() {
 
           <Box sx={{ p: { xs: 2, md: 1 } }}>
             <FormControl size="small" sx={{ minWidth: 160 }}>
-              <InputLabel>Leave Type</InputLabel>
               <Select
                 value={leaveType}
-                label="Leave Type"
+                displayEmpty
                 onChange={(e) => {
                   setLeaveType(e.target.value);
                   setPage(1);
                 }}
-                sx={{ borderRadius: '10px' }}
+                sx={{
+                  height: 40,
+                  borderRadius: '10px',
+                  bgcolor: '#F8FAFC',
+                  fontSize: '13.5px',
+                  color: leaveType ? '#0F172A' : '#64748B',
+                  '& fieldset': { borderColor: '#E2E8F0', transition: 'border-color 0.2s' },
+                  '&:hover fieldset': { borderColor: '#23A4E8' },
+                  '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
+                }}
               >
-                <MenuItem value="">All Types</MenuItem>
+                <MenuItem value="">All Leave Types</MenuItem>
                 <MenuItem value="casual_leave">Casual Leave (CL)</MenuItem>
                 <MenuItem value="sick_leave">Sick Leave (SL)</MenuItem>
               </Select>

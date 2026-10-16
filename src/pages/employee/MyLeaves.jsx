@@ -45,7 +45,7 @@ export default function MyLeaves() {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
       {/* Header */}
       <Box
         sx={{
@@ -53,7 +53,8 @@ export default function MyLeaves() {
           flexDirection: { xs: 'column', sm: 'row' },
           alignItems: { xs: 'flex-start', sm: 'center' },
           justifyContent: 'space-between',
-          gap: 2
+          gap: 2,
+          width: '100%'
         }}
       >
         <Box>

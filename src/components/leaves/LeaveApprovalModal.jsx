@@ -13,15 +13,12 @@ import {
   Avatar,
   CircularProgress,
   Stack,
-  Alert
+  IconButton
 } from '@mui/material';
 import {
   CheckCircle as CheckIcon,
   Cancel as CancelIcon,
-  CalendarToday as CalendarIcon,
-  Person as PersonIcon,
-  Notes as NotesIcon,
-  Timelapse as TimeIcon
+  Close as CloseIcon
 } from '@mui/icons-material';
 import { useReviewLeaveRequest } from '../../Api/Api';
 import StatusBadge from '../../common/custom/StatusBadge';
@@ -78,8 +75,10 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
       PaperProps={{
         sx: {
           borderRadius: '16px',
-          boxShadow: '0 20px 40px rgba(15, 23, 42, 0.15)',
-          overflow: 'hidden'
+          borderTop: '5px solid #23A4E8',
+          boxShadow: '0 20px 40px rgba(15, 23, 42, 0.12)',
+          overflow: 'hidden',
+          bgcolor: '#FFFFFF'
         }
       }}
     >
@@ -95,14 +94,19 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
         }}
       >
         <Box>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: '#0F172A', fontSize: '1.125rem' }}>
+          <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '17px', lineHeight: 1.3 }}>
             Review Leave Application
           </Typography>
-          <Typography variant="caption" sx={{ color: '#64748B' }}>
+          <Typography sx={{ color: '#64748B', fontSize: '12.5px' }}>
             Reference #{leave.id} • Submitted on {new Date(leave.created_at).toLocaleDateString()}
           </Typography>
         </Box>
-        <StatusBadge status={leave.status} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <StatusBadge status={leave.status} />
+          <IconButton onClick={handleClose} size="small" sx={{ color: '#94A3B8', '&:hover': { color: '#0F172A' } }}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Box>
       </DialogTitle>
 
       <DialogContent sx={{ px: 3, py: 2.5 }}>
@@ -132,13 +136,13 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
             {employee.first_name ? employee.first_name[0] : 'E'}
           </Avatar>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0F172A', lineHeight: 1.2 }}>
+            <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '15px', lineHeight: 1.2 }}>
               {employee.first_name} {employee.last_name}
             </Typography>
-            <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.8125rem' }}>
+            <Typography sx={{ color: '#64748B', fontSize: '13px', mt: 0.25 }}>
               {employee.designation || 'Team Member'} • {employee.department?.name || 'Department'}
             </Typography>
-            <Typography variant="caption" sx={{ color: '#94A3B8' }}>
+            <Typography sx={{ color: '#94A3B8', fontSize: '12px' }}>
               {employee.work_email} • ID: {employee.employee_id || 'N/A'}
             </Typography>
           </Box>
@@ -153,42 +157,42 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
             p: 2,
             borderRadius: '12px',
             border: '1px solid #EEF2F6',
-            bgcolor: '#FFFFFF',
+            bgcolor: '#FAFCFE',
             mb: 2.5
           }}
         >
           <Box>
-            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>
+            <Typography sx={{ color: '#64748B', fontWeight: 600, fontSize: '12px' }}>
               LEAVE TYPE
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A', mt: 0.5 }}>
+            <Typography sx={{ fontWeight: 700, color: '#0F172A', mt: 0.5, fontSize: '14px' }}>
               {leave.leave_type === 'casual_leave' ? 'Casual Leave (CL)' : 'Sick Leave (SL)'}
             </Typography>
           </Box>
 
           <Box>
-            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>
+            <Typography sx={{ color: '#64748B', fontWeight: 600, fontSize: '12px' }}>
               TOTAL DEDUCTED DAYS
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 800, color: '#23A4E8', mt: 0.5, fontSize: '1rem' }}>
+            <Typography sx={{ fontWeight: 800, color: '#23A4E8', mt: 0.5, fontSize: '15px' }}>
               {leave.total_days} {leave.total_days === 1 ? 'day' : 'days'}
             </Typography>
           </Box>
 
           <Box>
-            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>
+            <Typography sx={{ color: '#64748B', fontWeight: 600, fontSize: '12px' }}>
               START DATE
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E293B', mt: 0.5 }}>
+            <Typography sx={{ fontWeight: 600, color: '#1E293B', mt: 0.5, fontSize: '13px' }}>
               {new Date(leave.start_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
             </Typography>
           </Box>
 
           <Box>
-            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>
+            <Typography sx={{ color: '#64748B', fontWeight: 600, fontSize: '12px' }}>
               END DATE
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E293B', mt: 0.5 }}>
+            <Typography sx={{ fontWeight: 600, color: '#1E293B', mt: 0.5, fontSize: '13px' }}>
               {new Date(leave.end_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
             </Typography>
           </Box>
@@ -196,17 +200,17 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
 
         {/* Reason */}
         <Box sx={{ mb: 2.5 }}>
-          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, mb: 0.5, display: 'block' }}>
+          <Typography sx={{ color: '#64748B', fontWeight: 600, fontSize: '12px', mb: 0.8, display: 'block' }}>
             EMPLOYEE'S REASON
           </Typography>
           <Box
             sx={{
               p: 1.5,
-              borderRadius: '8px',
+              borderRadius: '10px',
               bgcolor: '#F8FAFC',
               border: '1px solid #E2E8F0',
               color: '#334155',
-              fontSize: '0.875rem'
+              fontSize: '13.5px'
             }}
           >
             {leave.reason || 'No reason provided.'}
@@ -216,7 +220,7 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
         {/* Breakdown chips if available */}
         {leave.breakdown && Array.isArray(leave.breakdown) && leave.breakdown.length > 0 && (
           <Box sx={{ mb: 2.5 }}>
-            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, mb: 0.75, display: 'block' }}>
+            <Typography sx={{ color: '#64748B', fontWeight: 600, fontSize: '12px', mb: 0.8, display: 'block' }}>
               DAILY DEDUCTION BREAKDOWN
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, maxHeight: 120, overflowY: 'auto' }}>
@@ -229,7 +233,8 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
                     bgcolor: item.weight > 0 ? '#E0F2FE' : '#F1F5F9',
                     color: item.weight > 0 ? '#0369A1' : '#64748B',
                     fontWeight: 500,
-                    fontSize: '0.75rem'
+                    fontSize: '12px',
+                    borderRadius: '6px'
                   }}
                 />
               ))}
@@ -242,13 +247,12 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
             <Divider sx={{ my: 2 }} />
 
             {/* Decision selector */}
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A', mb: 1.5 }}>
+            <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '14px', mb: 1.5 }}>
               Administrative Decision
             </Typography>
-            <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
+            <Stack direction="row" spacing={1.5} sx={{ mb: 2.2 }}>
               <Button
                 variant={action === 'approved' ? 'contained' : 'outlined'}
-                color="success"
                 onClick={() => setAction('approved')}
                 startIcon={<CheckIcon />}
                 fullWidth
@@ -256,10 +260,13 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
                   py: 1,
                   borderRadius: '10px',
                   fontWeight: 600,
+                  textTransform: 'none',
                   bgcolor: action === 'approved' ? '#10B981' : 'transparent',
+                  color: action === 'approved' ? '#FFFFFF' : '#10B981',
                   borderColor: '#10B981',
                   '&:hover': {
-                    bgcolor: action === 'approved' ? '#059669' : '#ECFDF5'
+                    bgcolor: action === 'approved' ? '#059669' : '#ECFDF5',
+                    borderColor: '#059669'
                   }
                 }}
               >
@@ -267,7 +274,6 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
               </Button>
               <Button
                 variant={action === 'rejected' ? 'contained' : 'outlined'}
-                color="error"
                 onClick={() => setAction('rejected')}
                 startIcon={<CancelIcon />}
                 fullWidth
@@ -275,10 +281,13 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
                   py: 1,
                   borderRadius: '10px',
                   fontWeight: 600,
+                  textTransform: 'none',
                   bgcolor: action === 'rejected' ? '#EF4444' : 'transparent',
+                  color: action === 'rejected' ? '#FFFFFF' : '#EF4444',
                   borderColor: '#EF4444',
                   '&:hover': {
-                    bgcolor: action === 'rejected' ? '#DC2626' : '#FEF2F2'
+                    bgcolor: action === 'rejected' ? '#DC2626' : '#FEF2F2',
+                    borderColor: '#DC2626'
                   }
                 }}
               >
@@ -287,43 +296,80 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
             </Stack>
 
             {action === 'rejected' ? (
-              <TextField
-                label="Reason for Rejection *"
-                fullWidth
-                multiline
-                rows={3}
-                required
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Please state why this leave request is being rejected (sent to employee)..."
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '10px'
-                  }
-                }}
-              />
+              <Box>
+                <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
+                  Reason for Rejection <span style={{ color: '#EF4444' }}>*</span>
+                </Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  required
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Please state why this leave request is being rejected (sent to employee)..."
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '10px',
+                      bgcolor: '#F8FAFC',
+                      p: 1.5,
+                      '& fieldset': { borderColor: '#E2E8F0', transition: 'border-color 0.2s' },
+                      '&:hover fieldset': { borderColor: '#23A4E8' },
+                      '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
+                    },
+                    '& .MuiOutlinedInput-input': {
+                      fontSize: '13.5px',
+                      color: '#0F172A',
+                      '&::placeholder': { color: '#94A3B8', opacity: 1 }
+                    }
+                  }}
+                />
+              </Box>
             ) : (
-              <TextField
-                label="Optional Admin Note / Comments"
-                fullWidth
-                multiline
-                rows={2}
-                value={comments}
-                onChange={(e) => setComments(e.target.value)}
-                placeholder="Optional notes or remarks for the employee..."
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '10px'
-                  }
-                }}
-              />
+              <Box>
+                <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
+                  Optional Admin Note / Comments
+                </Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={2}
+                  value={comments}
+                  onChange={(e) => setComments(e.target.value)}
+                  placeholder="Optional notes or remarks for the employee..."
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '10px',
+                      bgcolor: '#F8FAFC',
+                      p: 1.5,
+                      '& fieldset': { borderColor: '#E2E8F0', transition: 'border-color 0.2s' },
+                      '&:hover fieldset': { borderColor: '#23A4E8' },
+                      '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
+                    },
+                    '& .MuiOutlinedInput-input': {
+                      fontSize: '13.5px',
+                      color: '#0F172A',
+                      '&::placeholder': { color: '#94A3B8', opacity: 1 }
+                    }
+                  }}
+                />
+              </Box>
             )}
           </>
         )}
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2, bgcolor: '#FAFCFE', borderTop: '1px solid #F1F5F9' }}>
-        <Button onClick={handleClose} sx={{ color: '#64748B', fontWeight: 600 }}>
+        <Button
+          onClick={handleClose}
+          sx={{
+            color: '#64748B',
+            fontWeight: 600,
+            textTransform: 'none',
+            px: 2.5,
+            borderRadius: '10px'
+          }}
+        >
           {isPending ? 'Cancel' : 'Close'}
         </Button>
         {isPending && (
@@ -338,7 +384,9 @@ export default function LeaveApprovalModal({ open, onClose, leave, onSuccess }) 
               },
               borderRadius: '10px',
               px: 3,
-              fontWeight: 600
+              py: 1,
+              fontWeight: 600,
+              textTransform: 'none'
             }}
           >
             {reviewMutation.isPending ? (

@@ -91,7 +91,7 @@ const Layout = () => {
         isPending={isLoggingOut}
         isDestructive={true}
         icon={<LogoutOutlinedIcon sx={{ fontSize: 28 }} />}
-        title="Sign Out of LeaveFlow"
+        title="Sign Out of staffEase"
         subtitle="Are you sure you want to log out? You will need to sign back in with your credentials to access your leave and employee details."
         confirmText="Sign Out"
         pendingText="Signing out..."

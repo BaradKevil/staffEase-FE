@@ -103,6 +103,7 @@ apiClient.interceptors.response.use(
       try {
         const { data } = await axios.post(`${baseURL}/auth/refresh-token`, {
           refresh_token: refreshToken,
+          refreshToken,
         });
 
         const { access_token, refresh_token } = data.data;

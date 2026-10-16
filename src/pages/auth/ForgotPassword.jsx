@@ -278,7 +278,7 @@ export default function ForgotPassword() {
         ))}
       </Box>
       <Typography sx={{ fontSize: '12px', color: '#94A3B8', textAlign: 'center' }}>
-        © {new Date().getFullYear()} LeaveFlow. All rights reserved.
+        © {new Date().getFullYear()} staffEase. All rights reserved.
       </Typography>
     </Box>
   );

@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Card,
-  Grid,
   Button,
   Table,
   TableBody,
@@ -13,8 +12,7 @@ import {
   TableRow,
   Chip,
   IconButton,
-  Tooltip,
-  Alert
+  Tooltip
 } from '@mui/material';
 import {
   EventAvailableRounded as HolidayIcon,
@@ -48,9 +46,9 @@ export default function LeavePolicies() {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
       {/* Header */}
-      <Box>
+      <Box sx={{ width: '100%' }}>
         <Typography variant="h5" sx={{ fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
           Leave Policies & Company Holidays
         </Typography>
@@ -59,176 +57,181 @@ export default function LeavePolicies() {
         </Typography>
       </Box>
 
-      {/* Policy Cards Grid */}
-      <Grid container spacing={2.5}>
-        <Grid item xs={12} md={4}>
-          <Card
-            sx={{
-              p: 3,
-              borderRadius: '16px',
-              border: '1px solid #EEF2F6',
-              boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)',
-              bgcolor: '#FFFFFF',
-              height: '100%'
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: '10px',
-                  bgcolor: '#E0F2FE',
-                  color: '#0284C7',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <PolicyIcon />
-              </Box>
-              <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0F172A' }}>
-                  Annual Entitlements
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#64748B' }}>
-                  Standard Full-Year Grant
-                </Typography>
-              </Box>
+      {/* Policy Cards CSS Grid - Edge-to-Edge full width */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+          gap: 2.5,
+          width: '100%'
+        }}
+      >
+        <Card
+          sx={{
+            p: 3,
+            borderRadius: '16px',
+            border: '1px solid #EEF2F6',
+            boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)',
+            bgcolor: '#FFFFFF',
+            height: '100%'
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: '12px',
+                bgcolor: '#EFF6FF',
+                color: '#23A4E8',
+                border: '1px solid #DBEAFE',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <PolicyIcon sx={{ fontSize: 24 }} />
             </Box>
-
-            <Typography variant="h3" sx={{ fontWeight: 800, color: '#23A4E8', mb: 1 }}>
-              18 <Typography component="span" variant="h6" sx={{ color: '#64748B', fontWeight: 600 }}>Days Total</Typography>
-            </Typography>
-
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1.25, bgcolor: '#F8FAFC', borderRadius: '8px' }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>Casual Leave (CL)</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: '#0284C7' }}>12.0 days / year</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1.25, bgcolor: '#F8FAFC', borderRadius: '8px' }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>Sick Leave (SL)</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: '#10B981' }}>6.0 days / year</Typography>
-              </Box>
+            <Box>
+              <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '15px' }}>
+                Annual Entitlements
+              </Typography>
+              <Typography sx={{ color: '#64748B', fontSize: '12px' }}>
+                Standard Full-Year Grant
+              </Typography>
             </Box>
-          </Card>
-        </Grid>
+          </Box>
 
-        <Grid item xs={12} md={4}>
-          <Card
-            sx={{
-              p: 3,
-              borderRadius: '16px',
-              border: '1px solid #EEF2F6',
-              boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)',
-              bgcolor: '#FFFFFF',
-              height: '100%'
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: '10px',
-                  bgcolor: '#ECFDF5',
-                  color: '#10B981',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <CalcIcon />
-              </Box>
-              <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0F172A' }}>
-                  Accrual & Proration
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#64748B' }}>
-                  Monthly Rate & Mid-Year Formula
-                </Typography>
-              </Box>
+          <Typography sx={{ fontSize: '30px', fontWeight: 800, color: '#23A4E8', mb: 1.5, lineHeight: 1.1 }}>
+            18 <Typography component="span" sx={{ color: '#64748B', fontWeight: 600, fontSize: '15px' }}>Days Total</Typography>
+          </Typography>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1.25, bgcolor: '#F8FAFC', borderRadius: '10px', border: '1px solid #F1F5F9' }}>
+              <Typography sx={{ fontWeight: 600, color: '#334155', fontSize: '13px' }}>Casual Leave (CL)</Typography>
+              <Typography sx={{ fontWeight: 700, color: '#0284C7', fontSize: '13px' }}>12.0 days / year</Typography>
             </Box>
-
-            <Typography variant="h3" sx={{ fontWeight: 800, color: '#10B981', mb: 1 }}>
-              1.5 <Typography component="span" variant="h6" sx={{ color: '#64748B', fontWeight: 600 }}>Days / Month</Typography>
-            </Typography>
-
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1.25, bgcolor: '#F8FAFC', borderRadius: '8px' }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>Monthly Accrual</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: '#334155' }}>1.0 CL + 0.5 SL</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1.25, bgcolor: '#F8FAFC', borderRadius: '8px' }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>Prorated Formula</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700, color: '#334155' }}>Remaining Months × 1.5</Typography>
-              </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1.25, bgcolor: '#F8FAFC', borderRadius: '10px', border: '1px solid #F1F5F9' }}>
+              <Typography sx={{ fontWeight: 600, color: '#334155', fontSize: '13px' }}>Sick Leave (SL)</Typography>
+              <Typography sx={{ fontWeight: 700, color: '#10B981', fontSize: '13px' }}>6.0 days / year</Typography>
             </Box>
-          </Card>
-        </Grid>
+          </Box>
+        </Card>
 
-        <Grid item xs={12} md={4}>
-          <Card
-            sx={{
-              p: 3,
-              borderRadius: '16px',
-              border: '1px solid #EEF2F6',
-              boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)',
-              bgcolor: '#FFFFFF',
-              height: '100%'
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: '10px',
-                  bgcolor: '#F3E8FF',
-                  color: '#7E22CE',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <CalIcon />
-              </Box>
-              <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0F172A' }}>
-                  Saturday Engine Rules
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#64748B' }}>
-                  Exact Working Day Weights
-                </Typography>
-              </Box>
+        <Card
+          sx={{
+            p: 3,
+            borderRadius: '16px',
+            border: '1px solid #EEF2F6',
+            boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)',
+            bgcolor: '#FFFFFF',
+            height: '100%'
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: '12px',
+                bgcolor: '#ECFDF5',
+                color: '#10B981',
+                border: '1px solid #A7F3D0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <CalcIcon sx={{ fontSize: 24 }} />
             </Box>
+            <Box>
+              <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '15px' }}>
+                Accrual & Proration
+              </Typography>
+              <Typography sx={{ color: '#64748B', fontSize: '12px' }}>
+                Monthly Rate & Mid-Year Formula
+              </Typography>
+            </Box>
+          </Box>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1.25, bgcolor: '#F8FAFC', borderRadius: '8px' }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>1st, 3rd, 5th Saturday</Typography>
-                <Chip size="small" label="0.0 days (OFF)" sx={{ bgcolor: '#FEF3C7', color: '#B45309', fontWeight: 600 }} />
-              </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1.25, bgcolor: '#F8FAFC', borderRadius: '8px' }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>2nd, 4th Saturday</Typography>
-                <Chip size="small" label="0.5 days (Half-day)" sx={{ bgcolor: '#E0F2FE', color: '#0369A1', fontWeight: 600 }} />
-              </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1.25, bgcolor: '#F8FAFC', borderRadius: '8px' }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>Sundays & Holidays</Typography>
-                <Chip size="small" label="0.0 days (Exempt)" sx={{ bgcolor: '#ECFDF5', color: '#047857', fontWeight: 600 }} />
-              </Box>
+          <Typography sx={{ fontSize: '30px', fontWeight: 800, color: '#10B981', mb: 1.5, lineHeight: 1.1 }}>
+            1.5 <Typography component="span" sx={{ color: '#64748B', fontWeight: 600, fontSize: '15px' }}>Days / Month</Typography>
+          </Typography>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1.25, bgcolor: '#F8FAFC', borderRadius: '10px', border: '1px solid #F1F5F9' }}>
+              <Typography sx={{ fontWeight: 600, color: '#334155', fontSize: '13px' }}>Monthly Accrual</Typography>
+              <Typography sx={{ fontWeight: 700, color: '#334155', fontSize: '13px' }}>1.0 CL + 0.5 SL</Typography>
             </Box>
-          </Card>
-        </Grid>
-      </Grid>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1.25, bgcolor: '#F8FAFC', borderRadius: '10px', border: '1px solid #F1F5F9' }}>
+              <Typography sx={{ fontWeight: 600, color: '#334155', fontSize: '13px' }}>Prorated Formula</Typography>
+              <Typography sx={{ fontWeight: 700, color: '#334155', fontSize: '13px' }}>Remaining Months × 1.5</Typography>
+            </Box>
+          </Box>
+        </Card>
+
+        <Card
+          sx={{
+            p: 3,
+            borderRadius: '16px',
+            border: '1px solid #EEF2F6',
+            boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)',
+            bgcolor: '#FFFFFF',
+            height: '100%'
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: '12px',
+                bgcolor: '#F3E8FF',
+                color: '#7E22CE',
+                border: '1px solid #E9D5FF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <CalIcon sx={{ fontSize: 24 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '15px' }}>
+                Saturday Engine Rules
+              </Typography>
+              <Typography sx={{ color: '#64748B', fontSize: '12px' }}>
+                Exact Working Day Weights
+              </Typography>
+            </Box>
+          </Box>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1.25, bgcolor: '#F8FAFC', borderRadius: '10px', border: '1px solid #F1F5F9' }}>
+              <Typography sx={{ fontWeight: 600, color: '#334155', fontSize: '12.5px' }}>1st, 3rd, 5th Saturday</Typography>
+              <Chip size="small" label="0.0d (OFF)" sx={{ bgcolor: '#FEF3C7', color: '#B45309', fontWeight: 600, fontSize: '11.5px', borderRadius: '6px' }} />
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1.25, bgcolor: '#F8FAFC', borderRadius: '10px', border: '1px solid #F1F5F9' }}>
+              <Typography sx={{ fontWeight: 600, color: '#334155', fontSize: '12.5px' }}>2nd, 4th Saturday</Typography>
+              <Chip size="small" label="0.5d (Half)" sx={{ bgcolor: '#E0F2FE', color: '#0369A1', fontWeight: 600, fontSize: '11.5px', borderRadius: '6px' }} />
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1.25, bgcolor: '#F8FAFC', borderRadius: '10px', border: '1px solid #F1F5F9' }}>
+              <Typography sx={{ fontWeight: 600, color: '#334155', fontSize: '12.5px' }}>Sundays & Holidays</Typography>
+              <Chip size="small" label="0.0d (Exempt)" sx={{ bgcolor: '#ECFDF5', color: '#047857', fontWeight: 600, fontSize: '11.5px', borderRadius: '6px' }} />
+            </Box>
+          </Box>
+        </Card>
+      </Box>
 
       {/* Holidays List */}
       <Card
         sx={{
           borderRadius: '16px',
           border: '1px solid #EEF2F6',
-          boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)',
+          boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)',
           bgcolor: '#FFFFFF',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          width: '100%'
         }}
       >
         <Box
@@ -241,10 +244,10 @@ export default function LeavePolicies() {
           }}
         >
           <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0F172A' }}>
+            <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '16px' }}>
               Company Holidays ({new Date().getFullYear()})
             </Typography>
-            <Typography variant="caption" sx={{ color: '#64748B' }}>
+            <Typography sx={{ color: '#64748B', fontSize: '12.5px' }}>
               Official paid holidays exempt from employee leave deduction
             </Typography>
           </Box>
@@ -259,22 +262,24 @@ export default function LeavePolicies() {
               '&:hover': { bgcolor: '#1D8BC4' },
               borderRadius: '8px',
               textTransform: 'none',
-              fontWeight: 600
+              fontWeight: 600,
+              px: 2,
+              py: 0.8
             }}
           >
             Add Holiday
           </Button>
         </Box>
 
-        <TableContainer>
+        <TableContainer sx={{ width: '100%' }}>
           <Table>
             <TableHead sx={{ bgcolor: '#F8FAFC' }}>
               <TableRow>
-                <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>HOLIDAY NAME</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>DATE</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>DAY OF WEEK</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>DESCRIPTION</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 700, color: '#475569', fontSize: '0.75rem' }}>ACTION</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '12px', py: 1.5 }}>HOLIDAY NAME</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '12px', py: 1.5 }}>DATE</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '12px', py: 1.5 }}>DAY OF WEEK</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '12px', py: 1.5 }}>DESCRIPTION</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 700, color: '#475569', fontSize: '12px', py: 1.5 }}>ACTION</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -282,7 +287,7 @@ export default function LeavePolicies() {
                 <CustomTableLoader rows={4} colSpan={5} />
               ) : holidays.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4, color: '#94A3B8' }}>
+                  <TableCell colSpan={5} align="center" sx={{ py: 4, color: '#94A3B8', fontSize: '13.5px' }}>
                     No holidays configured for this calendar year.
                   </TableCell>
                 </TableRow>
@@ -293,20 +298,20 @@ export default function LeavePolicies() {
                   return (
                     <TableRow key={h.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                       <TableCell>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A' }}>
-                          {h.name}
+                        <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '13.5px' }}>
+                          {h.holiday_name || h.name}
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Typography variant="body2" sx={{ color: '#334155', fontWeight: 600 }}>
+                        <Typography sx={{ color: '#334155', fontWeight: 600, fontSize: '13px' }}>
                           {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Chip size="small" label={dayName} sx={{ bgcolor: '#F1F5F9', color: '#475569', fontSize: '0.75rem' }} />
+                        <Chip size="small" label={dayName} sx={{ bgcolor: '#F1F5F9', color: '#475569', fontSize: '12px', borderRadius: '6px' }} />
                       </TableCell>
                       <TableCell>
-                        <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.8125rem' }}>
+                        <Typography sx={{ color: '#64748B', fontSize: '13px' }}>
                           {h.description || '—'}
                         </Typography>
                       </TableCell>
@@ -315,7 +320,7 @@ export default function LeavePolicies() {
                           <IconButton
                             size="small"
                             color="error"
-                            onClick={() => handleDeleteHoliday(h.id, h.name)}
+                            onClick={() => handleDeleteHoliday(h.id, h.holiday_name || h.name)}
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>

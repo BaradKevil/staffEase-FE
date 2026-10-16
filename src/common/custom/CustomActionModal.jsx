@@ -54,6 +54,7 @@ const CustomActionModal = ({
       PaperProps={{
         sx: {
           borderRadius: '16px',
+          borderTop: isDestructive ? '5px solid #EF4444' : '5px solid #23A4E8',
           padding: '6px',
           maxWidth: maxWidth,
           width: '100%',
