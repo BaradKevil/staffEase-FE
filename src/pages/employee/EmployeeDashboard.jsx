@@ -37,19 +37,20 @@ export default function EmployeeDashboard() {
   const { data: dashData, isLoading, refetch } = useEmployeeDashboard();
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const entitlements = dashData?.data?.entitlements || [];
-  const upcomingHolidays = dashData?.data?.upcoming_holidays || [];
-  const recentLeaves = dashData?.data?.recent_leaves || [];
+  const entitlements = dashData?.data?.entitlements || dashData?.entitlements || [];
+  const upcomingHolidays = dashData?.data?.upcoming_holidays || dashData?.upcoming_holidays || [];
+  const recentLeaves = dashData?.data?.recent_leaves || dashData?.recent_leaves || [];
+  const balances = dashData?.data?.balances || dashData?.balances;
 
-  const cl = entitlements.find((e) => e.leave_type === 'casual_leave') || {
-    total_entitled: 12,
-    used_days: 0,
-    remaining_balance: 12
+  const cl = entitlements.find((e) => e.leave_type === 'casual_leave' || e.leave_type === 'CL') || {
+    total_entitled: balances?.CL?.allocated ?? 12,
+    used_days: balances?.CL?.approvedConsumed ?? 0,
+    remaining_balance: balances?.CL?.availableBalanceAfterPending ?? 12
   };
-  const sl = entitlements.find((e) => e.leave_type === 'sick_leave') || {
-    total_entitled: 6,
-    used_days: 0,
-    remaining_balance: 6
+  const sl = entitlements.find((e) => e.leave_type === 'sick_leave' || e.leave_type === 'SL') || {
+    total_entitled: balances?.SL?.allocated ?? 6,
+    used_days: balances?.SL?.approvedConsumed ?? 0,
+    remaining_balance: balances?.SL?.availableBalanceAfterPending ?? 6
   };
 
   const clProgress = cl.total_entitled > 0 ? (cl.used_days / cl.total_entitled) * 100 : 0;

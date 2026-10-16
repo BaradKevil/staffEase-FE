@@ -35,8 +35,14 @@ import { toast } from 'react-toastify';
 
 const ApplyLeaveModal = ({ open, onClose }) => {
   const currentYear = new Date().getFullYear();
-  const { data: balanceData } = useMyBalances(currentYear);
-  const balances = balanceData?.balances;
+  const { data: balanceData, refetch: refetchBalances } = useMyBalances(currentYear);
+  const balances = balanceData?.balances || balanceData?.data?.balances;
+
+  React.useEffect(() => {
+    if (open) {
+      refetchBalances();
+    }
+  }, [open, refetchBalances]);
 
   const { mutate: applyMutate, isPending } = useApplyLeave(
     () => {
