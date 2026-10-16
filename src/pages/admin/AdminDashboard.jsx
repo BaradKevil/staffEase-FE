@@ -126,17 +126,19 @@ export default function AdminDashboard() {
           </Button>
           <Button
             component={Link}
-            to="/admin/calendar"
+            to="/dashboard/calendar"
             variant="outlined"
             startIcon={<CalendarIcon />}
             sx={{
               borderRadius: '10px',
-              px: 2,
+              px: 2.2,
               fontWeight: 600,
               textTransform: 'none',
               borderColor: '#E2E8F0',
               color: '#334155',
-              '&:hover': { borderColor: '#CBD5E1', bgcolor: '#F8FAFC' },
+              bgcolor: '#FFFFFF',
+              boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
+              '&:hover': { borderColor: '#23A4E8', color: '#23A4E8', bgcolor: '#F0F9FF' },
               width: { xs: '100%', sm: 'auto' }
             }}
           >

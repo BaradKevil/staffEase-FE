@@ -34,13 +34,6 @@ export const adminMenuList = [
     roles: ['admin'],
   },
   {
-    id: 'admin-calendar',
-    title: 'Company Calendar',
-    path: '/admin/calendar',
-    iconName: 'CalendarMonth',
-    roles: ['admin'],
-  },
-  {
     id: 'admin-policies',
     title: 'Policies & Holidays',
     path: '/admin/policies',
@@ -69,6 +62,13 @@ export const employeeMenuList = [
     title: 'My Leaves',
     path: '/employee/my-leaves',
     iconName: 'EventNote',
+    roles: ['employee'],
+  },
+  {
+    id: 'employee-leave-tracker',
+    title: 'Leave Tracker',
+    path: '/employee/leave-tracker',
+    iconName: 'DateRange',
     roles: ['employee'],
   },
   {

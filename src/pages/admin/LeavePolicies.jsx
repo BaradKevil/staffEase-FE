@@ -253,25 +253,6 @@ export default function LeavePolicies() {
               Official paid holidays exempt from employee leave deduction
             </Typography>
           </Box>
-
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddIcon />}
-            onClick={() => setAddHolidayOpen(true)}
-            sx={{
-              bgcolor: '#23A4E8',
-              '&:hover': { bgcolor: '#1D8BC4' },
-              borderRadius: '8px',
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 2,
-              py: 0.8,
-              width: { xs: '100%', sm: 'auto' }
-            }}
-          >
-            Add Holiday
-          </Button>
         </Box>
 
         <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>

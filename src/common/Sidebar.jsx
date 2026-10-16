@@ -26,6 +26,7 @@ import {
   SettingsOutlined as SettingsOutlinedIcon,
   AssessmentOutlined as AssessmentOutlinedIcon,
   PersonOutlineOutlined as PersonOutlineOutlinedIcon,
+  DateRangeOutlined as DateRangeOutlinedIcon,
   LogoutOutlined as LogoutOutlinedIcon,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -40,6 +41,7 @@ const iconMap = {
   Settings: <SettingsOutlinedIcon sx={{ fontSize: 20 }} />,
   Assessment: <AssessmentOutlinedIcon sx={{ fontSize: 20 }} />,
   Person: <PersonOutlineOutlinedIcon sx={{ fontSize: 20 }} />,
+  DateRange: <DateRangeOutlinedIcon sx={{ fontSize: 20 }} />,
 };
 
 const drawerWidth = 260;

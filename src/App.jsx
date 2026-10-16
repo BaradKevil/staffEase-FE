@@ -27,6 +27,7 @@ import ReportsAndAudit from './pages/admin/ReportsAndAudit';
 // Employee Pages
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import MyLeaves from './pages/employee/MyLeaves';
+import LeaveTracker from './pages/employee/LeaveTracker';
 import LeaveCalendar from './pages/employee/LeaveCalendar';
 import MyProfile from './pages/employee/MyProfile';
 
@@ -152,6 +153,22 @@ function App() {
           )
         },
         {
+          path: '/dashboard/calendar',
+          element: (
+            <RoleGuard allowedRoles={['admin']}>
+              <LeaveCalendarAdmin />
+            </RoleGuard>
+          )
+        },
+        {
+          path: '/dashboard/calender',
+          element: (
+            <RoleGuard allowedRoles={['admin']}>
+              <LeaveCalendarAdmin />
+            </RoleGuard>
+          )
+        },
+        {
           path: '/admin/reports',
           element: (
             <RoleGuard allowedRoles={['admin']}>
@@ -174,6 +191,14 @@ function App() {
           element: (
             <RoleGuard allowedRoles={['employee', 'admin']}>
               <MyLeaves />
+            </RoleGuard>
+          )
+        },
+        {
+          path: '/employee/leave-tracker',
+          element: (
+            <RoleGuard allowedRoles={['employee', 'admin']}>
+              <LeaveTracker />
             </RoleGuard>
           )
         },
