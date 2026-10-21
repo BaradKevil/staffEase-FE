@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -12,7 +12,10 @@ import {
   TableHead,
   TableRow,
   Chip,
-  IconButton
+  IconButton,
+  Stack,
+  Tooltip,
+  Divider,
 } from '@mui/material';
 import {
   AddCircleOutlineRounded as ApplyIcon,
@@ -21,14 +24,45 @@ import {
   HistoryOutlined as HistoryIcon,
   BeachAccessRounded as BeachIcon,
   LocalHospitalRounded as HospitalIcon,
-  ArrowForward as ArrowForwardIcon
+  ArrowForward as ArrowForwardIcon,
+  AccessTimeFilled as ClockIcon,
+  TimerOutlined as TimerIcon,
+  FiberManualRecord as StatusDotIcon,
+  NotificationsActiveOutlined as AlertIcon,
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
-import { useEmployeeDashboard } from '../../Api/Api';
+import { useEmployeeDashboard, useTodayTimeSummary } from '../../Api/Api';
 import StatusBadge from '../../common/custom/StatusBadge';
 import CustomTableLoader from '../../common/custom/CustomTableLoader';
 import ApplyLeaveModal from '../../components/leaves/ApplyLeaveModal';
 import CancelLeaveModal from '../../components/leaves/CancelLeaveModal';
+
+// Formats total seconds to digital clock display (HH:MM:SS)
+const formatSecondsToHMS = (totalSeconds = 0) => {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const hrs = Math.floor(s / 3600);
+  const mins = Math.floor((s % 3600) / 60);
+  const secs = s % 60;
+  return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+// Formats total seconds to human-readable string (e.g. 2h 15m 30s)
+const formatSecondsHuman = (totalSeconds = 0) => {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const hrs = Math.floor(s / 3600);
+  const mins = Math.floor((s % 3600) / 60);
+  const secs = s % 60;
+  if (hrs > 0) return `${hrs}h ${mins}m ${secs}s`;
+  if (mins > 0) return `${mins}m ${secs}s`;
+  return `${secs}s`;
+};
+
+// Formats timestamp to time-only string with seconds (e.g. 09:30:15 AM)
+const formatTimeOnly = (dateStr) => {
+  if (!dateStr) return '--:--';
+  const d = new Date(dateStr);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+};
 
 export default function EmployeeDashboard() {
   const [applyOpen, setApplyOpen] = useState(false);
@@ -36,11 +70,82 @@ export default function EmployeeDashboard() {
 
   const { data: dashData, isLoading, refetch } = useEmployeeDashboard();
 
+  // Query today's live time summary
+  const { data: summary, refetch: refetchSummary } = useTodayTimeSummary(5000);
+
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const entitlements = dashData?.data?.entitlements || dashData?.entitlements || [];
   const upcomingHolidays = dashData?.data?.upcoming_holidays || dashData?.upcoming_holidays || [];
   const recentLeaves = dashData?.data?.recent_leaves || dashData?.recent_leaves || [];
   const balances = dashData?.data?.balances || dashData?.balances;
+
+  // Workday end timestamp calculation (IST: defaults to 24:00 / 12:00 AM Midnight)
+  const workdayEndMs = useMemo(() => {
+    if (summary?.workday_end_time) {
+      return new Date(summary.workday_end_time).getTime();
+    }
+    if (summary?.today_date) {
+      const [y, m, d] = summary.today_date.split('-').map(Number);
+      return Date.UTC(y, m - 1, d, 0, 0, 0, 0) + (24 * 60 - 330) * 60000;
+    }
+    return Infinity;
+  }, [summary?.today_date, summary?.workday_end_time]);
+
+  // Exact completed seconds from all completed/closed sessions today
+  const completedSecondsToday = useMemo(() => {
+    if (!summary?.sessions) return summary?.recorded_seconds || 0;
+    return summary.sessions
+      .filter((s) => s.status !== 'active')
+      .reduce((acc, s) => {
+        if (s.duration_seconds !== null && s.duration_seconds !== undefined) {
+          return acc + s.duration_seconds;
+        }
+        if (s.ended_at && s.started_at) {
+          return acc + Math.max(0, Math.round((new Date(s.ended_at).getTime() - new Date(s.started_at).getTime()) / 1000));
+        }
+        return acc + ((s.duration_minutes || 0) * 60);
+      }, 0);
+  }, [summary?.sessions, summary?.recorded_seconds]);
+
+  // Live timer for current active session
+  const [currentSessionSeconds, setCurrentSessionSeconds] = useState(0);
+
+  useEffect(() => {
+    let interval = null;
+    if (summary?.active_session?.started_at) {
+      const startTime = new Date(summary.active_session.started_at).getTime();
+      const updateTimer = () => {
+        const now = Date.now();
+        const effectiveNow = Math.min(now, workdayEndMs);
+        const diffSecs = Math.max(0, Math.floor((effectiveNow - startTime) / 1000));
+        setCurrentSessionSeconds(diffSecs);
+
+        if (now >= workdayEndMs && summary?.is_tracking_active) {
+          refetchSummary();
+        }
+      };
+      updateTimer();
+      interval = setInterval(updateTimer, 1000);
+    } else {
+      setCurrentSessionSeconds(0);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [summary?.active_session?.started_at, workdayEndMs, summary?.is_tracking_active, refetchSummary]);
+
+  // Target seconds (default 8 hours = 28,800 seconds)
+  const targetSeconds = (summary?.target_minutes ?? 480) * 60;
+  const totalWorkedSeconds = completedSecondsToday + currentSessionSeconds;
+  const remainingTargetSeconds = Math.max(0, targetSeconds - totalWorkedSeconds);
+  const overtimeSeconds = Math.max(0, totalWorkedSeconds - targetSeconds);
+  const progressPercent =
+    targetSeconds > 0
+      ? Math.min(100, Math.round((totalWorkedSeconds / targetSeconds) * 100))
+      : (totalWorkedSeconds > 0 ? 100 : 0);
+
+  const isCompleted = targetSeconds > 0 ? totalWorkedSeconds >= targetSeconds : totalWorkedSeconds > 0;
+  const isTrackingActive = Boolean(summary?.is_tracking_active);
 
   const cl = entitlements.find((e) => e.leave_type === 'casual_leave' || e.leave_type === 'CL') || {
     total_entitled: balances?.CL?.allocated ?? 12,
@@ -74,7 +179,7 @@ export default function EmployeeDashboard() {
             Welcome back, {user.first_name || 'Team Member'}!
           </Typography>
           <Typography variant="body2" sx={{ color: '#64748B', mt: 0.5 }}>
-            Here is your leave entitlement overview, recent activity, and upcoming holidays.
+            Here is your live work tracking, leave entitlement overview, and upcoming activity.
           </Typography>
         </Box>
 
@@ -97,6 +202,191 @@ export default function EmployeeDashboard() {
           Apply for Leave
         </Button>
       </Box>
+
+      {/* Live Work Tracking Hero Card */}
+      <Card
+        sx={{
+          p: { xs: 2.5, sm: 3 },
+          borderRadius: '16px',
+          border: isTrackingActive ? '1.5px solid #86EFAC' : '1px solid #EEF2F6',
+          boxShadow: isTrackingActive
+            ? '0 6px 20px rgba(16, 185, 129, 0.12)'
+            : '0 4px 14px rgba(15, 23, 42, 0.04)',
+          bgcolor: '#FFFFFF',
+          position: 'relative',
+          overflow: 'hidden',
+          transition: 'all 0.25s ease',
+        }}
+      >
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', lg: 'auto 1fr auto' },
+            alignItems: 'center',
+            gap: { xs: 2.5, md: 3.5 },
+          }}
+        >
+          {/* Section 1: Live Digital Clock & Status Badge */}
+          <Box sx={{ minWidth: { md: 250 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '8px',
+                  bgcolor: isTrackingActive ? '#ECFDF5' : '#F1F5F9',
+                  color: isTrackingActive ? '#10B981' : '#64748B',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <ClockIcon sx={{ fontSize: 18 }} />
+              </Box>
+              <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Today's Work Timer
+              </Typography>
+              <Chip
+                size="small"
+                icon={
+                  <StatusDotIcon
+                    sx={{
+                      fontSize: '8px !important',
+                      color: isTrackingActive ? '#10B981 !important' : '#94A3B8 !important',
+                    }}
+                  />
+                }
+                label={isTrackingActive ? 'LIVE ACTIVE' : 'PAUSED'}
+                sx={{
+                  height: 20,
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  bgcolor: isTrackingActive ? '#ECFDF5' : '#F1F5F9',
+                  color: isTrackingActive ? '#059669' : '#64748B',
+                }}
+              />
+            </Box>
+
+            <Typography
+              sx={{
+                fontFamily: 'monospace',
+                fontSize: { xs: '32px', sm: '36px' },
+                fontWeight: 800,
+                color: isTrackingActive ? '#15803D' : '#0F172A',
+                letterSpacing: '0.02em',
+                lineHeight: 1.1,
+              }}
+            >
+              {formatSecondsToHMS(totalWorkedSeconds)}
+            </Typography>
+
+            <Typography sx={{ fontSize: '12px', color: '#64748B', mt: 0.5 }}>
+              {isTrackingActive ? (
+                <>
+                  Started at <strong>{formatTimeOnly(summary?.active_session?.started_at)}</strong> (Current: <strong>{formatSecondsHuman(currentSessionSeconds)}</strong>)
+                </>
+              ) : (
+                'Tracking paused • Switch status to Active in Profile Menu to resume'
+              )}
+            </Typography>
+          </Box>
+
+          {/* Section 2: Daily 8h Target Progress Bar & Remaining Countdown */}
+          <Box sx={{ width: '100%' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 1 }}>
+              <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
+                8-Hour Daily Goal Progress
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography sx={{ fontSize: '14px', fontWeight: 800, color: isCompleted ? '#059669' : '#23A4E8' }}>
+                  {progressPercent}%
+                </Typography>
+                <Typography sx={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>
+                  ({formatSecondsHuman(totalWorkedSeconds)} / 8h 00m)
+                </Typography>
+              </Box>
+            </Box>
+
+            <LinearProgress
+              variant="determinate"
+              value={progressPercent}
+              sx={{
+                height: 10,
+                borderRadius: 5,
+                bgcolor: '#F1F5F9',
+                my: 0.5,
+                '& .MuiLinearProgress-bar': {
+                  bgcolor: isCompleted ? '#10B981' : '#23A4E8',
+                  borderRadius: 5,
+                },
+              }}
+            />
+
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 1, mt: 1 }}>
+              <Typography sx={{ fontSize: '12px', color: isCompleted ? '#059669' : '#EA580C', fontWeight: 600 }}>
+                {isCompleted ? (
+                  `✓ 8h Target achieved (+${formatSecondsHuman(overtimeSeconds)} overtime)`
+                ) : (
+                  `⏳ Time remaining: ${formatSecondsToHMS(remainingTargetSeconds)} (${formatSecondsHuman(remainingTargetSeconds)} needed)`
+                )}
+              </Typography>
+              <Typography sx={{ fontSize: '11px', color: '#94A3B8' }}>
+                Cutoff: 12:00 AM Midnight • Alert: 7:00 PM
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Section 3: Navigation to Time Tracking */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'row', lg: 'column' },
+              alignItems: { xs: 'center', lg: 'flex-end' },
+              justifyContent: 'space-between',
+              gap: 1.5,
+              minWidth: { lg: 160 },
+            }}
+          >
+            <Chip
+              size="small"
+              icon={<AlertIcon sx={{ fontSize: '14px !important', color: '#B45309 !important' }} />}
+              label="7:00 PM Reminder"
+              sx={{
+                bgcolor: '#FEF3C7',
+                color: '#92400E',
+                fontSize: '11px',
+                fontWeight: 600,
+                borderRadius: '6px',
+              }}
+            />
+            <Button
+              component={Link}
+              to="/employee/time-tracking"
+              variant="outlined"
+              size="small"
+              endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
+              sx={{
+                borderRadius: '8px',
+                textTransform: 'none',
+                fontWeight: 700,
+                fontSize: '12.5px',
+                px: 2,
+                py: 0.8,
+                color: '#23A4E8',
+                borderColor: '#BAE6FD',
+                bgcolor: '#F0F9FF',
+                '&:hover': {
+                  bgcolor: '#E0F2FE',
+                  borderColor: '#23A4E8',
+                },
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Time Tracking
+            </Button>
+          </Box>
+        </Box>
+      </Card>
 
       {/* Leave Balance KPI Cards - Full-Width CSS Grid matching SmartOps-Pay MetricCard */}
       <Box
