@@ -6,7 +6,18 @@
 
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_BASEURL || 'http://localhost:5000/api/v1';
+const sanitizeBaseUrl = (rawUrl) => {
+  if (!rawUrl) return 'http://localhost:5000/api/v1';
+  let clean = String(rawUrl).trim();
+  try {
+    clean = decodeURIComponent(clean);
+  } catch (e) {
+    // ignore decode error
+  }
+  return clean.replace(/\s+/g, '').replace(/\/+$/, '');
+};
+
+const baseURL = sanitizeBaseUrl(import.meta.env.VITE_BASEURL);
 
 const apiClient = axios.create({
   baseURL,
@@ -17,6 +28,12 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
+    if (config.baseURL) {
+      config.baseURL = sanitizeBaseUrl(config.baseURL);
+    }
+    if (config.url) {
+      config.url = config.url.trim().replace(/\s+/g, '');
+    }
     const accessToken = localStorage.getItem('accessToken');
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
