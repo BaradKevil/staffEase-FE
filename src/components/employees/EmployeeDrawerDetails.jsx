@@ -75,59 +75,99 @@ export default function EmployeeDrawerDetails({ open, onClose, employee, onRefre
         anchor="right"
         open={open}
         onClose={onClose}
+        sx={{
+          zIndex: (theme) => theme.zIndex.drawer + 2, // 1202, higher than Navbar (1201)
+          '& .MuiBackdrop-root': {
+            zIndex: (theme) => theme.zIndex.drawer + 2,
+          },
+          '& .MuiDrawer-paper': {
+            zIndex: (theme) => theme.zIndex.drawer + 2,
+            width: { xs: '100%', sm: 460 },
+            boxShadow: '-10px 0 30px rgba(15, 23, 42, 0.15)',
+            bgcolor: '#FFFFFF',
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100vh',
+            maxHeight: '100vh',
+            top: 0,
+            bottom: 0,
+          }
+        }}
         PaperProps={{
           sx: {
             width: { xs: '100%', sm: 460 },
-            boxShadow: '-10px 0 30px rgba(15, 23, 42, 0.1)',
+            boxShadow: '-10px 0 30px rgba(15, 23, 42, 0.15)',
             bgcolor: '#FFFFFF',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            height: '100vh',
+            maxHeight: '100vh',
+            top: 0,
+            bottom: 0,
           }
         }}
       >
         {/* Header bar */}
         <Box
           sx={{
-            p: 2.5,
+            px: 2.5,
+            py: 1.5,
+            minHeight: 52,
+            boxSizing: 'border-box',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             borderBottom: '1px solid #F1F5F9',
-            bgcolor: '#FAFCFE'
+            bgcolor: '#FAFCFE',
           }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 700, color: '#0F172A', fontSize: '1rem' }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#0F172A', fontSize: '0.95rem' }}>
             Employee Profile
           </Typography>
-          <IconButton onClick={onClose} size="small" sx={{ color: '#94A3B8' }}>
-            <CloseIcon fontSize="small" />
+          <IconButton
+            onClick={onClose}
+            size="small"
+            sx={{
+              color: '#64748B',
+              p: 0.5,
+              '&:hover': { color: '#0F172A', bgcolor: '#F1F5F9' }
+            }}
+          >
+            <CloseIcon sx={{ fontSize: 20 }} />
           </IconButton>
         </Box>
 
-        {/* Scrollable body */}
-        <Box sx={{ p: 3, flex: 1, overflowY: 'auto' }}>
+        {/* Compact body - fits completely without scrolling */}
+        <Box
+          sx={{
+            p: 2.5,
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-start',
+            overflowY: 'auto',
+          }}
+        >
           {/* Profile overview */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1.5 }}>
             <Avatar
               src={getAvatarFullUrl(employee.avatar_url || employee.profile_photo)}
               sx={{
-                width: 72,
-                height: 72,
+                width: 54,
+                height: 54,
                 bgcolor: '#23A4E8',
-                fontSize: '1.75rem',
+                fontSize: '1.4rem',
                 fontWeight: 700,
-                border: '3px solid #E0F2FE'
+                border: '2.5px solid #E0F2FE'
               }}
             >
               {employee.first_name ? employee.first_name[0] : 'U'}
             </Avatar>
             <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A', fontSize: '1.125rem' }}>
-                  {employee.first_name} {employee.last_name}
-                </Typography>
-              </Box>
-              <Typography variant="body2" sx={{ color: '#64748B', mb: 1, fontWeight: 500 }}>
+              <Typography sx={{ fontWeight: 800, color: '#0F172A', fontSize: '1.05rem', lineHeight: 1.2, mb: 0.25 }}>
+                {employee.first_name} {employee.last_name}
+              </Typography>
+              <Typography sx={{ color: '#64748B', fontSize: '0.8rem', fontWeight: 500, mb: 0.5 }}>
                 {employee.designation || 'Team Member'}
               </Typography>
               <Stack direction="row" spacing={1} alignItems="center">
@@ -139,43 +179,55 @@ export default function EmployeeDrawerDetails({ open, onClose, employee, onRefre
                     bgcolor: employee.role?.name === 'admin' ? '#F3E8FF' : '#F1F5F9',
                     color: employee.role?.name === 'admin' ? '#7E22CE' : '#475569',
                     fontWeight: 600,
-                    fontSize: '0.75rem'
+                    fontSize: '0.7rem',
+                    height: 20
                   }}
                 />
               </Stack>
             </Box>
           </Box>
 
-          <Divider sx={{ mb: 3 }} />
+          <Divider sx={{ my: 1.5 }} />
 
           {/* Details Section */}
-          <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 700, letterSpacing: '0.05em', display: 'block', mb: 2 }}>
+          <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 700, letterSpacing: '0.05em', display: 'block', mb: 1, fontSize: '0.7rem' }}>
             EMPLOYMENT DETAILS
           </Typography>
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.75, mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <EmailIcon sx={{ color: '#94A3B8', fontSize: 20 }} />
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, mb: 1.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+              <EmailIcon sx={{ color: '#94A3B8', fontSize: 18, mt: 0.2 }} />
+              <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
+                <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontSize: '0.7rem', lineHeight: 1 }}>
                   Work Email
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A' }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: '#0F172A',
+                    fontSize: '0.78rem',
+                    wordBreak: 'break-all',
+                    lineHeight: 1.25,
+                    mt: 0.25
+                  }}
+                  title={employee.work_email || employee.email}
+                >
                   {employee.work_email || employee.email}
                 </Typography>
               </Box>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <CalendarIcon sx={{ color: '#94A3B8', fontSize: 20 }} />
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+              <CalendarIcon sx={{ color: '#94A3B8', fontSize: 18, mt: 0.2 }} />
+              <Box>
+                <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontSize: '0.7rem', lineHeight: 1 }}>
                   Joining Date
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A' }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A', fontSize: '0.78rem', lineHeight: 1.25, mt: 0.25 }}>
                   {employee.joining_date
                     ? new Date(employee.joining_date).toLocaleDateString('en-US', {
-                        month: 'long',
+                        month: 'short',
                         day: 'numeric',
                         year: 'numeric'
                       })
@@ -185,96 +237,93 @@ export default function EmployeeDrawerDetails({ open, onClose, employee, onRefre
             </Box>
           </Box>
 
-          <Divider sx={{ mb: 3 }} />
+          <Divider sx={{ my: 1.5 }} />
 
           {/* Leave Entitlement Overview */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 700, letterSpacing: '0.05em' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+            <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 700, letterSpacing: '0.05em', fontSize: '0.7rem' }}>
               LEAVE ENTITLEMENTS (Current Year)
             </Typography>
             <Button
               size="small"
-              startIcon={<TuneIcon />}
+              startIcon={<TuneIcon sx={{ fontSize: '14px !important' }} />}
               onClick={() => setAdjustOpen(true)}
-              sx={{ textTransform: 'none', fontWeight: 600, color: '#23A4E8', fontSize: '0.75rem' }}
+              sx={{ textTransform: 'none', fontWeight: 600, color: '#23A4E8', fontSize: '0.72rem', py: 0.25, px: 1, minHeight: 0 }}
             >
               Adjust Balance
             </Button>
           </Box>
 
-          {/* CL Card */}
-          <Box
-            sx={{
-              p: 2,
-              borderRadius: '12px',
-              border: '1px solid #E2E8F0',
-              bgcolor: '#F8FAFC',
-              mb: 2
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
+          {/* 2-Column Side-by-Side CL and SL Cards */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.25 }}>
+            {/* CL Card */}
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: '10px',
+                border: '1px solid #E2E8F0',
+                bgcolor: '#F8FAFC',
+              }}
+            >
+              <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '0.75rem', lineHeight: 1.2 }}>
                 Casual Leave (CL)
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 800, color: '#23A4E8' }}>
+              <Typography sx={{ fontWeight: 800, color: '#23A4E8', fontSize: '0.8rem', my: 0.5 }}>
                 {cl.remaining_balance} / {cl.total_entitled} days left
               </Typography>
+              <LinearProgress
+                variant="determinate"
+                value={Math.min(clProgress, 100)}
+                sx={{
+                  height: 6,
+                  borderRadius: 3,
+                  bgcolor: '#E2E8F0',
+                  '& .MuiLinearProgress-bar': { bgcolor: '#23A4E8', borderRadius: 3 }
+                }}
+              />
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.75 }}>
+                <Typography sx={{ fontSize: '0.68rem', color: '#64748B' }}>
+                  Used: {cl.used_days}d
+                </Typography>
+                <Typography sx={{ fontSize: '0.68rem', color: '#64748B' }}>
+                  Ent: {cl.total_entitled}d
+                </Typography>
+              </Box>
             </Box>
-            <LinearProgress
-              variant="determinate"
-              value={Math.min(clProgress, 100)}
-              sx={{
-                height: 8,
-                borderRadius: 4,
-                bgcolor: '#E2E8F0',
-                '& .MuiLinearProgress-bar': { bgcolor: '#23A4E8', borderRadius: 4 }
-              }}
-            />
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-              <Typography variant="caption" sx={{ color: '#64748B' }}>
-                Used: {cl.used_days} days
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#64748B' }}>
-                Entitled: {cl.total_entitled} days
-              </Typography>
-            </Box>
-          </Box>
 
-          {/* SL Card */}
-          <Box
-            sx={{
-              p: 2,
-              borderRadius: '12px',
-              border: '1px solid #E2E8F0',
-              bgcolor: '#F8FAFC',
-              mb: 3
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
+            {/* SL Card */}
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: '10px',
+                border: '1px solid #E2E8F0',
+                bgcolor: '#F8FAFC',
+              }}
+            >
+              <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '0.75rem', lineHeight: 1.2 }}>
                 Sick Leave (SL)
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 800, color: '#10B981' }}>
+              <Typography sx={{ fontWeight: 800, color: '#10B981', fontSize: '0.8rem', my: 0.5 }}>
                 {sl.remaining_balance} / {sl.total_entitled} days left
               </Typography>
-            </Box>
-            <LinearProgress
-              variant="determinate"
-              value={Math.min(slProgress, 100)}
-              sx={{
-                height: 8,
-                borderRadius: 4,
-                bgcolor: '#E2E8F0',
-                '& .MuiLinearProgress-bar': { bgcolor: '#10B981', borderRadius: 4 }
-              }}
-            />
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-              <Typography variant="caption" sx={{ color: '#64748B' }}>
-                Used: {sl.used_days} days
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#64748B' }}>
-                Entitled: {sl.total_entitled} days
-              </Typography>
+              <LinearProgress
+                variant="determinate"
+                value={Math.min(slProgress, 100)}
+                sx={{
+                  height: 6,
+                  borderRadius: 3,
+                  bgcolor: '#E2E8F0',
+                  '& .MuiLinearProgress-bar': { bgcolor: '#10B981', borderRadius: 3 }
+                }}
+              />
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.75 }}>
+                <Typography sx={{ fontSize: '0.68rem', color: '#64748B' }}>
+                  Used: {sl.used_days}d
+                </Typography>
+                <Typography sx={{ fontSize: '0.68rem', color: '#64748B' }}>
+                  Ent: {sl.total_entitled}d
+                </Typography>
+              </Box>
             </Box>
           </Box>
         </Box>
@@ -282,24 +331,26 @@ export default function EmployeeDrawerDetails({ open, onClose, employee, onRefre
         {/* Footer actions */}
         <Box
           sx={{
-            p: 2.5,
+            p: 2,
             borderTop: '1px solid #F1F5F9',
             bgcolor: '#FAFCFE',
             display: 'flex',
-            gap: 1.5
+            gap: 1.5,
           }}
         >
           <Button
             variant="outlined"
             color={employee.status === 'active' ? 'error' : 'success'}
             fullWidth
-            startIcon={employee.status === 'active' ? <BlockIcon /> : <ActiveIcon />}
+            startIcon={employee.status === 'active' ? <BlockIcon sx={{ fontSize: 18 }} /> : <ActiveIcon sx={{ fontSize: 18 }} />}
             onClick={handleToggleStatus}
             disabled={statusMutation.isPending}
             sx={{
               borderRadius: '10px',
               fontWeight: 600,
-              textTransform: 'none'
+              textTransform: 'none',
+              py: 1,
+              fontSize: '0.85rem'
             }}
           >
             {employee.status === 'active' ? 'Deactivate Account' : 'Activate Account'}
