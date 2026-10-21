@@ -166,7 +166,7 @@ export default function SelfieCaptureModal({
       setCapturedImage(dataUrl);
       setCameraError('');
       stopMediaStream();
-    };
+    };  
     reader.readAsDataURL(file);
   };
 
