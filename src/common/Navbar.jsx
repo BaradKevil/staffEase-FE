@@ -23,6 +23,12 @@ import {
   ListItemIcon,
   Divider,
   Button,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -31,9 +37,20 @@ import {
   PersonOutlineOutlined as PersonOutlineOutlinedIcon,
   InfoOutlined as InfoOutlinedIcon,
   CheckCircleOutlineRounded as CheckCircleOutlineIcon,
+  FiberManualRecord as FiberManualRecordIcon,
+  PlayArrowRounded as PlayArrowRoundedIcon,
+  StopRounded as StopRoundedIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '../Api/Api';
+import { toast } from 'react-toastify';
+import {
+  useNotifications,
+  useMarkNotificationRead,
+  useMarkAllNotificationsRead,
+  useTodayTimeSummary,
+  useStartWorkSession,
+  useStopWorkSession,
+} from '../Api/Api';
 
 const Navbar = ({ toggleSidebar, onLogoutClick }) => {
   const navigate = useNavigate();
@@ -82,6 +99,58 @@ const Navbar = ({ toggleSidebar, onLogoutClick }) => {
   const unreadCount = notifications.filter((n) => !n.is_read).length;
   const { mutate: markRead } = useMarkNotificationRead();
   const { mutate: markAllRead } = useMarkAllNotificationsRead();
+
+  // Work Tracking Live State & Toggle
+  const { data: timeSummary, refetch: refetchTimeSummary } = useTodayTimeSummary(10000);
+  const isTrackingActive = Boolean(timeSummary?.is_tracking_active);
+
+  const [reasonModalOpen, setReasonModalOpen] = useState(false);
+  const [reasonText, setReasonText] = useState('');
+  const [reasonError, setReasonError] = useState('');
+
+  const { mutate: startWorkMutate, isPending: isStarting } = useStartWorkSession(
+    () => {
+      toast.success('Status set to Active. Work session started!');
+      refetchTimeSummary();
+    },
+    (err) => {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to start session.';
+      toast.error(msg);
+    }
+  );
+
+  const { mutate: stopWorkMutate, isPending: isStopping } = useStopWorkSession(
+    () => {
+      toast.success('Status set to Inactive. Session stopped.');
+      setReasonModalOpen(false);
+      setReasonText('');
+      setReasonError('');
+      refetchTimeSummary();
+    },
+    (err) => {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to stop session.';
+      toast.error(msg);
+    }
+  );
+
+  const handleInitiateActive = () => {
+    startWorkMutate();
+  };
+
+  const handleInitiateInactive = () => {
+    setReasonText('');
+    setReasonError('');
+    setReasonModalOpen(true);
+  };
+
+  const handleConfirmInactive = () => {
+    const trimmed = reasonText.trim();
+    if (trimmed.length < 3) {
+      setReasonError('Please provide a valid reason (minimum 3 characters).');
+      return;
+    }
+    stopWorkMutate({ reason: trimmed });
+  };
 
   return (
     <AppBar
@@ -141,8 +210,8 @@ const Navbar = ({ toggleSidebar, onLogoutClick }) => {
           </Box>
         </Box>
 
-        {/* Right: Role, Notifications, Avatar Profile */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
+        {/* Right: Role, Work Tracking Status, Notifications, Avatar Profile */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 } }}>
           <Chip
             size="small"
             label={role === 'admin' ? 'HR Admin' : 'Employee'}
@@ -155,6 +224,38 @@ const Navbar = ({ toggleSidebar, onLogoutClick }) => {
               height: 24,
             }}
           />
+
+          {/* Live Work Tracking Status Chip */}
+          <Tooltip title={isTrackingActive ? 'Work session is running (Active). Click to change status to Inactive.' : 'No active work session (Inactive). Click to change status to Active.'}>
+            <Chip
+              size="small"
+              icon={
+                <FiberManualRecordIcon
+                  sx={{
+                    fontSize: '10px !important',
+                    color: isTrackingActive ? '#10B981 !important' : '#94A3B8 !important',
+                  }}
+                />
+              }
+              label={isStarting ? 'Starting...' : isStopping ? 'Stopping...' : isTrackingActive ? 'Active' : 'Inactive'}
+              onClick={isTrackingActive ? handleInitiateInactive : handleInitiateActive}
+              clickable
+              sx={{
+                fontWeight: 700,
+                fontSize: '11px',
+                borderRadius: '6px',
+                height: 24,
+                cursor: 'pointer',
+                bgcolor: isTrackingActive ? '#ECFDF5' : '#F8FAFC',
+                color: isTrackingActive ? '#065F46' : '#64748B',
+                border: `1px solid ${isTrackingActive ? '#A7F3D0' : '#E2E8F0'}`,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  bgcolor: isTrackingActive ? '#D1FAE5' : '#F1F5F9',
+                },
+              }}
+            />
+          </Tooltip>
 
           {/* Notifications Bell */}
           <IconButton
@@ -314,6 +415,35 @@ const Navbar = ({ toggleSidebar, onLogoutClick }) => {
             <MenuItem
               onClick={() => {
                 handleProfileClose();
+                if (isTrackingActive) {
+                  handleInitiateInactive();
+                } else {
+                  handleInitiateActive();
+                }
+              }}
+              sx={{
+                fontSize: '13px',
+                py: 1,
+                color: isTrackingActive ? '#DC2626' : '#059669',
+                fontWeight: 600,
+              }}
+            >
+              {isTrackingActive ? (
+                <>
+                  <StopRoundedIcon sx={{ fontSize: 18, mr: 1.5, color: '#DC2626' }} />
+                  Change Status: Inactive
+                </>
+              ) : (
+                <>
+                  <PlayArrowRoundedIcon sx={{ fontSize: 18, mr: 1.5, color: '#059669' }} />
+                  Change Status: Active
+                </>
+              )}
+            </MenuItem>
+            <Divider sx={{ my: 0.5 }} />
+            <MenuItem
+              onClick={() => {
+                handleProfileClose();
                 onLogoutClick();
               }}
               sx={{ fontSize: '13px', color: '#EF4444', py: 1 }}
@@ -324,6 +454,72 @@ const Navbar = ({ toggleSidebar, onLogoutClick }) => {
           </Menu>
         </Box>
       </Toolbar>
+
+      {/* Mandatory Reason Dialog for changing status to Inactive */}
+      <Dialog
+        open={reasonModalOpen}
+        onClose={() => !isStopping && setReasonModalOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '16px',
+            p: 1,
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, fontSize: '17px', color: '#0F172A', pb: 1 }}>
+          Change Status to Inactive
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography sx={{ fontSize: '13px', color: '#64748B', mb: 2 }}>
+            Please enter the reason for stopping work and changing your status to <strong>Inactive</strong>. This reason is required.
+          </Typography>
+          <TextField
+            autoFocus
+            fullWidth
+            multiline
+            rows={3}
+            required
+            label="Reason for stopping work *"
+            placeholder="e.g. Completed daily tasks, lunch break, personal appointment..."
+            value={reasonText}
+            onChange={(e) => {
+              setReasonText(e.target.value);
+              if (reasonError && e.target.value.trim().length >= 3) {
+                setReasonError('');
+              }
+            }}
+            error={Boolean(reasonError)}
+            helperText={reasonError || `${reasonText.trim().length} characters (minimum 3 required)`}
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button
+            onClick={() => setReasonModalOpen(false)}
+            disabled={isStopping}
+            sx={{ textTransform: 'none', color: '#64748B' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleConfirmInactive}
+            disabled={isStopping || reasonText.trim().length < 3}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 700,
+              borderRadius: '8px',
+              bgcolor: '#EF4444',
+              '&:hover': { bgcolor: '#DC2626' },
+            }}
+          >
+            {isStopping ? 'Stopping...' : 'Confirm & Set Inactive'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </AppBar>
   );
 };

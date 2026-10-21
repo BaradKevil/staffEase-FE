@@ -27,6 +27,7 @@ import {
   AssessmentOutlined as AssessmentOutlinedIcon,
   PersonOutlineOutlined as PersonOutlineOutlinedIcon,
   DateRangeOutlined as DateRangeOutlinedIcon,
+  AccessTimeOutlined as AccessTimeOutlinedIcon,
   LogoutOutlined as LogoutOutlinedIcon,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -42,6 +43,7 @@ const iconMap = {
   Assessment: <AssessmentOutlinedIcon sx={{ fontSize: 20 }} />,
   Person: <PersonOutlineOutlinedIcon sx={{ fontSize: 20 }} />,
   DateRange: <DateRangeOutlinedIcon sx={{ fontSize: 20 }} />,
+  AccessTime: <AccessTimeOutlinedIcon sx={{ fontSize: 20 }} />,
 };
 
 const drawerWidth = 260;

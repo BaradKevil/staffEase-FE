@@ -655,3 +655,149 @@ export const useAuditLogs = (params = {}) => {
     },
   });
 };
+
+// -------------------------------------------------
+//  Time Tracking API Hooks
+// -------------------------------------------------
+
+export const useStartWorkSession = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await apiClient.post('/time-tracking/start');
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['today-time-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['my-time-history'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-time-records'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-time-overview'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useStopWorkSession = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data = {}) => {
+      const res = await apiClient.post('/time-tracking/stop', data);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['today-time-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['my-time-history'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-time-records'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-time-overview'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useTrigger7PmReminder = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await apiClient.post('/time-tracking/admin/send-7pm-reminder');
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useTodayTimeSummary = (refetchInterval = 30000) => {
+  return useQuery({
+    queryKey: ['today-time-summary'],
+    queryFn: async () => {
+      const res = await apiClient.get('/time-tracking/today-summary');
+      return unwrap(res);
+    },
+    refetchInterval,
+  });
+};
+
+export const useMyTimeHistory = (params = {}) => {
+  return useQuery({
+    queryKey: ['my-time-history', params],
+    queryFn: async () => {
+      const res = await apiClient.get('/time-tracking/my-history', { params });
+      return unwrapPaginated(res);
+    },
+  });
+};
+
+export const useAdminTimeRecords = (params = {}) => {
+  return useQuery({
+    queryKey: ['admin-time-records', params],
+    queryFn: async () => {
+      const res = await apiClient.get('/time-tracking/admin/records', { params });
+      return unwrapPaginated(res);
+    },
+  });
+};
+
+export const useAdminTimeOverview = () => {
+  return useQuery({
+    queryKey: ['admin-time-overview'],
+    queryFn: async () => {
+      const res = await apiClient.get('/time-tracking/admin/overview');
+      return unwrap(res);
+    },
+    refetchInterval: 30000,
+  });
+};
+
+export const useEmployeeDateSessions = (userId, date) => {
+  return useQuery({
+    queryKey: ['employee-date-sessions', userId, date],
+    queryFn: async () => {
+      const res = await apiClient.get('/time-tracking/sessions', {
+        params: { user_id: userId, date },
+      });
+      return unwrap(res);
+    },
+    enabled: !!userId && !!date,
+  });
+};
+
+export const useAdminCorrectSession = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ sessionId, data }) => {
+      const res = await apiClient.put(`/time-tracking/admin/sessions/${sessionId}`, data);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-time-records'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-date-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['today-time-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['my-time-history'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-time-overview'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useTriggerAutoClose = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await apiClient.post('/time-tracking/admin/auto-close');
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-time-records'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-time-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['today-time-summary'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};

@@ -28,6 +28,17 @@ const statusConfig = {
   accepted: { label: 'Accepted', bg: '#ECFDF5', color: '#059669', border: '#A7F3D0' },
   revoked: { label: 'Revoked', bg: '#FEF2F2', color: '#DC2626', border: '#FECACA' },
   expired: { label: 'Expired', bg: '#F8FAFC', color: '#94A3B8', border: '#E2E8F0' },
+
+  // Time Tracking Statuses
+  complete: { label: 'Completed (8h)', bg: '#ECFDF5', color: '#059669', border: '#A7F3D0' },
+  incomplete: { label: 'Incomplete', bg: '#FFFBEB', color: '#D97706', border: '#FDE68A' },
+  non_working: { label: 'Non-Working Day', bg: '#F1F5F9', color: '#64748B', border: '#E2E8F0' },
+  on_leave: { label: 'On Leave', bg: '#EFF6FF', color: '#2563EB', border: '#BFDBFE' },
+  auto_closed: { label: 'Auto Closed', bg: '#FEF3C7', color: '#B45309', border: '#FDE68A' },
+  completed: { label: 'Completed', bg: '#ECFDF5', color: '#059669', border: '#A7F3D0' },
+  admin_correction: { label: 'Admin Corrected', bg: '#F3E8FF', color: '#7E22CE', border: '#E9D5FF' },
+  tracking_active: { label: 'Clocked In', bg: '#ECFDF5', color: '#059669', border: '#A7F3D0' },
+  tracking_inactive: { label: 'Clocked Out', bg: '#F1F5F9', color: '#64748B', border: '#E2E8F0' },
 };
 
 const StatusBadge = ({ status, size = 'small', customLabel }) => {

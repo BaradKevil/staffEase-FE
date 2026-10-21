@@ -23,6 +23,7 @@ import LeaveManagement from './pages/admin/LeaveManagement';
 import LeavePolicies from './pages/admin/LeavePolicies';
 import LeaveCalendarAdmin from './pages/admin/LeaveCalendarAdmin';
 import ReportsAndAudit from './pages/admin/ReportsAndAudit';
+import TimeTrackingAdmin from './pages/admin/TimeTrackingAdmin';
 
 // Employee Pages
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
@@ -30,6 +31,7 @@ import MyLeaves from './pages/employee/MyLeaves';
 import LeaveTracker from './pages/employee/LeaveTracker';
 import LeaveCalendar from './pages/employee/LeaveCalendar';
 import MyProfile from './pages/employee/MyProfile';
+import TimeTracking from './pages/employee/TimeTracking';
 
 // Error Page
 import NotFound from './pages/NotFound';
@@ -176,6 +178,14 @@ function App() {
             </RoleGuard>
           )
         },
+        {
+          path: '/admin/time-tracking',
+          element: (
+            <RoleGuard allowedRoles={['admin']}>
+              <TimeTrackingAdmin />
+            </RoleGuard>
+          )
+        },
 
         // Employee Routes (Admins can also view employee profile and leaves)
         {
@@ -183,6 +193,14 @@ function App() {
           element: (
             <RoleGuard allowedRoles={['employee', 'admin']}>
               <EmployeeDashboard />
+            </RoleGuard>
+          )
+        },
+        {
+          path: '/employee/time-tracking',
+          element: (
+            <RoleGuard allowedRoles={['employee', 'admin']}>
+              <TimeTracking />
             </RoleGuard>
           )
         },

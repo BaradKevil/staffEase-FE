@@ -41,6 +41,13 @@ export const adminMenuList = [
     roles: ['admin'],
   },
   {
+    id: 'admin-time-tracking',
+    title: 'Time Tracking',
+    path: '/admin/time-tracking',
+    iconName: 'AccessTime',
+    roles: ['admin'],
+  },
+  {
     id: 'admin-reports',
     title: 'Reports & Audit Logs',
     path: '/admin/reports',
@@ -55,6 +62,13 @@ export const employeeMenuList = [
     title: 'Dashboard',
     path: '/employee/dashboard',
     iconName: 'Dashboard',
+    roles: ['employee'],
+  },
+  {
+    id: 'employee-time-tracking',
+    title: 'Time Tracking',
+    path: '/employee/time-tracking',
+    iconName: 'AccessTime',
     roles: ['employee'],
   },
   {
