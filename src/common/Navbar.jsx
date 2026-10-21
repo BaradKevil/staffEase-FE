@@ -51,6 +51,7 @@ import {
   useStartWorkSession,
   useStopWorkSession,
 } from '../Api/Api';
+import SelfieCaptureModal from '../components/timeTracking/SelfieCaptureModal';
 
 const Navbar = ({ toggleSidebar, onLogoutClick }) => {
   const navigate = useNavigate();
@@ -100,17 +101,17 @@ const Navbar = ({ toggleSidebar, onLogoutClick }) => {
   const { mutate: markRead } = useMarkNotificationRead();
   const { mutate: markAllRead } = useMarkAllNotificationsRead();
 
-  // Work Tracking Live State & Toggle
+  // Work Tracking Live State & Selfie Verification Modal
   const { data: timeSummary, refetch: refetchTimeSummary } = useTodayTimeSummary(10000);
   const isTrackingActive = Boolean(timeSummary?.is_tracking_active);
 
-  const [reasonModalOpen, setReasonModalOpen] = useState(false);
-  const [reasonText, setReasonText] = useState('');
-  const [reasonError, setReasonError] = useState('');
+  const [selfieModalOpen, setSelfieModalOpen] = useState(false);
+  const [selfieModalMode, setSelfieModalMode] = useState('start'); // 'start' | 'stop'
 
   const { mutate: startWorkMutate, isPending: isStarting } = useStartWorkSession(
     () => {
-      toast.success('Status set to Active. Work session started!');
+      toast.success('Selfie verified! Status changed to Active & timer started.');
+      setSelfieModalOpen(false);
       refetchTimeSummary();
     },
     (err) => {
@@ -121,10 +122,8 @@ const Navbar = ({ toggleSidebar, onLogoutClick }) => {
 
   const { mutate: stopWorkMutate, isPending: isStopping } = useStopWorkSession(
     () => {
-      toast.success('Status set to Inactive. Session stopped.');
-      setReasonModalOpen(false);
-      setReasonText('');
-      setReasonError('');
+      toast.success('Selfie & reason verified! Status changed to Inactive & session stopped.');
+      setSelfieModalOpen(false);
       refetchTimeSummary();
     },
     (err) => {
@@ -134,22 +133,21 @@ const Navbar = ({ toggleSidebar, onLogoutClick }) => {
   );
 
   const handleInitiateActive = () => {
-    startWorkMutate();
+    setSelfieModalMode('start');
+    setSelfieModalOpen(true);
   };
 
   const handleInitiateInactive = () => {
-    setReasonText('');
-    setReasonError('');
-    setReasonModalOpen(true);
+    setSelfieModalMode('stop');
+    setSelfieModalOpen(true);
   };
 
-  const handleConfirmInactive = () => {
-    const trimmed = reasonText.trim();
-    if (trimmed.length < 3) {
-      setReasonError('Please provide a valid reason (minimum 3 characters).');
-      return;
+  const handleSelfieSubmit = ({ selfie, reason }) => {
+    if (selfieModalMode === 'start') {
+      startWorkMutate({ selfie });
+    } else {
+      stopWorkMutate({ reason, selfie });
     }
-    stopWorkMutate({ reason: trimmed });
   };
 
   return (
@@ -455,71 +453,18 @@ const Navbar = ({ toggleSidebar, onLogoutClick }) => {
         </Box>
       </Toolbar>
 
-      {/* Mandatory Reason Dialog for changing status to Inactive */}
-      <Dialog
-        open={reasonModalOpen}
-        onClose={() => !isStopping && setReasonModalOpen(false)}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: '16px',
-            p: 1,
-          },
+      {/* Selfie Verification & Mandatory Reason Modal for Status Changes */}
+      <SelfieCaptureModal
+        open={selfieModalOpen}
+        mode={selfieModalMode}
+        isLoading={isStarting || isStopping}
+        onClose={() => {
+          if (!isStarting && !isStopping) {
+            setSelfieModalOpen(false);
+          }
         }}
-      >
-        <DialogTitle sx={{ fontWeight: 800, fontSize: '17px', color: '#0F172A', pb: 1 }}>
-          Change Status to Inactive
-        </DialogTitle>
-        <DialogContent sx={{ pt: 1 }}>
-          <Typography sx={{ fontSize: '13px', color: '#64748B', mb: 2 }}>
-            Please enter the reason for stopping work and changing your status to <strong>Inactive</strong>. This reason is required.
-          </Typography>
-          <TextField
-            autoFocus
-            fullWidth
-            multiline
-            rows={3}
-            required
-            label="Reason for stopping work *"
-            placeholder="e.g. Completed daily tasks, lunch break, personal appointment..."
-            value={reasonText}
-            onChange={(e) => {
-              setReasonText(e.target.value);
-              if (reasonError && e.target.value.trim().length >= 3) {
-                setReasonError('');
-              }
-            }}
-            error={Boolean(reasonError)}
-            helperText={reasonError || `${reasonText.trim().length} characters (minimum 3 required)`}
-            sx={{ mt: 1 }}
-          />
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
-          <Button
-            onClick={() => setReasonModalOpen(false)}
-            disabled={isStopping}
-            sx={{ textTransform: 'none', color: '#64748B' }}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleConfirmInactive}
-            disabled={isStopping || reasonText.trim().length < 3}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 700,
-              borderRadius: '8px',
-              bgcolor: '#EF4444',
-              '&:hover': { bgcolor: '#DC2626' },
-            }}
-          >
-            {isStopping ? 'Stopping...' : 'Confirm & Set Inactive'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onSubmit={handleSelfieSubmit}
+      />
     </AppBar>
   );
 };

@@ -28,6 +28,7 @@ import {
   Stack,
   Alert,
   Button,
+  Avatar,
 } from '@mui/material';
 import {
   AccessTimeFilled as ClockIcon,
@@ -42,6 +43,7 @@ import {
   FiberManualRecord as StatusDotIcon,
   PauseCircleOutlineRounded as PausedIcon,
   PlayCircleFilledRounded as RunningIcon,
+  CameraAltRounded as CameraIcon,
 } from '@mui/icons-material';
 import {
   useTodayTimeSummary,
@@ -51,6 +53,7 @@ import {
 import StatusBadge from '../../common/custom/StatusBadge';
 import CustomTableLoader from '../../common/custom/CustomTableLoader';
 import CustomPagination from '../../common/custom/CustomPagination';
+import DailySelfieGallery, { getSelfieUrl } from '../../components/timeTracking/DailySelfieGallery';
 
 // Formats total seconds to digital clock display (HH:MM:SS)
 const formatSecondsToHMS = (totalSeconds = 0) => {
@@ -582,6 +585,22 @@ export default function TimeTracking() {
                           <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
                             #{idx + 1}
                           </Typography>
+                          {sess.start_selfie_url && (
+                            <Tooltip title="Clock-In selfie verified">
+                              <Avatar
+                                src={getSelfieUrl(sess.start_selfie_url)}
+                                sx={{ width: 22, height: 22, border: '1.5px solid #10B981' }}
+                              />
+                            </Tooltip>
+                          )}
+                          {sess.end_selfie_url && (
+                            <Tooltip title={`Clock-Out selfie verified: ${sess.notes || 'Paused'}`}>
+                              <Avatar
+                                src={getSelfieUrl(sess.end_selfie_url)}
+                                sx={{ width: 22, height: 22, border: '1.5px solid #EF4444' }}
+                              />
+                            </Tooltip>
+                          )}
                           <Typography sx={{ fontSize: '12px', color: '#64748B' }}>
                             {formatTimeOnly(sess.started_at)} → {sess.ended_at ? formatTimeOnly(sess.ended_at) : 'Active'}
                           </Typography>
@@ -849,6 +868,16 @@ export default function TimeTracking() {
               </Box>
 
               <Divider />
+
+              {/* Daily Verification Selfies Gallery */}
+              <DailySelfieGallery
+                sessions={drillDownData.sessions || []}
+                employeeName={`${drillDownData.user?.first_name || ''} ${drillDownData.user?.last_name || ''}`}
+                employeeId={drillDownData.user?.employee_id || ''}
+                workDate={formatDateReadable(drillDownDate)}
+              />
+
+              <Divider sx={{ my: 0.5 }} />
 
               <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
                 Work Sessions ({drillDownData.sessions?.length || 0})

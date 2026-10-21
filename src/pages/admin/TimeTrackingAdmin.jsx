@@ -40,6 +40,7 @@ import {
   RestartAltRounded as ResetIcon,
   CalendarMonthOutlined as CalendarIcon,
   NotificationsActiveOutlined as AlertIcon,
+  CameraAltRounded as CameraIcon,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import {
@@ -54,6 +55,7 @@ import {
 import StatusBadge from '../../common/custom/StatusBadge';
 import CustomTableLoader from '../../common/custom/CustomTableLoader';
 import CustomPagination from '../../common/custom/CustomPagination';
+import DailySelfieGallery, { getSelfieUrl } from '../../components/timeTracking/DailySelfieGallery';
 
 const formatMinutesToHours = (totalMinutes = 0) => {
   if (totalMinutes === null || totalMinutes === undefined) return '--';
@@ -714,11 +716,36 @@ export default function TimeTrackingAdmin() {
                       </TableCell>
 
                       <TableCell>
-                        <Chip
-                          size="small"
-                          label={`${rec.sessions?.length || 0} session(s)`}
-                          sx={{ bgcolor: '#F1F5F9', color: '#475569', fontWeight: 600, fontSize: '11px' }}
-                        />
+                        <Stack direction="row" spacing={0.8} alignItems="center">
+                          <Chip
+                            size="small"
+                            label={`${rec.sessions?.length || 0} session(s)`}
+                            sx={{ bgcolor: '#F1F5F9', color: '#475569', fontWeight: 600, fontSize: '11px' }}
+                          />
+                          {rec.sessions?.some((s) => s.start_selfie_url || s.end_selfie_url) && (
+                            <Tooltip title="Daily verification selfie(s) captured">
+                              <Chip
+                                size="small"
+                                icon={<CameraIcon sx={{ fontSize: '13px !important' }} />}
+                                label="Selfies"
+                                sx={{
+                                  bgcolor: '#EFF6FF',
+                                  color: '#2563EB',
+                                  fontWeight: 700,
+                                  fontSize: '10px',
+                                  height: 22,
+                                  cursor: 'pointer',
+                                }}
+                                onClick={() =>
+                                  setSelectedUserDate({
+                                    userId: rec.user_id,
+                                    date: rec.work_date,
+                                  })
+                                }
+                              />
+                            </Tooltip>
+                          )}
+                        </Stack>
                       </TableCell>
 
                       <TableCell align="right">
@@ -815,6 +842,16 @@ export default function TimeTrackingAdmin() {
                 </Stack>
               </Box>
 
+              {/* Daily Verification Selfies Gallery */}
+              <DailySelfieGallery
+                sessions={drillDownData.sessions || []}
+                employeeName={`${drillDownData.user?.first_name || ''} ${drillDownData.user?.last_name || ''}`}
+                employeeId={drillDownData.user?.employee_id || ''}
+                workDate={formatDateReadable(selectedUserDate?.date)}
+              />
+
+              <Divider sx={{ my: 0.5 }} />
+
               {/* Sessions Table */}
               <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>
                 Recorded Sessions ({drillDownData.sessions?.length || 0})
@@ -826,6 +863,7 @@ export default function TimeTrackingAdmin() {
                     <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#475569' }}>#</TableCell>
+                        <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#475569' }}>SELFIES</TableCell>
                         <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#475569' }}>START TIME</TableCell>
                         <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#475569' }}>END TIME</TableCell>
                         <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#475569' }}>DURATION</TableCell>
@@ -839,6 +877,52 @@ export default function TimeTrackingAdmin() {
                       {drillDownData.sessions.map((sess, idx) => (
                         <TableRow key={sess.id} hover>
                           <TableCell sx={{ fontWeight: 600 }}>{idx + 1}</TableCell>
+                          <TableCell>
+                            <Stack direction="row" spacing={0.8} alignItems="center">
+                              {sess.start_selfie_url ? (
+                                <Tooltip title="Clock-In Selfie (Start)">
+                                  <Avatar
+                                    src={getSelfieUrl(sess.start_selfie_url)}
+                                    sx={{
+                                      width: 28,
+                                      height: 28,
+                                      border: '2px solid #10B981',
+                                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                    }}
+                                  />
+                                </Tooltip>
+                              ) : (
+                                <Tooltip title="No clock-in selfie">
+                                  <Avatar sx={{ width: 28, height: 28, bgcolor: '#F1F5F9', color: '#94A3B8', fontSize: '11px' }}>
+                                    -
+                                  </Avatar>
+                                </Tooltip>
+                              )}
+                              {sess.end_selfie_url ? (
+                                <Tooltip title={`Clock-Out Selfie (Stop): ${sess.notes || 'No reason'}`}>
+                                  <Avatar
+                                    src={getSelfieUrl(sess.end_selfie_url)}
+                                    sx={{
+                                      width: 28,
+                                      height: 28,
+                                      border: '2px solid #EF4444',
+                                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                    }}
+                                  />
+                                </Tooltip>
+                              ) : sess.status === 'active' ? (
+                                <Tooltip title="Session in progress">
+                                  <Chip size="small" label="Active" sx={{ fontSize: '10px', height: 22, bgcolor: '#ECFDF5', color: '#059669', fontWeight: 700 }} />
+                                </Tooltip>
+                              ) : (
+                                <Tooltip title="No clock-out selfie">
+                                  <Avatar sx={{ width: 28, height: 28, bgcolor: '#F1F5F9', color: '#94A3B8', fontSize: '11px' }}>
+                                    -
+                                  </Avatar>
+                                </Tooltip>
+                              )}
+                            </Stack>
+                          </TableCell>
                           <TableCell sx={{ color: '#334155' }}>{formatTimeOnly(sess.started_at)}</TableCell>
                           <TableCell sx={{ color: '#334155' }}>
                             {sess.ended_at ? formatTimeOnly(sess.ended_at) : 'Active'}

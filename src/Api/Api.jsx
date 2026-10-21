@@ -663,8 +663,8 @@ export const useAuditLogs = (params = {}) => {
 export const useStartWorkSession = (onSuccess, onError) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async () => {
-      const res = await apiClient.post('/time-tracking/start');
+    mutationFn: async (data = {}) => {
+      const res = await apiClient.post('/time-tracking/start', data);
       return unwrap(res);
     },
     onSuccess: (data, variables, context) => {
