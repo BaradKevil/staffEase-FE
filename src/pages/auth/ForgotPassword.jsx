@@ -52,30 +52,28 @@ export default function ForgotPassword() {
   return (
     <Box
       sx={{
-        minHeight: '100dvh',
+        minHeight: '100vh',
         width: '100%',
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'flex-start',
-        bgcolor: '#F4F7FA',
-        py: { xs: 3, sm: 5, md: 6 },
+        justifyContent: 'center',
+        bgcolor: '#F8FAFC',
+        py: { xs: 3, sm: 4 },
         px: { xs: 2, sm: 3 },
-        overflowY: 'auto',
       }}
     >
       <Card
         sx={{
-          my: 'auto',
           borderRadius: '16px',
           maxWidth: 440,
           width: '100%',
-          mb: { xs: 2.5, sm: 3 },
           boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
           overflow: 'hidden',
           borderTop: '5px solid #23A4E8',
           bgcolor: '#FFFFFF',
+          my: 'auto',
         }}
       >
         <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
@@ -125,7 +123,7 @@ export default function ForgotPassword() {
           {submitted ? (
             <Box sx={{ textAlign: 'center' }}>
               <Alert severity="success" sx={{ mb: 3, borderRadius: '10px', textAlign: 'left', fontSize: '13px' }}>
-                If an active account exists for <strong>{email}</strong>, a password reset link has been dispatched to your inbox.
+                A password reset link has been dispatched to <strong>{email}</strong>. Please check your inbox (and spam folder) and click the link within 15 minutes to reset your password.
               </Alert>
               <Button
                 component={Link}
@@ -239,50 +237,7 @@ export default function ForgotPassword() {
             </Box>
           )}
         </Box>
-
-        {/* Security Footer */}
-        <Box
-          sx={{
-            bgcolor: '#F8FAFC',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: 1,
-            py: 1.8,
-            px: 2.5,
-            borderTop: '1px solid #F1F5F9'
-          }}
-        >
-          <SecurityIcon sx={{ color: '#10B981', fontSize: 18 }} />
-          <Typography sx={{ fontSize: '13px', color: '#64748B', fontWeight: 500 }}>
-            Protected by 256-bit SSL Security
-          </Typography>
-        </Box>
       </Card>
-
-      {/* Outer Footer */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 }, flexWrap: 'wrap', justifyContent: 'center', mb: 1 }}>
-        {['Employee Self-Service', 'Leave Policies', 'Support'].map((text, index, array) => (
-          <React.Fragment key={text}>
-            <Typography
-              sx={{
-                fontSize: '13px',
-                color: '#64748B',
-                textDecoration: 'none',
-                fontWeight: 500
-              }}
-            >
-              {text}
-            </Typography>
-            {index < array.length - 1 && (
-              <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: '#CBD5E1' }} />
-            )}
-          </React.Fragment>
-        ))}
-      </Box>
-      <Typography sx={{ fontSize: '12px', color: '#94A3B8', textAlign: 'center' }}>
-        © {new Date().getFullYear()} staffEase. All rights reserved.
-      </Typography>
     </Box>
   );
 }
