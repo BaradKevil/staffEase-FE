@@ -48,6 +48,7 @@ export const CallProvider = ({ children }) => {
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isCamOff, setIsCamOff] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [peerMediaStates, setPeerMediaStates] = useState({}); // { [userId: number]: { isMuted?: boolean, isVideoOff?: boolean, isScreenSharing?: boolean } }
   const [callDuration, setCallDuration] = useState(0);
 
   // References
@@ -115,6 +116,8 @@ export const CallProvider = ({ children }) => {
 
     setLocalStream(null);
     setRemoteStreams({});
+    setPeerMediaStates({});
+    originalVideoTrackRef.current = null;
     setIsMicMuted(false);
     setIsCamOff(false);
     setIsScreenSharing(false);
@@ -337,11 +340,21 @@ export const CallProvider = ({ children }) => {
   }, [socket]);
 
   /**
-   * Toggle Screen Sharing
+   * Toggle Screen Sharing (Full-System Entire Screen)
    */
   const toggleScreenShare = useCallback(async () => {
+    const current = callStateRef.current;
+    if (current.status !== 'connected') {
+      toast.warn('Screen sharing is only available once the call is connected.');
+      return;
+    }
+    if (current.callType !== 'video') {
+      toast.warn('Screen sharing is only available during video calls.');
+      return;
+    }
+
     if (isScreenSharing) {
-      // Revert back to camera track
+      // Revert back to original camera track
       if (originalVideoTrackRef.current) {
         peerConnectionsRef.current.forEach((pc) => {
           const sender = pc.getSenders().find((s) => s.track && s.track.kind === 'video');
@@ -349,22 +362,62 @@ export const CallProvider = ({ children }) => {
             sender.replaceTrack(originalVideoTrackRef.current);
           }
         });
+
+        if (localStreamRef.current) {
+          const audioTracks = localStreamRef.current.getAudioTracks();
+          const revertedStream = new MediaStream([...audioTracks, originalVideoTrackRef.current]);
+          setLocalStream(revertedStream);
+          localStreamRef.current = revertedStream;
+        }
       }
+
       if (screenTrackRef.current) {
         screenTrackRef.current.stop();
         screenTrackRef.current = null;
       }
+
       setIsScreenSharing(false);
+
+      if (socket && current.callId) {
+        socket.emit('call:toggle-media', {
+          callId: current.callId,
+          isScreenSharing: false,
+        });
+      }
       return;
     }
 
     try {
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      // W3C Screen Capture API configured to request the ENTIRE system/screen:
+      // displaySurface: 'monitor' automatically directs the browser to the "Entire Screen" option
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          displaySurface: 'monitor',
+          cursor: 'always',
+          width: { ideal: 1920, max: 2560 },
+          height: { ideal: 1080, max: 1440 },
+          frameRate: { ideal: 30 },
+        },
+        audio: true,
+        systemAudio: 'include',
+        selfBrowserSurface: 'exclude',
+        surfaceSwitching: 'include',
+        preferCurrentTab: false,
+      });
+
       const screenTrack = screenStream.getVideoTracks()[0];
+      if (!screenTrack) {
+        toast.error('No video track found in screen capture.');
+        return;
+      }
       screenTrackRef.current = screenTrack;
 
+      // Save original camera video track
       if (localStreamRef.current) {
-        originalVideoTrackRef.current = localStreamRef.current.getVideoTracks()[0] || null;
+        const currentVideoTracks = localStreamRef.current.getVideoTracks();
+        if (currentVideoTracks.length > 0) {
+          originalVideoTrackRef.current = currentVideoTracks[0];
+        }
       }
 
       // Replace video track in all active peer connections
@@ -375,9 +428,24 @@ export const CallProvider = ({ children }) => {
         }
       });
 
+      // Update local preview with the screen share stream
+      if (localStreamRef.current) {
+        const audioTracks = localStreamRef.current.getAudioTracks();
+        const screenMediaStream = new MediaStream([...audioTracks, screenTrack]);
+        setLocalStream(screenMediaStream);
+        localStreamRef.current = screenMediaStream;
+      }
+
       setIsScreenSharing(true);
 
-      // Handle user stopping screen share via browser bar
+      if (socket && current.callId) {
+        socket.emit('call:toggle-media', {
+          callId: current.callId,
+          isScreenSharing: true,
+        });
+      }
+
+      // Handle user stopping screen share via browser's native floating bar
       screenTrack.onended = () => {
         if (originalVideoTrackRef.current) {
           peerConnectionsRef.current.forEach((pc) => {
@@ -386,14 +454,28 @@ export const CallProvider = ({ children }) => {
               sender.replaceTrack(originalVideoTrackRef.current);
             }
           });
+
+          if (localStreamRef.current) {
+            const audioTracks = localStreamRef.current.getAudioTracks();
+            const revertedStream = new MediaStream([...audioTracks, originalVideoTrackRef.current]);
+            setLocalStream(revertedStream);
+            localStreamRef.current = revertedStream;
+          }
         }
         screenTrackRef.current = null;
         setIsScreenSharing(false);
+
+        if (socket && current.callId) {
+          socket.emit('call:toggle-media', {
+            callId: current.callId,
+            isScreenSharing: false,
+          });
+        }
       };
     } catch (err) {
       console.warn('Screen share cancelled or failed:', err);
     }
-  }, [isScreenSharing]);
+  }, [isScreenSharing, socket]);
 
   // -------------------------------------------------------------
   //  Socket Event Listeners for Call Lifecycle & Signaling
@@ -518,12 +600,25 @@ export const CallProvider = ({ children }) => {
       }
     };
 
+    const handleMediaStateChanged = (payload) => {
+      setPeerMediaStates((prev) => ({
+        ...prev,
+        [payload.userId]: {
+          ...(prev[payload.userId] || {}),
+          ...(payload.isMuted !== undefined ? { isMuted: payload.isMuted } : {}),
+          ...(payload.isVideoOff !== undefined ? { isVideoOff: payload.isVideoOff } : {}),
+          ...(payload.isScreenSharing !== undefined ? { isScreenSharing: payload.isScreenSharing } : {}),
+        },
+      }));
+    };
+
     socket.on('call:incoming', handleIncomingCall);
     socket.on('call:accepted', handleCallAccepted);
     socket.on('call:user-joined', handleUserJoined);
     socket.on('call:rejected', handleCallRejected);
     socket.on('call:ended', handleCallEnded);
     socket.on('call:webrtc-signal', handleWebRTCSignal);
+    socket.on('call:media-state-changed', handleMediaStateChanged);
 
     return () => {
       socket.off('call:incoming', handleIncomingCall);
@@ -532,6 +627,7 @@ export const CallProvider = ({ children }) => {
       socket.off('call:rejected', handleCallRejected);
       socket.off('call:ended', handleCallEnded);
       socket.off('call:webrtc-signal', handleWebRTCSignal);
+      socket.off('call:media-state-changed', handleMediaStateChanged);
     };
   }, [socket, getOrCreatePeerConnection, cleanupMediaAndPeers]);
 
@@ -539,6 +635,7 @@ export const CallProvider = ({ children }) => {
     callState,
     localStream,
     remoteStreams,
+    peerMediaStates,
     isMicMuted,
     isCamOff,
     isScreenSharing,

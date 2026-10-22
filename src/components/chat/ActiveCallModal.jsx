@@ -49,6 +49,7 @@ function VideoTile({
   isLocal = false,
   isCamOff = false,
   isMicMuted = false,
+  isScreenSharing = false,
   avatarSrc = null,
 }) {
   const videoRef = useRef(null);
@@ -74,8 +75,8 @@ function VideoTile({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.45)',
+        border: isScreenSharing ? '2px solid rgba(99, 102, 241, 0.65)' : '1px solid rgba(255, 255, 255, 0.08)',
+        boxShadow: isScreenSharing ? '0 0 24px rgba(99, 102, 241, 0.3)' : '0 12px 32px rgba(0, 0, 0, 0.45)',
         background: 'linear-gradient(145deg, #13192B 0%, #0A0E1A 100%)',
       }}
     >
@@ -88,9 +89,10 @@ function VideoTile({
         style={{
           width: '100%',
           height: '100%',
-          objectFit: 'cover',
+          objectFit: isScreenSharing ? 'contain' : 'cover', // Full-system entire screen without cropping
           display: hasVideo ? 'block' : 'none',
-          transform: isLocal ? 'scaleX(-1)' : 'none', // Natural mirror preview
+          transform: isLocal && !isScreenSharing ? 'scaleX(-1)' : 'none', // Do NOT mirror screen share
+          backgroundColor: '#000000',
         }}
       />
 
@@ -150,7 +152,13 @@ function VideoTile({
         }}
       >
         <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#F1F5F9' }}>
-          {isLocal ? `${name} (You)` : name}
+          {isScreenSharing
+            ? isLocal
+              ? '🖥️ Your Shared Screen'
+              : `🖥️ ${name}'s Screen`
+            : isLocal
+            ? `${name} (You)`
+            : name}
         </Typography>
         {isMicMuted ? (
           <MicOffIcon sx={{ fontSize: 14, color: '#EF4444' }} />
@@ -167,6 +175,7 @@ export default function ActiveCallModal() {
     callState,
     localStream,
     remoteStreams,
+    peerMediaStates = {},
     isMicMuted,
     isCamOff,
     isScreenSharing,
@@ -188,6 +197,7 @@ export default function ActiveCallModal() {
   const isVideoCall = callState.callType === 'video';
   const remoteUserIds = Object.keys(remoteStreams);
   const isOneOnOne = !callState.isGroup && remoteUserIds.length <= 1;
+  const isRemoteScreenSharing = remoteUserIds.length > 0 && Boolean(peerMediaStates?.[remoteUserIds[0]]?.isScreenSharing);
 
   const formatDuration = (seconds) => {
     const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -519,6 +529,7 @@ export default function ActiveCallModal() {
                 stream={remoteStreams[remoteUserIds[0]]}
                 name={callState.title}
                 isLocal={false}
+                isScreenSharing={isRemoteScreenSharing}
               />
             ) : (
               /* Outgoing Call Waiting Stage with Ambient Radar Waves */
@@ -679,6 +690,7 @@ export default function ActiveCallModal() {
                   isLocal={true}
                   isCamOff={isCamOff}
                   isMicMuted={isMicMuted}
+                  isScreenSharing={isScreenSharing}
                 />
               </Box>
             )}
@@ -706,6 +718,7 @@ export default function ActiveCallModal() {
               isLocal={true}
               isCamOff={isCamOff}
               isMicMuted={isMicMuted}
+              isScreenSharing={isScreenSharing}
             />
 
             {/* Remote Participants Streams */}
@@ -715,6 +728,7 @@ export default function ActiveCallModal() {
                 stream={remoteStreams[uid]}
                 name={`Participant ${uid}`}
                 isLocal={false}
+                isScreenSharing={Boolean(peerMediaStates?.[uid]?.isScreenSharing)}
               />
             ))}
           </Box>
@@ -794,30 +808,32 @@ export default function ActiveCallModal() {
             </Tooltip>
           )}
 
-          {/* Screen Share Button */}
-          <Tooltip title={isScreenSharing ? 'Stop Screen Sharing' : 'Share Screen'}>
-            <IconButton
-              onClick={toggleScreenShare}
-              sx={{
-                bgcolor: isScreenSharing ? '#5B5FC7' : 'rgba(255, 255, 255, 0.12)',
-                color: '#FFFFFF',
-                width: 48,
-                height: 48,
-                transition: 'all 0.15s ease',
-                boxShadow: isScreenSharing ? '0 0 18px rgba(91, 95, 199, 0.6)' : 'none',
-                '&:hover': {
-                  bgcolor: isScreenSharing ? '#4F46E5' : 'rgba(255, 255, 255, 0.22)',
-                  transform: 'scale(1.05)',
-                },
-              }}
-            >
-              {isScreenSharing ? (
-                <StopScreenShareIcon sx={{ fontSize: 22 }} />
-              ) : (
-                <ScreenShareIcon sx={{ fontSize: 22 }} />
-              )}
-            </IconButton>
-          </Tooltip>
+          {/* Screen Share Button: ONLY in Video Calls AND ONLY once connected / accepted */}
+          {isVideoCall && callState.status === 'connected' && (
+            <Tooltip title={isScreenSharing ? 'Stop Screen Sharing' : 'Share Entire Screen'}>
+              <IconButton
+                onClick={toggleScreenShare}
+                sx={{
+                  bgcolor: isScreenSharing ? '#5B5FC7' : 'rgba(255, 255, 255, 0.12)',
+                  color: '#FFFFFF',
+                  width: 48,
+                  height: 48,
+                  transition: 'all 0.15s ease',
+                  boxShadow: isScreenSharing ? '0 0 18px rgba(91, 95, 199, 0.6)' : 'none',
+                  '&:hover': {
+                    bgcolor: isScreenSharing ? '#4F46E5' : 'rgba(255, 255, 255, 0.22)',
+                    transform: 'scale(1.05)',
+                  },
+                }}
+              >
+                {isScreenSharing ? (
+                  <StopScreenShareIcon sx={{ fontSize: 22 }} />
+                ) : (
+                  <ScreenShareIcon sx={{ fontSize: 22 }} />
+                )}
+              </IconButton>
+            </Tooltip>
+          )}
 
           {/* Red End Call Capsule Button */}
           <Tooltip title="Leave Call">
