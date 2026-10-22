@@ -3,6 +3,9 @@ import { RouterProvider, createBrowserRouter, Navigate } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { SocketProvider } from './common/SocketContext';
+import { CallProvider } from './common/CallContext';
+import IncomingCallModal from './components/chat/IncomingCallModal';
+import ActiveCallModal from './components/chat/ActiveCallModal';
 
 // Guards & Layout
 import { AuthGaurd, LogGaurd, RoleGuard, HomeRedirect } from './common/Gaurd';
@@ -266,7 +269,10 @@ function App() {
 
   return (
     <SocketProvider>
-      <RouterProvider router={router} />
+      <CallProvider>
+        <RouterProvider router={router} />
+        <IncomingCallModal />
+        <ActiveCallModal />
       <ToastContainer
         position="top-right"
         autoClose={3500}
@@ -279,6 +285,7 @@ function App() {
         pauseOnHover
         theme="colored"
       />
+      </CallProvider>
     </SocketProvider>
   );
 }

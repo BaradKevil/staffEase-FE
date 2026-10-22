@@ -43,11 +43,8 @@ import {
   VideocamRounded as VideoCallIcon,
   PhoneRounded as VoiceCallIcon,
   PersonAddAlt1Outlined as AddPersonIcon,
-  Mic as MicIcon,
-  MicOff as MicOffIcon,
-  VideocamOff as VideocamOffIcon,
-  CallEndRounded as CallEndIcon,
 } from '@mui/icons-material';
+import { useCall } from '../../common/CallContext';
 import ChatMessageItem from './ChatMessageItem';
 import ChatInput from './ChatInput';
 import ConversationDetailsPanel from './ConversationDetailsPanel';
@@ -77,9 +74,7 @@ export default function ChatWindow({
   const [detailsPanelOpen, setDetailsPanelOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCall, setActiveCall] = useState(null); // { type: 'video' | 'voice', status: 'calling' | 'connected', duration: 0 }
-  const [isMicMuted, setIsMicMuted] = useState(false);
-  const [isCamOff, setIsCamOff] = useState(false);
+  const { startCall } = useCall();
   const messagesEndRef = useRef(null);
 
   // Auto scroll to bottom
@@ -91,45 +86,17 @@ export default function ChatWindow({
     scrollToBottom();
   }, [messages.length, typingUsers.length]);
 
-  // Call simulation and duration counter
-  useEffect(() => {
-    if (!activeCall) return;
 
-    // Simulate answer after 2.2 seconds
-    const answerTimer = setTimeout(() => {
-      setActiveCall((prev) => (prev ? { ...prev, status: 'connected' } : null));
-    }, 2200);
-
-    // Call duration timer
-    const interval = setInterval(() => {
-      setActiveCall((prev) => {
-        if (!prev) return null;
-        if (prev.status === 'connected') {
-          return { ...prev, duration: prev.duration + 1 };
-        }
-        return prev;
-      });
-    }, 1000);
-
-    return () => {
-      clearTimeout(answerTimer);
-      clearInterval(interval);
-    };
-  }, [activeCall?.status]);
 
   const handleStartCall = (type) => {
-    setActiveCall({
-      type,
-      status: 'calling',
-      duration: 0,
+    if (!conversation) return;
+    startCall({
+      conversationId: conversation.id,
+      targetUserId: conversation.other_user?.id,
+      isGroup: conversation.type === 'group',
+      callType: type,
+      title: conversation.title,
     });
-    setIsMicMuted(false);
-    setIsCamOff(false);
-  };
-
-  const handleEndCall = () => {
-    setActiveCall(null);
-    toast.info('Call ended');
   };
 
   const handleAddPeople = () => {
@@ -138,12 +105,6 @@ export default function ChatWindow({
     } else {
       toast.info('To create a multi-person conversation, click "+ New Chat" in the sidebar and select multiple team members.');
     }
-  };
-
-  const formatDuration = (seconds) => {
-    const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const secs = (seconds % 60).toString().padStart(2, '0');
-    return `${mins}:${secs}`;
   };
 
   // Filter messages if search active
@@ -731,151 +692,7 @@ export default function ChatWindow({
         onLeaveGroup={onLeaveGroup}
       />
 
-      {/* ------------------------------------------------------------- */}
-      {/* Interactive Video & Audio Call Modal Dialog                   */}
-      {/* ------------------------------------------------------------- */}
-      <Dialog
-        open={Boolean(activeCall)}
-        onClose={handleEndCall}
-        PaperProps={{
-          sx: {
-            borderRadius: '24px',
-            bgcolor: '#0F172A',
-            color: '#FFFFFF',
-            width: '100%',
-            maxWidth: 420,
-            p: 3,
-            textAlign: 'center',
-            boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
-            border: '1px solid rgba(255,255,255,0.1)',
-          },
-        }}
-      >
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2 }}>
-          {/* Avatar with animated halo ring */}
-          <Box
-            sx={{
-              position: 'relative',
-              mb: 3,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Box
-              sx={{
-                position: 'absolute',
-                width: 110,
-                height: 110,
-                borderRadius: '50%',
-                bgcolor: activeCall?.type === 'video' ? 'rgba(91, 95, 199, 0.25)' : 'rgba(16, 185, 129, 0.25)',
-                animation: 'callPulse 2s infinite ease-in-out',
-                '@keyframes callPulse': {
-                  '0%': { transform: 'scale(0.9)', opacity: 0.8 },
-                  '50%': { transform: 'scale(1.25)', opacity: 0.2 },
-                  '100%': { transform: 'scale(0.9)', opacity: 0.8 },
-                },
-              }}
-            />
-            <Avatar
-              src={getAvatarFullUrl(otherUser?.profile_photo)}
-              sx={{
-                width: 82,
-                height: 82,
-                bgcolor: '#5B5FC7',
-                fontSize: '28px',
-                fontWeight: 700,
-                border: '3px solid #1E293B',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-              }}
-            >
-              {conversation.title?.[0] || 'S'}
-            </Avatar>
-          </Box>
 
-          <Typography sx={{ fontSize: '19px', fontWeight: 700, color: '#FFFFFF', mb: 0.6 }}>
-            {conversation.title}
-          </Typography>
-
-          <Typography
-            sx={{
-              fontSize: '13px',
-              fontWeight: 500,
-              color: activeCall?.status === 'connected' ? '#34D399' : '#94A3B8',
-              mb: 3.5,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.8,
-            }}
-          >
-            {activeCall?.status === 'calling' ? (
-              <>
-                <CircularProgress size={12} sx={{ color: '#94A3B8' }} />
-                <span>Calling {activeCall.type === 'video' ? 'video' : 'voice'}...</span>
-              </>
-            ) : (
-              <span>Connected • {formatDuration(activeCall?.duration || 0)}</span>
-            )}
-          </Typography>
-
-          {/* Call Controls Toolbar */}
-          <Stack direction="row" spacing={2.5} justifyContent="center" alignItems="center">
-            {/* Microphone Toggle */}
-            <Tooltip title={isMicMuted ? 'Unmute Microphone' : 'Mute Microphone'}>
-              <IconButton
-                onClick={() => setIsMicMuted(!isMicMuted)}
-                sx={{
-                  bgcolor: isMicMuted ? '#EF4444' : '#1E293B',
-                  color: '#FFFFFF',
-                  width: 48,
-                  height: 48,
-                  transition: 'all 0.15s ease',
-                  '&:hover': { bgcolor: isMicMuted ? '#DC2626' : '#334155' },
-                }}
-              >
-                {isMicMuted ? <MicOffIcon sx={{ fontSize: 22 }} /> : <MicIcon sx={{ fontSize: 22 }} />}
-              </IconButton>
-            </Tooltip>
-
-            {/* Video Camera Toggle (for video calls) */}
-            {activeCall?.type === 'video' && (
-              <Tooltip title={isCamOff ? 'Turn Camera On' : 'Turn Camera Off'}>
-                <IconButton
-                  onClick={() => setIsCamOff(!isCamOff)}
-                  sx={{
-                    bgcolor: isCamOff ? '#EF4444' : '#1E293B',
-                    color: '#FFFFFF',
-                    width: 48,
-                    height: 48,
-                    transition: 'all 0.15s ease',
-                    '&:hover': { bgcolor: isCamOff ? '#DC2626' : '#334155' },
-                  }}
-                >
-                  {isCamOff ? <VideocamOffIcon sx={{ fontSize: 22 }} /> : <VideoCallIcon sx={{ fontSize: 22 }} />}
-                </IconButton>
-              </Tooltip>
-            )}
-
-            {/* End Call Button */}
-            <Tooltip title="End Call">
-              <IconButton
-                onClick={handleEndCall}
-                sx={{
-                  bgcolor: '#EF4444',
-                  color: '#FFFFFF',
-                  width: 52,
-                  height: 52,
-                  boxShadow: '0 4px 16px rgba(239, 68, 68, 0.45)',
-                  transition: 'all 0.15s ease',
-                  '&:hover': { bgcolor: '#DC2626', transform: 'scale(1.05)' },
-                }}
-              >
-                <CallEndIcon sx={{ fontSize: 24 }} />
-              </IconButton>
-            </Tooltip>
-          </Stack>
-        </Box>
-      </Dialog>
     </Box>
   );
 }
