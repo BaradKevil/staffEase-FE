@@ -16,6 +16,7 @@ import {
   TextField,
   Button,
   Dialog,
+  Popover,
 } from '@mui/material';
 import {
   CheckCircleOutlineRounded as ReadIcon,
@@ -25,7 +26,9 @@ import {
   DeleteOutlineRounded as DeleteIcon,
   InsertDriveFileOutlined as FileIcon,
   DownloadOutlined as DownloadIcon,
+  SentimentSatisfiedAltOutlined as AddReactionIcon,
 } from '@mui/icons-material';
+import EmojiPicker from 'emoji-picker-react';
 import { formatMessageTime, getAvatarFullUrl, formatFileSize } from './chatUtils';
 
 const QUICK_EMOJIS = ['👍', '❤️', '😂', '🔥', '🎉', '👏'];
@@ -44,6 +47,7 @@ export default function ChatMessageItem({
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
   const [previewImage, setPreviewImage] = useState(null);
+  const [reactionPickerAnchor, setReactionPickerAnchor] = useState(null);
 
   const isSelf = Number(message.sender_id) === Number(currentUserId);
   const isSystem = message.message_type === 'system';
@@ -87,7 +91,6 @@ export default function ChatMessageItem({
         gap: 1.2,
         mt: isGrouped ? 0.4 : 1.5,
         mb: 0.4,
-        position: 'relative',
         px: { xs: 1, sm: 2 },
       }}
     >
@@ -190,6 +193,131 @@ export default function ChatMessageItem({
             wordBreak: 'break-word',
           }}
         >
+          {/* Floating Hover Action Toolbar: Strictly anchored directly above THIS message bubble */}
+          {(isHovered || Boolean(reactionPickerAnchor)) && !isEditing && !message.is_deleted && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: -18,
+                [isSelf ? 'right' : 'left']: 6,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.3,
+                bgcolor: '#FFFFFF',
+                borderRadius: '24px',
+                boxShadow: '0 4px 18px rgba(15, 23, 42, 0.18)',
+                border: '1px solid #E2E8F0',
+                px: 0.8,
+                py: 0.3,
+                zIndex: 10,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {QUICK_EMOJIS.map((emoji) => (
+                <IconButton
+                  key={emoji}
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleReaction(message.id, emoji);
+                  }}
+                  sx={{
+                    width: 26,
+                    height: 26,
+                    fontSize: '13px',
+                    borderRadius: '6px',
+                    transition: 'transform 0.1s ease',
+                    '&:hover': { bgcolor: '#F1F5F9', transform: 'scale(1.2)' },
+                  }}
+                >
+                  {emoji}
+                </IconButton>
+              ))}
+
+              <Tooltip title="Add reaction">
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setReactionPickerAnchor(e.currentTarget);
+                  }}
+                  sx={{
+                    width: 26,
+                    height: 26,
+                    color: '#64748B',
+                    borderRadius: '6px',
+                    '&:hover': { color: '#0284C7', bgcolor: '#F0F9FF' },
+                  }}
+                >
+                  <AddReactionIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
+
+              <Box sx={{ width: '1px', height: 16, bgcolor: '#E2E8F0', mx: 0.3 }} />
+
+              <Tooltip title="Reply">
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onReply(message);
+                  }}
+                  sx={{
+                    width: 26,
+                    height: 26,
+                    color: '#64748B',
+                    borderRadius: '6px',
+                    '&:hover': { color: '#0284C7', bgcolor: '#F0F9FF' },
+                  }}
+                >
+                  <ReplyIcon sx={{ fontSize: 15 }} />
+                </IconButton>
+              </Tooltip>
+
+              {isSelf && (
+                <Tooltip title="Edit">
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditing(true);
+                    }}
+                    sx={{
+                      width: 26,
+                      height: 26,
+                      color: '#64748B',
+                      borderRadius: '6px',
+                      '&:hover': { color: '#0284C7', bgcolor: '#F0F9FF' },
+                    }}
+                  >
+                    <EditIcon sx={{ fontSize: 15 }} />
+                  </IconButton>
+                </Tooltip>
+              )}
+
+              {(isSelf || userRole === 'admin') && (
+                <Tooltip title="Delete">
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(message.id);
+                    }}
+                    sx={{
+                      width: 26,
+                      height: 26,
+                      color: '#EF4444',
+                      borderRadius: '6px',
+                      '&:hover': { bgcolor: '#FEE2E2' },
+                    }}
+                  >
+                    <DeleteIcon sx={{ fontSize: 15 }} />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
+          )}
+
           {isEditing ? (
             <Box sx={{ minWidth: 220 }}>
               <TextField
@@ -237,7 +365,9 @@ export default function ChatMessageItem({
               {message.attachments && message.attachments.length > 0 && (
                 <Stack spacing={1} sx={{ mb: message.content ? 1 : 0 }}>
                   {message.attachments.map((att) => {
-                    const isImg = (att.file_type && att.file_type.startsWith('image/')) || /\.(jpg|jpeg|png|webp|gif|svg|bmp|ico)$/i.test(att.file_name || att.file_path || '');
+                    const isImg =
+                      (att.file_type && att.file_type.startsWith('image/')) ||
+                      /\.(jpg|jpeg|png|webp|gif|svg|bmp|ico)$/i.test(att.file_name || att.file_path || '');
                     const fullUrl = getAvatarFullUrl(att.file_path);
 
                     if (isImg) {
@@ -271,6 +401,7 @@ export default function ChatMessageItem({
                         key={att.id}
                         component="a"
                         href={fullUrl}
+                        download={att.file_name}
                         target="_blank"
                         rel="noopener noreferrer"
                         sx={{
@@ -342,9 +473,11 @@ export default function ChatMessageItem({
             <span>{formatMessageTime(message.createdAt || message.created_at)}</span>
             {message.is_edited && <span>(edited)</span>}
             {isSelf && (
-              <Tooltip title="Delivered">
-                <ReadIcon sx={{ fontSize: 13, color: '#BAE6FD' }} />
-              </Tooltip>
+              message.is_read ? (
+                <ReadIcon sx={{ fontSize: 14, color: '#38BDF8' }} />
+              ) : (
+                <SentIcon sx={{ fontSize: 14 }} />
+              )
             )}
           </Box>
         </Box>
@@ -382,71 +515,42 @@ export default function ChatMessageItem({
         )}
       </Box>
 
-      {/* Floating Hover Action Toolbar */}
-      {isHovered && !isEditing && !message.is_deleted && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: -14,
-            [isSelf ? 'left' : 'right']: { xs: 8, sm: 20 },
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.3,
-            bgcolor: '#FFFFFF',
-            borderRadius: '24px',
-            boxShadow: '0 4px 16px rgba(15, 23, 42, 0.12)',
+      {/* Reaction Picker Popover using emoji-picker-react */}
+      <Popover
+        open={Boolean(reactionPickerAnchor)}
+        anchorEl={reactionPickerAnchor}
+        onClose={() => setReactionPickerAnchor(null)}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: isSelf ? 'right' : 'left',
+        }}
+        transformOrigin={{
+          vertical: 'bottom',
+          horizontal: isSelf ? 'right' : 'left',
+        }}
+        PaperProps={{
+          sx: {
+            p: 0,
+            borderRadius: '16px',
+            boxShadow: '0 12px 36px rgba(15, 23, 42, 0.18)',
             border: '1px solid #E2E8F0',
-            px: 0.8,
-            py: 0.3,
-            zIndex: 10,
+            overflow: 'hidden',
+          },
+        }}
+      >
+        <EmojiPicker
+          onEmojiClick={(emojiData) => {
+            onToggleReaction(message.id, emojiData.emoji);
+            setReactionPickerAnchor(null);
           }}
-        >
-          {QUICK_EMOJIS.map((emoji) => (
-            <IconButton
-              key={emoji}
-              size="small"
-              onClick={() => onToggleReaction(message.id, emoji)}
-              sx={{ width: 26, height: 26, fontSize: '13px', '&:hover': { bgcolor: '#F1F5F9' } }}
-            >
-              {emoji}
-            </IconButton>
-          ))}
-
-          <Tooltip title="Reply">
-            <IconButton
-              size="small"
-              onClick={() => onReply(message)}
-              sx={{ width: 26, height: 26, color: '#64748B', '&:hover': { color: '#0284C7' } }}
-            >
-              <ReplyIcon sx={{ fontSize: 15 }} />
-            </IconButton>
-          </Tooltip>
-
-          {isSelf && (
-            <Tooltip title="Edit">
-              <IconButton
-                size="small"
-                onClick={() => setIsEditing(true)}
-                sx={{ width: 26, height: 26, color: '#64748B', '&:hover': { color: '#0284C7' } }}
-              >
-                <EditIcon sx={{ fontSize: 15 }} />
-              </IconButton>
-            </Tooltip>
-          )}
-
-          {(isSelf || userRole === 'admin') && (
-            <Tooltip title="Delete">
-              <IconButton
-                size="small"
-                onClick={() => onDelete(message.id)}
-                sx={{ width: 26, height: 26, color: '#EF4444', '&:hover': { bgcolor: '#FEE2E2' } }}
-              >
-                <DeleteIcon sx={{ fontSize: 15 }} />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Box>
-      )}
+          autoFocusSearch={false}
+          theme="light"
+          lazyLoadEmojis={true}
+          searchPlaceHolder="React with emoji..."
+          width={320}
+          height={380}
+        />
+      </Popover>
 
       {/* Image Lightbox Modal */}
       <Dialog open={!!previewImage} onClose={() => setPreviewImage(null)} maxWidth="md">

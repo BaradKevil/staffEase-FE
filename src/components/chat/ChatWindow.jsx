@@ -22,11 +22,12 @@ import {
   Chip,
   TextField,
   InputAdornment,
+  Dialog,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
   PeopleAltOutlined as PeopleIcon,
-  MoreVert as MoreIcon,
+  MoreHorizRounded as MoreIcon,
   StarBorderRounded as StarIcon,
   StarRounded as StarFilledIcon,
   NotificationsOffOutlined as MuteIcon,
@@ -39,6 +40,13 @@ import {
   CloseRounded as CloseIcon,
   ForumOutlined as ChatPlaceholderIcon,
   LinkOutlined as LinkIcon,
+  VideocamRounded as VideoCallIcon,
+  PhoneRounded as VoiceCallIcon,
+  PersonAddAlt1Outlined as AddPersonIcon,
+  Mic as MicIcon,
+  MicOff as MicOffIcon,
+  VideocamOff as VideocamOffIcon,
+  CallEndRounded as CallEndIcon,
 } from '@mui/icons-material';
 import ChatMessageItem from './ChatMessageItem';
 import ChatInput from './ChatInput';
@@ -49,10 +57,10 @@ import { toast } from 'react-toastify';
 export default function ChatWindow({
   conversation,
   messages = [],
-  isLoadingMessages,
+  isLoadingMessages = false,
   currentUserId,
   userRole,
-  isOtherOnline,
+  isOtherOnline = false,
   typingUsers = [],
   onBack,
   onSendMessage,
@@ -69,6 +77,9 @@ export default function ChatWindow({
   const [detailsPanelOpen, setDetailsPanelOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeCall, setActiveCall] = useState(null); // { type: 'video' | 'voice', status: 'calling' | 'connected', duration: 0 }
+  const [isMicMuted, setIsMicMuted] = useState(false);
+  const [isCamOff, setIsCamOff] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Auto scroll to bottom
@@ -79,6 +90,61 @@ export default function ChatWindow({
   useEffect(() => {
     scrollToBottom();
   }, [messages.length, typingUsers.length]);
+
+  // Call simulation and duration counter
+  useEffect(() => {
+    if (!activeCall) return;
+
+    // Simulate answer after 2.2 seconds
+    const answerTimer = setTimeout(() => {
+      setActiveCall((prev) => (prev ? { ...prev, status: 'connected' } : null));
+    }, 2200);
+
+    // Call duration timer
+    const interval = setInterval(() => {
+      setActiveCall((prev) => {
+        if (!prev) return null;
+        if (prev.status === 'connected') {
+          return { ...prev, duration: prev.duration + 1 };
+        }
+        return prev;
+      });
+    }, 1000);
+
+    return () => {
+      clearTimeout(answerTimer);
+      clearInterval(interval);
+    };
+  }, [activeCall?.status]);
+
+  const handleStartCall = (type) => {
+    setActiveCall({
+      type,
+      status: 'calling',
+      duration: 0,
+    });
+    setIsMicMuted(false);
+    setIsCamOff(false);
+  };
+
+  const handleEndCall = () => {
+    setActiveCall(null);
+    toast.info('Call ended');
+  };
+
+  const handleAddPeople = () => {
+    if (conversation?.type === 'group') {
+      if (onOpenMembersModal) onOpenMembersModal();
+    } else {
+      toast.info('To create a multi-person conversation, click "+ New Chat" in the sidebar and select multiple team members.');
+    }
+  };
+
+  const formatDuration = (seconds) => {
+    const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const secs = (seconds % 60).toString().padStart(2, '0');
+    return `${mins}:${secs}`;
+  };
 
   // Filter messages if search active
   const displayedMessages = useMemo(() => {
@@ -261,9 +327,67 @@ export default function ChatWindow({
             </Box>
           </Stack>
 
-          {/* Right Header Action Controls */}
-          <Stack direction="row" spacing={0.6} alignItems="center">
-            {/* Search in chat toggle */}
+          {/* ------------------------------------------------------------- */}
+          {/* Right Header Action Controls: Matching user toolbar reference */}
+          {/* [ Video Call ] [ Voice Call ] [ Add People ] | [ Search ] [ ... ] */}
+          {/* ------------------------------------------------------------- */}
+          <Stack direction="row" spacing={0.8} alignItems="center">
+            {/* 1. Video Call Button */}
+            <Tooltip title="Start Video Call">
+              <IconButton
+                size="small"
+                onClick={() => handleStartCall('video')}
+                sx={{
+                  color: '#5B5FC7',
+                  p: 0.8,
+                  borderRadius: '8px',
+                  '&:hover': { bgcolor: '#F0F0FF', color: '#4F46E5' },
+                }}
+              >
+                <VideoCallIcon sx={{ fontSize: 22 }} />
+              </IconButton>
+            </Tooltip>
+
+            {/* 2. Audio/Voice Call Button */}
+            <Tooltip title="Start Audio Call">
+              <IconButton
+                size="small"
+                onClick={() => handleStartCall('voice')}
+                sx={{
+                  color: '#5B5FC7',
+                  p: 0.8,
+                  borderRadius: '8px',
+                  '&:hover': { bgcolor: '#F0F0FF', color: '#4F46E5' },
+                }}
+              >
+                <VoiceCallIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+            </Tooltip>
+
+            {/* 3. Add People / Participants Button */}
+            <Tooltip title={isGroup ? 'Manage Participants' : 'Add People to Chat'}>
+              <IconButton
+                size="small"
+                onClick={handleAddPeople}
+                sx={{
+                  color: '#475569',
+                  p: 0.8,
+                  borderRadius: '8px',
+                  '&:hover': { bgcolor: '#F1F5F9', color: '#0F172A' },
+                }}
+              >
+                <AddPersonIcon sx={{ fontSize: 22 }} />
+              </IconButton>
+            </Tooltip>
+
+            {/* 4. Vertical Divider */}
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{ height: 20, my: 'auto', mx: 0.5, borderColor: '#E2E8F0' }}
+            />
+
+            {/* 5. Search Button */}
             <Tooltip title={isSearching ? 'Close Search' : 'Search in Conversation'}>
               <IconButton
                 size="small"
@@ -272,68 +396,34 @@ export default function ChatWindow({
                   if (isSearching) setSearchQuery('');
                 }}
                 sx={{
-                  color: isSearching ? '#0284C7' : '#64748B',
+                  color: isSearching ? '#0284C7' : '#475569',
                   bgcolor: isSearching ? '#F0F9FF' : 'transparent',
+                  p: 0.8,
+                  borderRadius: '8px',
+                  '&:hover': { bgcolor: isSearching ? '#E0F2FE' : '#F1F5F9', color: '#0F172A' },
                 }}
               >
-                <SearchIcon fontSize="small" />
+                <SearchIcon sx={{ fontSize: 20 }} />
               </IconButton>
             </Tooltip>
 
-            {/* Star Favourite Toggle */}
-            <Tooltip title={conversation.is_favourite ? 'Remove from Favourites' : 'Star Favourite'}>
+            {/* 6. Three-dot More Options Button */}
+            <Tooltip title="More options">
               <IconButton
                 size="small"
-                onClick={onToggleFavourite}
-                sx={{ color: conversation.is_favourite ? '#F59E0B' : '#64748B' }}
-              >
-                {conversation.is_favourite ? (
-                  <StarFilledIcon fontSize="small" />
-                ) : (
-                  <StarIcon fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
-
-            {/* Mute Toggle */}
-            <Tooltip title={conversation.is_muted ? 'Unmute Chat' : 'Mute Notifications'}>
-              <IconButton size="small" onClick={onToggleMute} sx={{ color: '#64748B' }}>
-                {conversation.is_muted ? (
-                  <MuteIcon fontSize="small" sx={{ color: '#EF4444' }} />
-                ) : (
-                  <UnmuteIcon fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
-
-            {/* Group Members Button (if group) */}
-            {isGroup && (
-              <Tooltip title="Manage Participants">
-                <IconButton size="small" onClick={onOpenMembersModal} sx={{ color: '#64748B' }}>
-                  <PeopleIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-
-            {/* Side Details Panel Toggle */}
-            <Tooltip title={detailsPanelOpen ? 'Hide Details' : 'Conversation Info'}>
-              <IconButton
-                size="small"
-                onClick={() => setDetailsPanelOpen(!detailsPanelOpen)}
+                onClick={(e) => setMenuAnchor(e.currentTarget)}
                 sx={{
-                  color: detailsPanelOpen ? '#0284C7' : '#64748B',
-                  bgcolor: detailsPanelOpen ? '#F0F9FF' : 'transparent',
+                  color: '#475569',
+                  p: 0.8,
+                  borderRadius: '8px',
+                  '&:hover': { bgcolor: '#F1F5F9', color: '#0F172A' },
                 }}
               >
-                <InfoIcon fontSize="small" />
+                <MoreIcon sx={{ fontSize: 22 }} />
               </IconButton>
             </Tooltip>
 
-            {/* More Menu (3-dot) */}
-            <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} sx={{ color: '#64748B' }}>
-              <MoreIcon fontSize="small" />
-            </IconButton>
-
+            {/* Remaining Options Menu (Opens on 3-dot click) */}
             <Menu
               anchorEl={menuAnchor}
               open={Boolean(menuAnchor)}
@@ -343,7 +433,7 @@ export default function ChatWindow({
                   borderRadius: '12px',
                   boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)',
                   border: '1px solid #E2E8F0',
-                  minWidth: 190,
+                  minWidth: 200,
                   py: 0.5,
                 },
               }}
@@ -359,19 +449,6 @@ export default function ChatWindow({
                   <InfoIcon fontSize="small" sx={{ color: '#0284C7' }} />
                 </ListItemIcon>
                 <ListItemText primary={isGroup ? 'Group Information' : 'Staff Profile'} />
-              </MenuItem>
-
-              <MenuItem
-                onClick={() => {
-                  setMenuAnchor(null);
-                  setIsSearching(true);
-                }}
-                sx={{ fontSize: '13px', py: 0.8 }}
-              >
-                <ListItemIcon sx={{ minWidth: 32 }}>
-                  <SearchIcon fontSize="small" sx={{ color: '#64748B' }} />
-                </ListItemIcon>
-                <ListItemText primary="Search Messages" />
               </MenuItem>
 
               <MenuItem
@@ -653,6 +730,152 @@ export default function ChatWindow({
         onOpenMembersModal={onOpenMembersModal}
         onLeaveGroup={onLeaveGroup}
       />
+
+      {/* ------------------------------------------------------------- */}
+      {/* Interactive Video & Audio Call Modal Dialog                   */}
+      {/* ------------------------------------------------------------- */}
+      <Dialog
+        open={Boolean(activeCall)}
+        onClose={handleEndCall}
+        PaperProps={{
+          sx: {
+            borderRadius: '24px',
+            bgcolor: '#0F172A',
+            color: '#FFFFFF',
+            width: '100%',
+            maxWidth: 420,
+            p: 3,
+            textAlign: 'center',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
+            border: '1px solid rgba(255,255,255,0.1)',
+          },
+        }}
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2 }}>
+          {/* Avatar with animated halo ring */}
+          <Box
+            sx={{
+              position: 'relative',
+              mb: 3,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Box
+              sx={{
+                position: 'absolute',
+                width: 110,
+                height: 110,
+                borderRadius: '50%',
+                bgcolor: activeCall?.type === 'video' ? 'rgba(91, 95, 199, 0.25)' : 'rgba(16, 185, 129, 0.25)',
+                animation: 'callPulse 2s infinite ease-in-out',
+                '@keyframes callPulse': {
+                  '0%': { transform: 'scale(0.9)', opacity: 0.8 },
+                  '50%': { transform: 'scale(1.25)', opacity: 0.2 },
+                  '100%': { transform: 'scale(0.9)', opacity: 0.8 },
+                },
+              }}
+            />
+            <Avatar
+              src={getAvatarFullUrl(otherUser?.profile_photo)}
+              sx={{
+                width: 82,
+                height: 82,
+                bgcolor: '#5B5FC7',
+                fontSize: '28px',
+                fontWeight: 700,
+                border: '3px solid #1E293B',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+              }}
+            >
+              {conversation.title?.[0] || 'S'}
+            </Avatar>
+          </Box>
+
+          <Typography sx={{ fontSize: '19px', fontWeight: 700, color: '#FFFFFF', mb: 0.6 }}>
+            {conversation.title}
+          </Typography>
+
+          <Typography
+            sx={{
+              fontSize: '13px',
+              fontWeight: 500,
+              color: activeCall?.status === 'connected' ? '#34D399' : '#94A3B8',
+              mb: 3.5,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.8,
+            }}
+          >
+            {activeCall?.status === 'calling' ? (
+              <>
+                <CircularProgress size={12} sx={{ color: '#94A3B8' }} />
+                <span>Calling {activeCall.type === 'video' ? 'video' : 'voice'}...</span>
+              </>
+            ) : (
+              <span>Connected • {formatDuration(activeCall?.duration || 0)}</span>
+            )}
+          </Typography>
+
+          {/* Call Controls Toolbar */}
+          <Stack direction="row" spacing={2.5} justifyContent="center" alignItems="center">
+            {/* Microphone Toggle */}
+            <Tooltip title={isMicMuted ? 'Unmute Microphone' : 'Mute Microphone'}>
+              <IconButton
+                onClick={() => setIsMicMuted(!isMicMuted)}
+                sx={{
+                  bgcolor: isMicMuted ? '#EF4444' : '#1E293B',
+                  color: '#FFFFFF',
+                  width: 48,
+                  height: 48,
+                  transition: 'all 0.15s ease',
+                  '&:hover': { bgcolor: isMicMuted ? '#DC2626' : '#334155' },
+                }}
+              >
+                {isMicMuted ? <MicOffIcon sx={{ fontSize: 22 }} /> : <MicIcon sx={{ fontSize: 22 }} />}
+              </IconButton>
+            </Tooltip>
+
+            {/* Video Camera Toggle (for video calls) */}
+            {activeCall?.type === 'video' && (
+              <Tooltip title={isCamOff ? 'Turn Camera On' : 'Turn Camera Off'}>
+                <IconButton
+                  onClick={() => setIsCamOff(!isCamOff)}
+                  sx={{
+                    bgcolor: isCamOff ? '#EF4444' : '#1E293B',
+                    color: '#FFFFFF',
+                    width: 48,
+                    height: 48,
+                    transition: 'all 0.15s ease',
+                    '&:hover': { bgcolor: isCamOff ? '#DC2626' : '#334155' },
+                  }}
+                >
+                  {isCamOff ? <VideocamOffIcon sx={{ fontSize: 22 }} /> : <VideoCallIcon sx={{ fontSize: 22 }} />}
+                </IconButton>
+              </Tooltip>
+            )}
+
+            {/* End Call Button */}
+            <Tooltip title="End Call">
+              <IconButton
+                onClick={handleEndCall}
+                sx={{
+                  bgcolor: '#EF4444',
+                  color: '#FFFFFF',
+                  width: 52,
+                  height: 52,
+                  boxShadow: '0 4px 16px rgba(239, 68, 68, 0.45)',
+                  transition: 'all 0.15s ease',
+                  '&:hover': { bgcolor: '#DC2626', transform: 'scale(1.05)' },
+                }}
+              >
+                <CallEndIcon sx={{ fontSize: 24 }} />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        </Box>
+      </Dialog>
     </Box>
   );
 }

@@ -24,14 +24,9 @@ import {
   CloseRounded as CloseIcon,
   InsertDriveFileOutlined as FileIcon,
 } from '@mui/icons-material';
+import EmojiPicker from 'emoji-picker-react';
 import { useUploadChatAttachment } from '../../Api/Api';
 import { toast } from 'react-toastify';
-
-const EMOJI_PALETTE = [
-  '👍', '❤️', '😂', '😮', '😢', '🔥', '🎉', '👏',
-  '🙌', '🚀', '💯', '✨', '🤝', '✅', '🙏', '☕',
-  '💡', '💪', '🎯', '⭐', '👀', '😎', '🥳', '👋'
-];
 
 export default function ChatInput({
   onSendMessage,
@@ -113,7 +108,6 @@ export default function ChatInput({
       return;
     }
 
-    // Pass the File object directly to uploadAttachment
     uploadAttachment(file);
     e.target.value = '';
   };
@@ -325,7 +319,7 @@ export default function ChatInput({
         </Box>
       </Box>
 
-      {/* Emoji Picker Popover */}
+      {/* Emoji Picker Popover using emoji-picker-react */}
       <Popover
         open={Boolean(emojiAnchor)}
         anchorEl={emojiAnchor}
@@ -334,31 +328,23 @@ export default function ChatInput({
         transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         PaperProps={{
           sx: {
-            p: 1.5,
-            borderRadius: '12px',
-            boxShadow: '0 8px 24px rgba(15, 23, 42, 0.15)',
+            p: 0,
+            borderRadius: '16px',
+            boxShadow: '0 12px 36px rgba(15, 23, 42, 0.18)',
             border: '1px solid #E2E8F0',
-            maxWidth: 280,
+            overflow: 'hidden',
           },
         }}
       >
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 0.5 }}>
-          {EMOJI_PALETTE.map((emoji) => (
-            <IconButton
-              key={emoji}
-              onClick={() => handleAddEmoji(emoji)}
-              sx={{
-                width: 36,
-                height: 36,
-                fontSize: '18px',
-                borderRadius: '8px',
-                '&:hover': { bgcolor: '#F1F5F9', transform: 'scale(1.15)' },
-              }}
-            >
-              {emoji}
-            </IconButton>
-          ))}
-        </Box>
+        <EmojiPicker
+          onEmojiClick={(emojiData) => handleAddEmoji(emojiData.emoji)}
+          autoFocusSearch={false}
+          theme="light"
+          lazyLoadEmojis={true}
+          searchPlaceHolder="Search emoji..."
+          width={340}
+          height={400}
+        />
       </Popover>
     </Box>
   );
