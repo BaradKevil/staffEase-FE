@@ -4,7 +4,7 @@
  * ===========================================
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Box, Toolbar, useMediaQuery, useTheme } from '@mui/material';
 import Navbar from './Navbar';
@@ -14,16 +14,35 @@ import { LogoutOutlined as LogoutOutlinedIcon } from '@mui/icons-material';
 import { useLogout } from '../Api/Api';
 import { toast } from 'react-toastify';
 
-const drawerWidth = 260;
-
 const Layout = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
+
   const isChatRoute = location.pathname.includes('/chat');
+
+  // Sidebar collapsed (mini icon-only) state
+  const [isCollapsed, setIsCollapsed] = useState(isChatRoute);
+
+  // Automatically collapse sidebar into icon-only mode when navigating to Staff Chat,
+  // and expand to normal full sidebar on all other pages.
+  useEffect(() => {
+    if (isChatRoute) {
+      setIsCollapsed(true);
+    } else {
+      setIsCollapsed(false);
+    }
+  }, [location.pathname, isChatRoute]);
+
+  // Permanent toggle button in top bar toggles collapse state on ANY page
+  const handleToggleCollapse = () => {
+    setIsCollapsed((prev) => !prev);
+  };
+
+  const currentDrawerWidth = isCollapsed ? 72 : 260;
 
   const handleClearSession = () => {
     localStorage.clear();
@@ -47,6 +66,8 @@ const Layout = () => {
       {/* Top Fixed Navbar */}
       <Navbar
         toggleSidebar={() => setIsMobileOpen(!isMobileOpen)}
+        onToggleCollapse={handleToggleCollapse}
+        isCollapsed={isCollapsed}
         onLogoutClick={() => setLogoutModalOpen(true)}
       />
 
@@ -55,6 +76,8 @@ const Layout = () => {
         isMobileOpen={isMobileOpen}
         onMobileClose={() => setIsMobileOpen(false)}
         onLogoutClick={() => setLogoutModalOpen(true)}
+        isCollapsed={isCollapsed}
+        drawerWidth={currentDrawerWidth}
       />
 
       {/* Main Content Area */}
@@ -62,12 +85,16 @@ const Layout = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          width: isMdUp ? `calc(100% - ${drawerWidth}px)` : '100%',
+          width: isMdUp ? `calc(100% - ${currentDrawerWidth}px)` : '100%',
           bgcolor: '#F8FAFC',
           display: 'flex',
           flexDirection: 'column',
           height: '100vh',
           overflow: 'hidden',
+          transition: theme.transitions.create(['width', 'margin'], {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
         }}
       >
         <Toolbar sx={{ height: 64, flexShrink: 0 }} />

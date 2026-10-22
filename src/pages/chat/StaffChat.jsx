@@ -1,11 +1,13 @@
 /**
  * ===========================================
- *  Staff Chat - Enterprise Real-Time Workplace Messaging
+ *  Staff Chat - Enterprise Workplace Messaging
  * ===========================================
  *
- * Professional workplace communication suite integrated directly into staffEase:
+ * Integrated workplace communication module:
+ *  - Collapsible mini sidebar automatically in chat mode
+ *  - Permanent top toggle button in Navbar for expanding/collapsing sidebar
  *  - Left rail with Direct Messages, Groups, HR Support, Favourites & Category filters
- *  - Main chat area with brand blue bubbles, real-time read receipts, reactions, replies, attachments
+ *  - Center chat area with real-time messages, read receipts, reactions, replies, attachments
  *  - Collapsible conversation info panel with employee details and shared media/files
  *  - Real-time Socket.IO synchronization for messages, typing, and presence
  */
@@ -185,9 +187,7 @@ export default function StaffChat() {
         bgcolor: '#FFFFFF',
       }}
     >
-      {/* ------------------------------------------------------------- */}
       {/* Left Chat Rail (Visible on Desktop, or when no active on mobile) */}
-      {/* ------------------------------------------------------------- */}
       {(isMdUp || !activeConversationId) && (
         <ChatSidebar
           conversations={conversations}
@@ -199,9 +199,7 @@ export default function StaffChat() {
         />
       )}
 
-      {/* ------------------------------------------------------------- */}
       {/* Main Conversation Area (Visible on Desktop, or when active on mobile) */}
-      {/* ------------------------------------------------------------- */}
       {(isMdUp || activeConversationId) && (
         <ChatWindow
           conversation={activeConversation}

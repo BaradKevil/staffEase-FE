@@ -15,6 +15,8 @@ import {
   Typography,
   Divider,
   Chip,
+  Badge,
+  Tooltip,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -50,9 +52,13 @@ const iconMap = {
   AccessTime: <AccessTimeOutlinedIcon sx={{ fontSize: 20 }} />,
 };
 
-const drawerWidth = 260;
-
-const Sidebar = ({ isMobileOpen, onMobileClose, onLogoutClick }) => {
+const Sidebar = ({
+  isMobileOpen,
+  onMobileClose,
+  onLogoutClick,
+  isCollapsed = false,
+  drawerWidth = 260,
+}) => {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -68,133 +74,176 @@ const Sidebar = ({ isMobileOpen, onMobileClose, onLogoutClick }) => {
   }, [conversations]);
 
   const content = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflowX: 'hidden' }}>
       {/* Spacer for 64px fixed Navbar */}
       <Box sx={{ height: 64, flexShrink: 0 }} />
 
-      <Box sx={{ px: 2.5, py: 2 }}>
-        <Typography
-          sx={{
-            fontSize: '11px',
-            fontWeight: 700,
-            color: '#94A3B8',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-          }}
-        >
-          {role === 'admin' ? 'Administration' : 'Self Service'}
-        </Typography>
-      </Box>
+      {/* Section Header */}
+      {!isCollapsed ? (
+        <Box sx={{ px: 2.5, py: 2 }}>
+          <Typography
+            sx={{
+              fontSize: '11px',
+              fontWeight: 700,
+              color: '#94A3B8',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {role === 'admin' ? 'Administration' : 'Self Service'}
+          </Typography>
+        </Box>
+      ) : (
+        <Box sx={{ py: 1 }} />
+      )}
 
       {/* Navigation List */}
-      <List sx={{ px: 1.5, py: 0, flexGrow: 1 }}>
+      <List sx={{ px: isCollapsed ? 1 : 1.5, py: 0, flexGrow: 1 }}>
         {menuItems.map((item) => {
           const isActive = location.pathname.startsWith(item.path);
           const isChatItem = item.id === 'admin-chat' || item.id === 'employee-chat';
 
           return (
-            <ListItemButton
+            <Tooltip
+              title={isCollapsed ? item.title : ''}
+              placement="right"
+              arrow
               key={item.id}
-              onClick={() => {
-                navigate(item.path);
-                if (!isMdUp && onMobileClose) onMobileClose();
-              }}
-              sx={{
-                borderRadius: '10px',
-                mb: 0.6,
-                py: 1.2,
-                px: 1.5,
-                bgcolor: isActive ? '#F0F9FF' : 'transparent',
-                color: isActive ? '#23A4E8' : '#475569',
-                borderLeft: isActive ? '3px solid #23A4E8' : '3px solid transparent',
-                '&:hover': {
-                  bgcolor: isActive ? '#F0F9FF' : '#F8FAFC',
-                  color: isActive ? '#23A4E8' : '#0F172A',
-                },
-              }}
             >
-              <ListItemIcon
+              <ListItemButton
+                onClick={() => {
+                  navigate(item.path);
+                  if (!isMdUp && onMobileClose) onMobileClose();
+                }}
                 sx={{
-                  minWidth: 34,
-                  color: isActive ? '#23A4E8' : '#64748B',
+                  borderRadius: '10px',
+                  mb: 0.6,
+                  py: 1.2,
+                  px: isCollapsed ? 1 : 1.5,
+                  justifyContent: isCollapsed ? 'center' : 'flex-start',
+                  bgcolor: isActive ? '#F0F9FF' : 'transparent',
+                  color: isActive ? '#23A4E8' : '#475569',
+                  borderLeft: !isCollapsed && isActive ? '3px solid #23A4E8' : '3px solid transparent',
+                  transition: 'all 0.15s ease',
+                  '&:hover': {
+                    bgcolor: isActive ? '#F0F9FF' : '#F8FAFC',
+                    color: isActive ? '#23A4E8' : '#0F172A',
+                  },
                 }}
               >
-                {iconMap[item.iconName] || <DashboardOutlinedIcon sx={{ fontSize: 20 }} />}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.title}
-                primaryTypographyProps={{
-                  fontSize: '13.5px',
-                  fontWeight: isActive ? 700 : 500,
-                }}
-              />
-
-              {/* Registration Pending Badge */}
-              {item.id === 'admin-approvals' && pendingCount > 0 && (
-                <Chip
-                  label={pendingCount}
-                  size="small"
+                <ListItemIcon
                   sx={{
-                    ml: 1,
-                    height: 20,
-                    minWidth: 20,
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    bgcolor: '#EF4444',
-                    color: '#FFFFFF',
-                    boxShadow: '0 2px 4px rgba(239, 68, 68, 0.35)',
-                    '& .MuiChip-label': { px: 0.8 },
+                    minWidth: isCollapsed ? 0 : 34,
+                    justifyContent: 'center',
+                    color: isActive ? '#23A4E8' : '#64748B',
+                    position: 'relative',
                   }}
-                />
-              )}
+                >
+                  <Badge
+                    color="error"
+                    variant="dot"
+                    invisible={
+                      !(
+                        isCollapsed &&
+                        ((item.id === 'admin-approvals' && pendingCount > 0) ||
+                          (isChatItem && unreadChatCount > 0))
+                      )
+                    }
+                    sx={{
+                      '& .MuiBadge-badge': {
+                        bgcolor: isChatItem ? '#0284C7' : '#EF4444',
+                      },
+                    }}
+                  >
+                    {iconMap[item.iconName] || <DashboardOutlinedIcon sx={{ fontSize: 20 }} />}
+                  </Badge>
+                </ListItemIcon>
 
-              {/* Unread Chat Badge */}
-              {isChatItem && unreadChatCount > 0 && (
-                <Chip
-                  label={unreadChatCount}
-                  size="small"
-                  sx={{
-                    ml: 1,
-                    height: 20,
-                    minWidth: 20,
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    bgcolor: '#5B5FC7',
-                    color: '#FFFFFF',
-                    boxShadow: '0 2px 4px rgba(91, 95, 199, 0.35)',
-                    '& .MuiChip-label': { px: 0.8 },
-                  }}
-                />
-              )}
-            </ListItemButton>
+                {!isCollapsed && (
+                  <ListItemText
+                    primary={item.title}
+                    primaryTypographyProps={{
+                      fontSize: '13.5px',
+                      fontWeight: isActive ? 700 : 500,
+                      noWrap: true,
+                    }}
+                  />
+                )}
+
+                {/* Expanded Badges */}
+                {!isCollapsed && item.id === 'admin-approvals' && pendingCount > 0 && (
+                  <Chip
+                    label={pendingCount}
+                    size="small"
+                    sx={{
+                      ml: 1,
+                      height: 20,
+                      minWidth: 20,
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      bgcolor: '#EF4444',
+                      color: '#FFFFFF',
+                      boxShadow: '0 2px 4px rgba(239, 68, 68, 0.35)',
+                      '& .MuiChip-label': { px: 0.8 },
+                    }}
+                  />
+                )}
+
+                {!isCollapsed && isChatItem && unreadChatCount > 0 && (
+                  <Chip
+                    label={unreadChatCount}
+                    size="small"
+                    sx={{
+                      ml: 1,
+                      height: 20,
+                      minWidth: 20,
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      bgcolor: '#0284C7',
+                      color: '#FFFFFF',
+                      boxShadow: '0 2px 4px rgba(2, 132, 199, 0.35)',
+                      '& .MuiChip-label': { px: 0.8 },
+                    }}
+                  />
+                )}
+              </ListItemButton>
+            </Tooltip>
           );
         })}
       </List>
 
-      <Divider sx={{ mx: 2, borderColor: '#F1F5F9' }} />
+      <Divider sx={{ mx: isCollapsed ? 1 : 2, borderColor: '#F1F5F9' }} />
 
       {/* Bottom Sign Out */}
-      <Box sx={{ p: 2 }}>
-        <ListItemButton
-          onClick={onLogoutClick}
-          sx={{
-            borderRadius: '10px',
-            py: 1,
-            color: '#64748B',
-            '&:hover': { bgcolor: '#FEF2F2', color: '#EF4444' },
-          }}
-        >
-          <ListItemIcon sx={{ minWidth: 34, color: 'inherit' }}>
-            <LogoutOutlinedIcon sx={{ fontSize: 20 }} />
-          </ListItemIcon>
-          <ListItemText
-            primary="Sign Out"
-            primaryTypographyProps={{
-              fontSize: '13.5px',
-              fontWeight: 600,
+      <Box sx={{ p: isCollapsed ? 1 : 2 }}>
+        <Tooltip title={isCollapsed ? 'Sign Out' : ''} placement="right" arrow>
+          <ListItemButton
+            onClick={onLogoutClick}
+            sx={{
+              borderRadius: '10px',
+              py: 1,
+              px: isCollapsed ? 1 : 1.5,
+              justifyContent: isCollapsed ? 'center' : 'flex-start',
+              color: '#64748B',
+              '&:hover': { bgcolor: '#FEF2F2', color: '#EF4444' },
             }}
-          />
-        </ListItemButton>
+          >
+            <ListItemIcon sx={{ minWidth: isCollapsed ? 0 : 34, justifyContent: 'center', color: 'inherit' }}>
+              <LogoutOutlinedIcon sx={{ fontSize: 20 }} />
+            </ListItemIcon>
+            {!isCollapsed && (
+              <ListItemText
+                primary="Sign Out"
+                primaryTypographyProps={{
+                  fontSize: '13.5px',
+                  fontWeight: 600,
+                  noWrap: true,
+                }}
+              />
+            )}
+          </ListItemButton>
+        </Tooltip>
       </Box>
     </Box>
   );
@@ -208,11 +257,20 @@ const Sidebar = ({ isMobileOpen, onMobileClose, onLogoutClick }) => {
           display: { xs: 'none', md: 'block' },
           width: drawerWidth,
           flexShrink: 0,
+          transition: theme.transitions.create('width', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
             borderRight: '1px solid #E2E8F0',
             bgcolor: '#FFFFFF',
+            overflowX: 'hidden',
+            transition: theme.transitions.create('width', {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.enteringScreen,
+            }),
           },
         }}
         open
@@ -229,7 +287,7 @@ const Sidebar = ({ isMobileOpen, onMobileClose, onLogoutClick }) => {
         sx={{
           display: { xs: 'block', md: 'none' },
           '& .MuiDrawer-paper': {
-            width: drawerWidth,
+            width: 260,
             boxSizing: 'border-box',
             borderRight: '1px solid #E2E8F0',
             bgcolor: '#FFFFFF',

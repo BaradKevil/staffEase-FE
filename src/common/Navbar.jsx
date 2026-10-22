@@ -32,6 +32,7 @@ import {
 } from '@mui/material';
 import {
   Menu as MenuIcon,
+  MenuOpen as MenuOpenIcon,
   NotificationsNoneOutlined as NotificationsNoneOutlinedIcon,
   LogoutOutlined as LogoutOutlinedIcon,
   PersonOutlineOutlined as PersonOutlineOutlinedIcon,
@@ -53,7 +54,7 @@ import {
 } from '../Api/Api';
 import SelfieCaptureModal from '../components/timeTracking/SelfieCaptureModal';
 
-const Navbar = ({ toggleSidebar, onLogoutClick }) => {
+const Navbar = ({ toggleSidebar, onToggleCollapse, isCollapsed = false, onLogoutClick }) => {
   const navigate = useNavigate();
   const role = localStorage.getItem('role') || 'employee';
 
@@ -172,6 +173,30 @@ const Navbar = ({ toggleSidebar, onLogoutClick }) => {
           >
             <MenuIcon />
           </IconButton>
+
+          {/* Desktop Permanent Collapse/Expand Toggle Button (All Pages) */}
+          <Tooltip title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} placement="bottom">
+            <IconButton
+              onClick={onToggleCollapse}
+              sx={{
+                display: { xs: 'none', md: 'flex' },
+                color: '#475569',
+                bgcolor: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                width: 36,
+                height: 36,
+                borderRadius: '8px',
+                transition: 'all 0.15s ease',
+                '&:hover': {
+                  bgcolor: '#F1F5F9',
+                  color: '#0284C7',
+                  borderColor: '#CBD5E1',
+                },
+              }}
+            >
+              {isCollapsed ? <MenuIcon sx={{ fontSize: 20 }} /> : <MenuOpenIcon sx={{ fontSize: 20 }} />}
+            </IconButton>
+          </Tooltip>
 
           <Box
             onClick={() => navigate(role === 'admin' ? '/admin/dashboard' : '/employee/dashboard')}
