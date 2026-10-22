@@ -5,7 +5,6 @@ import {
   Typography,
   TextField,
   Button,
-  InputAdornment,
   IconButton,
   CircularProgress,
   Alert
@@ -15,7 +14,6 @@ import {
   VisibilityOff,
   LockOutlined as LockIcon,
   CheckCircleRounded as SuccessIcon,
-  Security as SecurityIcon,
   ArrowBackRounded as BackIcon
 } from '@mui/icons-material';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
@@ -30,6 +28,7 @@ export default function ResetPassword() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [success, setSuccess] = useState(false);
 
@@ -67,39 +66,37 @@ export default function ResetPassword() {
     return (
       <Box
         sx={{
-          minHeight: '100vh',
+          minHeight: '100dvh',
           width: '100%',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           bgcolor: '#F8FAFC',
-          py: { xs: 3, sm: 4 },
-          px: { xs: 2, sm: 3 },
+          p: { xs: 1.5, sm: 2 },
           boxSizing: 'border-box',
         }}
       >
         <Card
           sx={{
-            my: 'auto',
             maxWidth: 440,
             width: '100%',
-            p: 4,
+            p: 3,
             textAlign: 'center',
             borderRadius: '16px',
-            borderTop: '5px solid #23A4E8',
+            borderTop: '4px solid #23A4E8',
             boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
             bgcolor: '#FFFFFF',
           }}
         >
-          <Alert severity="error" sx={{ mb: 3, borderRadius: '10px' }}>
+          <Alert severity="error" sx={{ mb: 2.5, borderRadius: '8px' }}>
             Invalid or missing password reset token in the URL.
           </Alert>
           <Button
             component={Link}
             to="/login"
             variant="contained"
-            sx={{ bgcolor: '#23A4E8', borderRadius: '10px', textTransform: 'none', fontWeight: 600 }}
+            sx={{ bgcolor: '#23A4E8', borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
           >
             Go to Login
           </Button>
@@ -111,7 +108,7 @@ export default function ResetPassword() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         width: '100%',
         boxSizing: 'border-box',
         display: 'flex',
@@ -119,8 +116,7 @@ export default function ResetPassword() {
         alignItems: 'center',
         justifyContent: 'center',
         bgcolor: '#F8FAFC',
-        py: { xs: 3, sm: 4 },
-        px: { xs: 2, sm: 3 },
+        p: { xs: 1.5, sm: 2 },
       }}
     >
       <Card
@@ -128,52 +124,55 @@ export default function ResetPassword() {
           borderRadius: '16px',
           maxWidth: 440,
           width: '100%',
+          maxHeight: 'calc(100dvh - 24px)',
+          overflowY: 'auto',
           boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
-          overflow: 'hidden',
-          borderTop: '5px solid #23A4E8',
+          borderTop: '4px solid #23A4E8',
           bgcolor: '#FFFFFF',
-          my: 'auto',
+          scrollbarWidth: 'thin',
+          '&::-webkit-scrollbar': { width: '4px' },
+          '&::-webkit-scrollbar-thumb': { bgcolor: '#CBD5E1', borderRadius: '4px' }
         }}
       >
-        <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
+        <Box sx={{ p: { xs: 2.25, sm: 3 } }}>
           <Box
             sx={{
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              mb: { xs: 2.5, sm: 3 }
+              mb: 2
             }}
           >
             <Box
               sx={{
-                width: 52,
-                height: 52,
-                borderRadius: '14px',
+                width: 46,
+                height: 46,
+                borderRadius: '12px',
                 bgcolor: '#EFF6FF',
                 color: '#23A4E8',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                mb: 1.5,
+                mb: 1.2,
                 border: '1px solid #DBEAFE',
-                boxShadow: '0 2px 8px rgba(35, 164, 232, 0.12)'
+                boxShadow: '0 2px 6px rgba(35, 164, 232, 0.1)'
               }}
             >
-              <LockIcon sx={{ fontSize: 28 }} />
+              <LockIcon sx={{ fontSize: 24 }} />
             </Box>
             <Typography
               sx={{
-                fontSize: { xs: '20px', sm: '22px' },
+                fontSize: { xs: '19px', sm: '21px' },
                 fontWeight: 700,
                 color: '#1E293B',
-                mb: 0.5,
+                mb: 0.3,
                 textAlign: 'center',
                 letterSpacing: '-0.01em'
               }}
             >
               Set New Password
             </Typography>
-            <Typography sx={{ fontSize: '13.5px', color: '#64748B', textAlign: 'center' }}>
+            <Typography sx={{ fontSize: '13px', color: '#64748B', textAlign: 'center' }}>
               Choose a secure password for your staffEase account
             </Typography>
           </Box>
@@ -182,23 +181,23 @@ export default function ResetPassword() {
             <Box sx={{ textAlign: 'center' }}>
               <Box
                 sx={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: '14px',
+                  width: 52,
+                  height: 52,
+                  borderRadius: '12px',
                   bgcolor: '#ECFDF5',
                   color: '#10B981',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  margin: '0 auto 16px'
+                  margin: '0 auto 14px'
                 }}
               >
-                <SuccessIcon sx={{ fontSize: 32 }} />
+                <SuccessIcon sx={{ fontSize: 30 }} />
               </Box>
-              <Typography sx={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', mb: 1 }}>
+              <Typography sx={{ fontSize: '17px', fontWeight: 700, color: '#0F172A', mb: 0.75 }}>
                 Password Updated!
               </Typography>
-              <Typography sx={{ fontSize: '13.5px', color: '#64748B', mb: 3 }}>
+              <Typography sx={{ fontSize: '13px', color: '#64748B', mb: 2.5 }}>
                 Your password has been successfully reset. You can now sign in with your new credentials.
               </Typography>
               <Button
@@ -208,11 +207,11 @@ export default function ResetPassword() {
                 fullWidth
                 sx={{
                   bgcolor: '#23A4E8',
-                  borderRadius: '10px',
-                  py: 1.25,
+                  borderRadius: '8px',
+                  py: 1.15,
                   fontWeight: 600,
                   textTransform: 'none',
-                  fontSize: '15px'
+                  fontSize: '14.5px'
                 }}
               >
                 Sign In Now
@@ -221,106 +220,117 @@ export default function ResetPassword() {
           ) : (
             <Box component="form" onSubmit={handleSubmit}>
               {errorMessage && (
-                <Alert severity="error" sx={{ mb: 2.5, borderRadius: '10px', fontSize: '13px' }}>
+                <Alert severity="error" sx={{ mb: 2, py: 0.5, borderRadius: '8px', fontSize: '12.5px' }}>
                   {errorMessage}
                 </Alert>
               )}
 
-              {/* New Password Field - Label ABOVE Input */}
-              <Box sx={{ mb: 2 }}>
-                <Typography sx={{ fontSize: '13.5px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
+              {/* New Password Field with Eye Toggle */}
+              <Box sx={{ mb: 1.8 }}>
+                <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#475569', mb: 0.5 }}>
                   New Password <span style={{ color: '#EF4444' }}>*</span>
                 </Typography>
-                <TextField
-                  fullWidth
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Minimum 8 characters"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LockIcon sx={{ color: '#94A3B8', fontSize: '20px' }} />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowPassword(!showPassword)}
-                          edge="end"
-                          size="small"
-                          sx={{ color: '#94A3B8', '&:hover': { color: '#23A4E8' } }}
-                        >
-                          {showPassword ? <VisibilityOff sx={{ fontSize: '20px' }} /> : <Visibility sx={{ fontSize: '20px' }} />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      height: 48,
-                      borderRadius: '10px',
-                      bgcolor: '#F8FAFC',
-                      paddingRight: '12px',
-                      '& fieldset': { borderColor: '#E2E8F0', transition: 'border-color 0.2s' },
-                      '&:hover fieldset': { borderColor: '#23A4E8' },
-                      '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
-                    },
-                    '& .MuiOutlinedInput-input': {
-                      padding: '12px 14px',
-                      fontSize: '14px',
-                      color: '#0F172A',
-                      '&::placeholder': {
-                        color: '#94A3B8',
-                        opacity: 1
+                <Box sx={{ position: 'relative' }}>
+                  <TextField
+                    fullWidth
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Minimum 8 characters"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        height: 44,
+                        borderRadius: '8px',
+                        bgcolor: '#F8FAFC',
+                        paddingRight: '44px',
+                        '& fieldset': { borderColor: '#E2E8F0', transition: 'border-color 0.2s' },
+                        '&:hover fieldset': { borderColor: '#23A4E8' },
+                        '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
+                      },
+                      '& .MuiOutlinedInput-input': {
+                        padding: '11px 14px',
+                        fontSize: '14px',
+                        color: '#0F172A',
+                        '&::placeholder': {
+                          color: '#94A3B8',
+                          opacity: 1
+                        }
                       }
-                    }
-                  }}
-                />
+                    }}
+                  />
+                  <IconButton
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    tabIndex={-1}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    sx={{
+                      position: 'absolute',
+                      right: 6,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#94A3B8',
+                      p: '6px',
+                      '&:hover': { color: '#23A4E8' }
+                    }}
+                  >
+                    {showPassword ? <VisibilityOff sx={{ fontSize: '20px' }} /> : <Visibility sx={{ fontSize: '20px' }} />}
+                  </IconButton>
+                </Box>
               </Box>
 
-              {/* Confirm Password Field - Label ABOVE Input */}
-              <Box sx={{ mb: 2.5 }}>
-                <Typography sx={{ fontSize: '13.5px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
+              {/* Confirm Password Field with Eye Toggle */}
+              <Box sx={{ mb: 2 }}>
+                <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#475569', mb: 0.5 }}>
                   Confirm New Password <span style={{ color: '#EF4444' }}>*</span>
                 </Typography>
-                <TextField
-                  fullWidth
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Re-enter your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LockIcon sx={{ color: '#94A3B8', fontSize: '20px' }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      height: 48,
-                      borderRadius: '10px',
-                      bgcolor: '#F8FAFC',
-                      '& fieldset': { borderColor: '#E2E8F0', transition: 'border-color 0.2s' },
-                      '&:hover fieldset': { borderColor: '#23A4E8' },
-                      '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
-                    },
-                    '& .MuiOutlinedInput-input': {
-                      padding: '12px 14px',
-                      fontSize: '14px',
-                      color: '#0F172A',
-                      '&::placeholder': {
-                        color: '#94A3B8',
-                        opacity: 1
+                <Box sx={{ position: 'relative' }}>
+                  <TextField
+                    fullWidth
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Re-enter your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        height: 44,
+                        borderRadius: '8px',
+                        bgcolor: '#F8FAFC',
+                        paddingRight: '44px',
+                        '& fieldset': { borderColor: '#E2E8F0', transition: 'border-color 0.2s' },
+                        '&:hover fieldset': { borderColor: '#23A4E8' },
+                        '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
+                      },
+                      '& .MuiOutlinedInput-input': {
+                        padding: '11px 14px',
+                        fontSize: '14px',
+                        color: '#0F172A',
+                        '&::placeholder': {
+                          color: '#94A3B8',
+                          opacity: 1
+                        }
                       }
-                    }
-                  }}
-                />
+                    }}
+                  />
+                  <IconButton
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    tabIndex={-1}
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    sx={{
+                      position: 'absolute',
+                      right: 6,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#94A3B8',
+                      p: '6px',
+                      '&:hover': { color: '#23A4E8' }
+                    }}
+                  >
+                    {showConfirmPassword ? <VisibilityOff sx={{ fontSize: '20px' }} /> : <Visibility sx={{ fontSize: '20px' }} />}
+                  </IconButton>
+                </Box>
               </Box>
 
               <Button
@@ -331,17 +341,17 @@ export default function ResetPassword() {
                 sx={{
                   bgcolor: '#23A4E8',
                   fontWeight: 600,
-                  borderRadius: '10px',
-                  py: 1.3,
+                  borderRadius: '8px',
+                  py: 1.15,
                   color: 'white',
                   textTransform: 'none',
-                  fontSize: '15px',
+                  fontSize: '14.5px',
                   boxShadow: '0 4px 12px rgba(35, 164, 232, 0.25)',
                   '&:hover': { bgcolor: '#1E92D1', boxShadow: '0 6px 16px rgba(35, 164, 232, 0.35)' },
-                  mb: 2
+                  mb: 1.8
                 }}
               >
-                {resetMutation.isPending ? <CircularProgress size={22} color="inherit" /> : 'Update Password'}
+                {resetMutation.isPending ? <CircularProgress size={20} color="inherit" /> : 'Update Password'}
               </Button>
 
               <Box sx={{ textAlign: 'center' }}>
@@ -349,7 +359,7 @@ export default function ResetPassword() {
                   component={Link}
                   to="/login"
                   sx={{
-                    fontSize: '13px',
+                    fontSize: '12.5px',
                     color: '#64748B',
                     fontWeight: 600,
                     textDecoration: 'none',

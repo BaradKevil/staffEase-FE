@@ -16,7 +16,9 @@ import {
   DeleteOutlineRounded as DeleteIcon,
   LockOutlined as LockIcon,
   CalendarTodayOutlined as CalendarIcon,
-  EmailOutlined as EmailIcon
+  EmailOutlined as EmailIcon,
+  Visibility,
+  VisibilityOff
 } from '@mui/icons-material';
 import {
   useMyProfile,
@@ -62,6 +64,9 @@ export default function MyProfile() {
     new_password: '',
     confirm_password: ''
   });
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [pwdError, setPwdError] = useState('');
 
   const handleFileChange = async (e) => {
@@ -146,6 +151,9 @@ export default function MyProfile() {
       });
       toast.success('Password updated successfully');
       setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
     } catch (err) {
       const msg = err?.response?.data?.message || 'Failed to change password';
       setPwdError(msg);
@@ -156,8 +164,9 @@ export default function MyProfile() {
   const inputStyle = {
     '& .MuiOutlinedInput-root': {
       height: 44,
-      borderRadius: '10px',
+      borderRadius: '8px',
       bgcolor: '#F8FAFC',
+      paddingRight: '44px',
       '& fieldset': { borderColor: '#E2E8F0', transition: 'border-color 0.2s' },
       '&:hover fieldset': { borderColor: '#23A4E8' },
       '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
@@ -165,6 +174,7 @@ export default function MyProfile() {
     '& .MuiOutlinedInput-input': {
       fontSize: '13.5px',
       color: '#0F172A',
+      padding: '11px 14px',
       '&::placeholder': { color: '#94A3B8', opacity: 1 }
     }
   };
@@ -345,52 +355,106 @@ export default function MyProfile() {
 
           <Box component="form" onSubmit={handlePasswordSubmit}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.2, maxWidth: 440 }}>
-              {/* Current Password */}
+              {/* Current Password with Eye Toggle */}
               <Box>
                 <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
                   Current Password <span style={{ color: '#EF4444' }}>*</span>
                 </Typography>
-                <TextField
-                  type="password"
-                  fullWidth
-                  required
-                  placeholder="Enter your current password"
-                  value={passwordData.current_password}
-                  onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
-                  sx={inputStyle}
-                />
+                <Box sx={{ position: 'relative' }}>
+                  <TextField
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    fullWidth
+                    required
+                    placeholder="Enter your current password"
+                    value={passwordData.current_password}
+                    onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
+                    sx={inputStyle}
+                  />
+                  <IconButton
+                    onClick={() => setShowCurrentPassword((prev) => !prev)}
+                    tabIndex={-1}
+                    aria-label={showCurrentPassword ? 'Hide current password' : 'Show current password'}
+                    sx={{
+                      position: 'absolute',
+                      right: 6,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#94A3B8',
+                      p: '6px',
+                      '&:hover': { color: '#23A4E8' }
+                    }}
+                  >
+                    {showCurrentPassword ? <VisibilityOff sx={{ fontSize: '20px' }} /> : <Visibility sx={{ fontSize: '20px' }} />}
+                  </IconButton>
+                </Box>
               </Box>
 
-              {/* New Password */}
+              {/* New Password with Eye Toggle */}
               <Box>
                 <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
                   New Password <span style={{ color: '#EF4444' }}>*</span>
                 </Typography>
-                <TextField
-                  type="password"
-                  fullWidth
-                  required
-                  placeholder="Minimum 8 characters"
-                  value={passwordData.new_password}
-                  onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
-                  sx={inputStyle}
-                />
+                <Box sx={{ position: 'relative' }}>
+                  <TextField
+                    type={showNewPassword ? 'text' : 'password'}
+                    fullWidth
+                    required
+                    placeholder="Minimum 8 characters"
+                    value={passwordData.new_password}
+                    onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
+                    sx={inputStyle}
+                  />
+                  <IconButton
+                    onClick={() => setShowNewPassword((prev) => !prev)}
+                    tabIndex={-1}
+                    aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
+                    sx={{
+                      position: 'absolute',
+                      right: 6,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#94A3B8',
+                      p: '6px',
+                      '&:hover': { color: '#23A4E8' }
+                    }}
+                  >
+                    {showNewPassword ? <VisibilityOff sx={{ fontSize: '20px' }} /> : <Visibility sx={{ fontSize: '20px' }} />}
+                  </IconButton>
+                </Box>
               </Box>
 
-              {/* Confirm New Password */}
+              {/* Confirm New Password with Eye Toggle */}
               <Box>
                 <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
                   Confirm New Password <span style={{ color: '#EF4444' }}>*</span>
                 </Typography>
-                <TextField
-                  type="password"
-                  fullWidth
-                  required
-                  placeholder="Re-enter your new password"
-                  value={passwordData.confirm_password}
-                  onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
-                  sx={inputStyle}
-                />
+                <Box sx={{ position: 'relative' }}>
+                  <TextField
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    fullWidth
+                    required
+                    placeholder="Re-enter your new password"
+                    value={passwordData.confirm_password}
+                    onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
+                    sx={inputStyle}
+                  />
+                  <IconButton
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    tabIndex={-1}
+                    aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                    sx={{
+                      position: 'absolute',
+                      right: 6,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#94A3B8',
+                      p: '6px',
+                      '&:hover': { color: '#23A4E8' }
+                    }}
+                  >
+                    {showConfirmPassword ? <VisibilityOff sx={{ fontSize: '20px' }} /> : <Visibility sx={{ fontSize: '20px' }} />}
+                  </IconButton>
+                </Box>
               </Box>
 
               <Button

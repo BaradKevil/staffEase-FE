@@ -5,7 +5,6 @@ import {
   Typography,
   TextField,
   Button,
-  InputAdornment,
   IconButton,
   CircularProgress,
   Alert
@@ -13,10 +12,7 @@ import {
 import {
   Visibility,
   VisibilityOff,
-  EmailOutlined as EmailIcon,
-  LockOutlined as LockIcon,
-  CorporateFare as LogoIcon,
-  Security as SecurityIcon
+  CorporateFare as LogoIcon
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLogin } from '../../Api/Api';
@@ -81,7 +77,7 @@ export default function Login() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         width: '100%',
         boxSizing: 'border-box',
         display: 'flex',
@@ -89,8 +85,7 @@ export default function Login() {
         alignItems: 'center',
         justifyContent: 'center',
         bgcolor: '#F8FAFC',
-        py: { xs: 3, sm: 4 },
-        px: { xs: 2, sm: 3 },
+        p: { xs: 1.5, sm: 2 },
       }}
     >
       <Card
@@ -98,68 +93,71 @@ export default function Login() {
           borderRadius: '16px',
           maxWidth: 440,
           width: '100%',
+          maxHeight: 'calc(100dvh - 24px)',
+          overflowY: 'auto',
           boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
-          overflow: 'hidden',
-          borderTop: '5px solid #23A4E8',
+          borderTop: '4px solid #23A4E8',
           bgcolor: '#FFFFFF',
-          my: 'auto',
+          scrollbarWidth: 'thin',
+          '&::-webkit-scrollbar': { width: '4px' },
+          '&::-webkit-scrollbar-thumb': { bgcolor: '#CBD5E1', borderRadius: '4px' }
         }}
       >
-        <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
+        <Box sx={{ p: { xs: 2.25, sm: 3 } }}>
           {/* Brand Logo & Header */}
           <Box
             sx={{
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              mb: { xs: 2.5, sm: 3 }
+              mb: 2
             }}
           >
             <Box
               sx={{
-                width: 52,
-                height: 52,
-                borderRadius: '14px',
+                width: 46,
+                height: 46,
+                borderRadius: '12px',
                 bgcolor: '#EFF6FF',
                 color: '#23A4E8',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                mb: 1.5,
+                mb: 1.2,
                 border: '1px solid #DBEAFE',
-                boxShadow: '0 2px 8px rgba(35, 164, 232, 0.12)'
+                boxShadow: '0 2px 6px rgba(35, 164, 232, 0.1)'
               }}
             >
-              <LogoIcon sx={{ fontSize: 30 }} />
+              <LogoIcon sx={{ fontSize: 26 }} />
             </Box>
             <Typography
               sx={{
-                fontSize: { xs: '20px', sm: '22px' },
+                fontSize: { xs: '19px', sm: '21px' },
                 fontWeight: 700,
                 color: '#1E293B',
-                mb: 0.5,
+                mb: 0.3,
                 textAlign: 'center',
                 letterSpacing: '-0.01em'
               }}
             >
               Sign in to your account
             </Typography>
-            <Typography sx={{ fontSize: '13.5px', color: '#64748B', textAlign: 'center' }}>
+            <Typography sx={{ fontSize: '13px', color: '#64748B', textAlign: 'center' }}>
               Employee & Leave Management Portal
             </Typography>
           </Box>
 
           {errorMessage && (
-            <Alert severity="error" sx={{ mb: 2.5, borderRadius: '10px', fontSize: '13px' }}>
+            <Alert severity="error" sx={{ mb: 2, py: 0.5, borderRadius: '8px', fontSize: '12.5px' }}>
               {errorMessage}
             </Alert>
           )}
 
           <Box component="form" onSubmit={handleSubmit}>
-            {/* Email Address Field - Label ABOVE Input */}
-            <Box sx={{ mb: { xs: 1.8, sm: 2.2 } }}>
-              <Typography sx={{ fontSize: '13.5px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
-                Email Address <span style={{ color: '#EF4444' }}>*</span>
+            {/* Email Address Field */}
+            <Box sx={{ mb: 1.8 }}>
+              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#475569', mb: 0.5 }}>
+                Work Email <span style={{ color: '#EF4444' }}>*</span>
               </Typography>
               <TextField
                 fullWidth
@@ -170,24 +168,17 @@ export default function Login() {
                 placeholder="name@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailIcon sx={{ color: '#94A3B8', fontSize: '20px' }} />
-                    </InputAdornment>
-                  ),
-                }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    height: 48,
-                    borderRadius: '10px',
+                    height: 44,
+                    borderRadius: '8px',
                     bgcolor: '#F8FAFC',
                     '& fieldset': { borderColor: '#E2E8F0', transition: 'border-color 0.2s' },
                     '&:hover fieldset': { borderColor: '#23A4E8' },
                     '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
                   },
                   '& .MuiOutlinedInput-input': {
-                    padding: '12px 14px',
+                    padding: '11px 14px',
                     fontSize: '14px',
                     color: '#0F172A',
                     '&::placeholder': {
@@ -199,69 +190,68 @@ export default function Login() {
               />
             </Box>
 
-            {/* Password Field - Label ABOVE Input */}
+            {/* Password Field with View Eye Button */}
             <Box sx={{ mb: 1.2 }}>
-              <Typography sx={{ fontSize: '13.5px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
+              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#475569', mb: 0.5 }}>
                 Password <span style={{ color: '#EF4444' }}>*</span>
               </Typography>
-              <TextField
-                fullWidth
-                id="password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockIcon sx={{ color: '#94A3B8', fontSize: '20px' }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                        size="small"
-                        sx={{ color: '#94A3B8', '&:hover': { color: '#23A4E8' } }}
-                      >
-                        {showPassword ? <VisibilityOff sx={{ fontSize: '20px' }} /> : <Visibility sx={{ fontSize: '20px' }} />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    height: 48,
-                    borderRadius: '10px',
-                    bgcolor: '#F8FAFC',
-                    paddingRight: '12px',
-                    '& fieldset': { borderColor: '#E2E8F0', transition: 'border-color 0.2s' },
-                    '&:hover fieldset': { borderColor: '#23A4E8' },
-                    '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
-                  },
-                  '& .MuiOutlinedInput-input': {
-                    padding: '12px 14px',
-                    fontSize: '14px',
-                    color: '#0F172A',
-                    '&::placeholder': {
-                      color: '#94A3B8',
-                      opacity: 1
+              <Box sx={{ position: 'relative' }}>
+                <TextField
+                  fullWidth
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      height: 44,
+                      borderRadius: '8px',
+                      bgcolor: '#F8FAFC',
+                      paddingRight: '44px',
+                      '& fieldset': { borderColor: '#E2E8F0', transition: 'border-color 0.2s' },
+                      '&:hover fieldset': { borderColor: '#23A4E8' },
+                      '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
+                    },
+                    '& .MuiOutlinedInput-input': {
+                      padding: '11px 14px',
+                      fontSize: '14px',
+                      color: '#0F172A',
+                      '&::placeholder': {
+                        color: '#94A3B8',
+                        opacity: 1
+                      }
                     }
-                  }
-                }}
-              />
+                  }}
+                />
+                <IconButton
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  sx={{
+                    position: 'absolute',
+                    right: 6,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#94A3B8',
+                    p: '6px',
+                    '&:hover': { color: '#23A4E8' }
+                  }}
+                >
+                  {showPassword ? <VisibilityOff sx={{ fontSize: '20px' }} /> : <Visibility sx={{ fontSize: '20px' }} />}
+                </IconButton>
+              </Box>
             </Box>
 
             {/* Forgot Password Link */}
-            <Box sx={{ textAlign: 'right', mb: { xs: 2, sm: 2.5 } }}>
+            <Box sx={{ textAlign: 'right', mb: 2 }}>
               <Typography
                 component={Link}
                 to="/forgot-password"
                 sx={{
-                  fontSize: '13px',
+                  fontSize: '12.5px',
                   color: '#23A4E8',
                   textDecoration: 'none',
                   fontWeight: 500,
@@ -281,16 +271,16 @@ export default function Login() {
               sx={{
                 bgcolor: '#23A4E8',
                 fontWeight: 600,
-                borderRadius: '10px',
-                py: 1.3,
+                borderRadius: '8px',
+                py: 1.15,
                 color: 'white',
                 textTransform: 'none',
-                fontSize: '15px',
+                fontSize: '14.5px',
                 boxShadow: '0 4px 12px rgba(35, 164, 232, 0.25)',
                 '&:hover': { bgcolor: '#1E92D1', boxShadow: '0 6px 16px rgba(35, 164, 232, 0.35)' },
               }}
             >
-              {loginMutation.isPending ? <CircularProgress size={22} color="inherit" /> : 'Log In'}
+              {loginMutation.isPending ? <CircularProgress size={20} color="inherit" /> : 'Log In'}
             </Button>
           </Box>
         </Box>

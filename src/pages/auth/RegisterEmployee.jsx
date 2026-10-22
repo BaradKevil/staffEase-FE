@@ -5,7 +5,6 @@ import {
   Typography,
   TextField,
   Button,
-  InputAdornment,
   IconButton,
   CircularProgress,
   Alert,
@@ -15,13 +14,8 @@ import {
 import {
   Visibility,
   VisibilityOff,
-  EmailOutlined as EmailIcon,
-  LockOutlined as LockIcon,
-  PersonOutlineOutlined as PersonIcon,
-  PhoneOutlined as PhoneIcon,
   CorporateFare as LogoIcon,
-  CheckCircleOutlineRounded as ValidIcon,
-  Security as SecurityIcon
+  CheckCircleOutlineRounded as ValidIcon
 } from '@mui/icons-material';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useVerifyInvitation, useRegisterEmployee } from '../../Api/Api';
@@ -41,6 +35,7 @@ export default function RegisterEmployee() {
     confirm_password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const { data: invitationData, isLoading, isError, error } = useVerifyInvitation(token);
@@ -67,7 +62,6 @@ export default function RegisterEmployee() {
       }
     }
   }, [invitation]);
-
 
   if (!token) {
     return <InvitationInvalid message="No invitation token was provided in the URL." />;
@@ -150,7 +144,7 @@ export default function RegisterEmployee() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         width: '100%',
         boxSizing: 'border-box',
         display: 'flex',
@@ -158,8 +152,7 @@ export default function RegisterEmployee() {
         alignItems: 'center',
         justifyContent: 'center',
         bgcolor: '#F8FAFC',
-        py: { xs: 3, sm: 5 },
-        px: { xs: 2, sm: 3 },
+        p: { xs: 1.5, sm: 2 },
       }}
     >
       <Card
@@ -167,53 +160,56 @@ export default function RegisterEmployee() {
           borderRadius: '16px',
           maxWidth: 480,
           width: '100%',
+          maxHeight: 'calc(100dvh - 24px)',
+          overflowY: 'auto',
           boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
-          overflow: 'hidden',
-          borderTop: '5px solid #23A4E8',
+          borderTop: '4px solid #23A4E8',
           bgcolor: '#FFFFFF',
-          my: 'auto',
+          scrollbarWidth: 'thin',
+          '&::-webkit-scrollbar': { width: '4px' },
+          '&::-webkit-scrollbar-thumb': { bgcolor: '#CBD5E1', borderRadius: '4px' }
         }}
       >
-        <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
+        <Box sx={{ p: { xs: 2, sm: 2.75 } }}>
           {/* Header */}
           <Box
             sx={{
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              mb: 2.5
+              mb: 1.5
             }}
           >
             <Box
               sx={{
-                width: 52,
-                height: 52,
-                borderRadius: '14px',
+                width: 44,
+                height: 44,
+                borderRadius: '12px',
                 bgcolor: '#EFF6FF',
                 color: '#23A4E8',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                mb: 1.5,
+                mb: 1,
                 border: '1px solid #DBEAFE',
-                boxShadow: '0 2px 8px rgba(35, 164, 232, 0.12)'
+                boxShadow: '0 2px 6px rgba(35, 164, 232, 0.1)'
               }}
             >
-              <LogoIcon sx={{ fontSize: 30 }} />
+              <LogoIcon sx={{ fontSize: 24 }} />
             </Box>
             <Typography
               sx={{
-                fontSize: { xs: '20px', sm: '22px' },
+                fontSize: { xs: '18px', sm: '20px' },
                 fontWeight: 700,
                 color: '#1E293B',
-                mb: 0.5,
+                mb: 0.25,
                 textAlign: 'center',
                 letterSpacing: '-0.01em'
               }}
             >
               Complete Employee Registration
             </Typography>
-            <Typography sx={{ fontSize: '13.5px', color: '#64748B', textAlign: 'center' }}>
+            <Typography sx={{ fontSize: '12.5px', color: '#64748B', textAlign: 'center' }}>
               Set up your credentials to join your workspace
             </Typography>
           </Box>
@@ -221,40 +217,40 @@ export default function RegisterEmployee() {
           {/* Invitation verification summary banner */}
           <Box
             sx={{
-              p: 2,
-              borderRadius: '12px',
+              p: 1.25,
+              borderRadius: '10px',
               bgcolor: '#F0F9FF',
               border: '1px solid #BAE6FD',
-              mb: 2.5
+              mb: 1.5
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-              <ValidIcon sx={{ color: '#0284C7', fontSize: 18 }} />
-              <Typography sx={{ color: '#0369A1', fontWeight: 700, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.25 }}>
+              <ValidIcon sx={{ color: '#0284C7', fontSize: 16 }} />
+              <Typography sx={{ color: '#0369A1', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Verified Official Invitation
               </Typography>
             </Box>
-            <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '14px' }}>
+            <Typography sx={{ fontWeight: 600, color: '#0F172A', fontSize: '13px', lineHeight: 1.3 }}>
               {invitation.work_email || invitation.email}
             </Typography>
-            <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-              {invitation.designation && (
-                <Chip size="small" label={invitation.designation} sx={{ bgcolor: '#E0F2FE', color: '#0284C7', fontWeight: 600, fontSize: '11px', height: 22 }} />
-              )}
-            </Stack>
+            {invitation.designation && (
+              <Stack direction="row" spacing={1} sx={{ mt: 0.75 }}>
+                <Chip size="small" label={invitation.designation} sx={{ bgcolor: '#E0F2FE', color: '#0284C7', fontWeight: 600, fontSize: '11px', height: 20 }} />
+              </Stack>
+            )}
           </Box>
 
           {errorMessage && (
-            <Alert severity="error" sx={{ mb: 2.5, borderRadius: '10px', fontSize: '13px' }}>
+            <Alert severity="error" sx={{ mb: 1.5, py: 0.5, borderRadius: '8px', fontSize: '12.5px' }}>
               {errorMessage}
             </Alert>
           )}
 
           <Box component="form" onSubmit={handleSubmit}>
-            {/* First & Last Name Grid - Labels ABOVE fields */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.5, mb: 2 }}>
+            {/* First & Last Name Grid */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.25, mb: 1.25 }}>
               <Box>
-                <Typography sx={{ fontSize: '13.5px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
+                <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: '#475569', mb: 0.4 }}>
                   First Name <span style={{ color: '#EF4444' }}>*</span>
                 </Typography>
                 <TextField
@@ -266,16 +262,16 @@ export default function RegisterEmployee() {
                   onChange={handleChange}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      height: 48,
-                      borderRadius: '10px',
+                      height: 42,
+                      borderRadius: '8px',
                       bgcolor: '#F8FAFC',
                       '& fieldset': { borderColor: '#E2E8F0' },
                       '&:hover fieldset': { borderColor: '#23A4E8' },
                       '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
                     },
                     '& .MuiOutlinedInput-input': {
-                      padding: '12px 14px',
-                      fontSize: '14px',
+                      padding: '10px 12px',
+                      fontSize: '13.5px',
                       color: '#0F172A'
                     }
                   }}
@@ -283,7 +279,7 @@ export default function RegisterEmployee() {
               </Box>
 
               <Box>
-                <Typography sx={{ fontSize: '13.5px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
+                <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: '#475569', mb: 0.4 }}>
                   Last Name <span style={{ color: '#EF4444' }}>*</span>
                 </Typography>
                 <TextField
@@ -295,16 +291,16 @@ export default function RegisterEmployee() {
                   onChange={handleChange}
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      height: 48,
-                      borderRadius: '10px',
+                      height: 42,
+                      borderRadius: '8px',
                       bgcolor: '#F8FAFC',
                       '& fieldset': { borderColor: '#E2E8F0' },
                       '&:hover fieldset': { borderColor: '#23A4E8' },
                       '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
                     },
                     '& .MuiOutlinedInput-input': {
-                      padding: '12px 14px',
-                      fontSize: '14px',
+                      padding: '10px 12px',
+                      fontSize: '13.5px',
                       color: '#0F172A'
                     }
                   }}
@@ -312,9 +308,9 @@ export default function RegisterEmployee() {
               </Box>
             </Box>
 
-            {/* Phone Number - Label ABOVE field */}
-            <Box sx={{ mb: 2 }}>
-              <Typography sx={{ fontSize: '13.5px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
+            {/* Phone Number */}
+            <Box sx={{ mb: 1.25 }}>
+              <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: '#475569', mb: 0.4 }}>
                 Phone Number
               </Typography>
               <TextField
@@ -324,118 +320,122 @@ export default function RegisterEmployee() {
                 placeholder="+1 (555) 000-0000"
                 value={formData.phone}
                 onChange={handleChange}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <PhoneIcon sx={{ color: '#94A3B8', fontSize: '20px' }} />
-                    </InputAdornment>
-                  ),
-                }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    height: 48,
-                    borderRadius: '10px',
+                    height: 42,
+                    borderRadius: '8px',
                     bgcolor: '#F8FAFC',
                     '& fieldset': { borderColor: '#E2E8F0' },
                     '&:hover fieldset': { borderColor: '#23A4E8' },
                     '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
                   },
                   '& .MuiOutlinedInput-input': {
-                    padding: '12px 14px',
-                    fontSize: '14px',
+                    padding: '10px 12px',
+                    fontSize: '13.5px',
                     color: '#0F172A'
                   }
                 }}
               />
             </Box>
 
-            {/* Password - Label ABOVE field */}
-            <Box sx={{ mb: 2 }}>
-              <Typography sx={{ fontSize: '13.5px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
+            {/* Password with View Password Eye Button at end */}
+            <Box sx={{ mb: 1.25 }}>
+              <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: '#475569', mb: 0.4 }}>
                 Password <span style={{ color: '#EF4444' }}>*</span>
               </Typography>
-              <TextField
-                fullWidth
-                id="password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Minimum 8 characters"
-                value={formData.password}
-                onChange={handleChange}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockIcon sx={{ color: '#94A3B8', fontSize: '20px' }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                        size="small"
-                        sx={{ color: '#94A3B8', '&:hover': { color: '#23A4E8' } }}
-                      >
-                        {showPassword ? <VisibilityOff sx={{ fontSize: '20px' }} /> : <Visibility sx={{ fontSize: '20px' }} />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    height: 48,
-                    borderRadius: '10px',
-                    bgcolor: '#F8FAFC',
-                    paddingRight: '12px',
-                    '& fieldset': { borderColor: '#E2E8F0' },
-                    '&:hover fieldset': { borderColor: '#23A4E8' },
-                    '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
-                  },
-                  '& .MuiOutlinedInput-input': {
-                    padding: '12px 14px',
-                    fontSize: '14px',
-                    color: '#0F172A'
-                  }
-                }}
-              />
+              <Box sx={{ position: 'relative' }}>
+                <TextField
+                  fullWidth
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Minimum 8 characters"
+                  value={formData.password}
+                  onChange={handleChange}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      height: 42,
+                      borderRadius: '8px',
+                      bgcolor: '#F8FAFC',
+                      paddingRight: '42px',
+                      '& fieldset': { borderColor: '#E2E8F0' },
+                      '&:hover fieldset': { borderColor: '#23A4E8' },
+                      '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
+                    },
+                    '& .MuiOutlinedInput-input': {
+                      padding: '10px 12px',
+                      fontSize: '13.5px',
+                      color: '#0F172A'
+                    }
+                  }}
+                />
+                <IconButton
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  sx={{
+                    position: 'absolute',
+                    right: 6,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#94A3B8',
+                    p: '6px',
+                    '&:hover': { color: '#23A4E8' }
+                  }}
+                >
+                  {showPassword ? <VisibilityOff sx={{ fontSize: '20px' }} /> : <Visibility sx={{ fontSize: '20px' }} />}
+                </IconButton>
+              </Box>
             </Box>
 
-            {/* Confirm Password - Label ABOVE field */}
-            <Box sx={{ mb: 2.5 }}>
-              <Typography sx={{ fontSize: '13.5px', fontWeight: 600, color: '#475569', mb: 0.8 }}>
+            {/* Confirm Password with View Password Eye Button at end */}
+            <Box sx={{ mb: 1.5 }}>
+              <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: '#475569', mb: 0.4 }}>
                 Confirm Password <span style={{ color: '#EF4444' }}>*</span>
               </Typography>
-              <TextField
-                fullWidth
-                id="confirm_password"
-                name="confirm_password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Re-enter your password"
-                value={formData.confirm_password}
-                onChange={handleChange}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockIcon sx={{ color: '#94A3B8', fontSize: '20px' }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    height: 48,
-                    borderRadius: '10px',
-                    bgcolor: '#F8FAFC',
-                    '& fieldset': { borderColor: '#E2E8F0' },
-                    '&:hover fieldset': { borderColor: '#23A4E8' },
-                    '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
-                  },
-                  '& .MuiOutlinedInput-input': {
-                    padding: '12px 14px',
-                    fontSize: '14px',
-                    color: '#0F172A'
-                  }
-                }}
-              />
+              <Box sx={{ position: 'relative' }}>
+                <TextField
+                  fullWidth
+                  id="confirm_password"
+                  name="confirm_password"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="Re-enter your password"
+                  value={formData.confirm_password}
+                  onChange={handleChange}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      height: 42,
+                      borderRadius: '8px',
+                      bgcolor: '#F8FAFC',
+                      paddingRight: '42px',
+                      '& fieldset': { borderColor: '#E2E8F0' },
+                      '&:hover fieldset': { borderColor: '#23A4E8' },
+                      '&.Mui-focused fieldset': { borderColor: '#23A4E8', borderWidth: '1.5px' }
+                    },
+                    '& .MuiOutlinedInput-input': {
+                      padding: '10px 12px',
+                      fontSize: '13.5px',
+                      color: '#0F172A'
+                    }
+                  }}
+                />
+                <IconButton
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  tabIndex={-1}
+                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  sx={{
+                    position: 'absolute',
+                    right: 6,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#94A3B8',
+                    p: '6px',
+                    '&:hover': { color: '#23A4E8' }
+                  }}
+                >
+                  {showConfirmPassword ? <VisibilityOff sx={{ fontSize: '20px' }} /> : <Visibility sx={{ fontSize: '20px' }} />}
+                </IconButton>
+              </Box>
             </Box>
 
             <Button
@@ -446,17 +446,17 @@ export default function RegisterEmployee() {
               sx={{
                 bgcolor: '#23A4E8',
                 fontWeight: 600,
-                borderRadius: '10px',
-                py: 1.3,
+                borderRadius: '8px',
+                py: 1.1,
                 color: 'white',
                 textTransform: 'none',
-                fontSize: '15px',
+                fontSize: '14px',
                 boxShadow: '0 4px 12px rgba(35, 164, 232, 0.25)',
                 '&:hover': { bgcolor: '#1E92D1', boxShadow: '0 6px 16px rgba(35, 164, 232, 0.35)' },
-                mb: 2
+                mb: 1.25
               }}
             >
-              {registerMutation.isPending ? <CircularProgress size={22} color="inherit" /> : 'Complete Registration'}
+              {registerMutation.isPending ? <CircularProgress size={20} color="inherit" /> : 'Complete Registration'}
             </Button>
 
             <Box sx={{ textAlign: 'center' }}>
@@ -464,7 +464,7 @@ export default function RegisterEmployee() {
                 component={Link}
                 to="/login"
                 sx={{
-                  fontSize: '13px',
+                  fontSize: '12.5px',
                   color: '#64748B',
                   fontWeight: 600,
                   textDecoration: 'none',
