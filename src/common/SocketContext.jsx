@@ -6,8 +6,9 @@
  * Provides real-time websocket connectivity across staffEase:
  *  - Authenticates with JWT accessToken.
  *  - Automatically invalidates TanStack Query caches for real-time UI synchrony.
+ *  - Live Presence tracking (online/offline).
+ *  - Real-time chat messages, typing indicators, read receipts, and reactions.
  *  - Dispatches toast notifications on incoming live events.
- *  - Fully prepared for direct and channel messaging (chat system).
  */
 
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
@@ -34,7 +35,6 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     const socketUrl = getSocketUrl();
     const token = localStorage.getItem('accessToken');
-    const role = localStorage.getItem('role') || 'employee';
 
     const socket = io(socketUrl, {
       auth: { token },
@@ -51,6 +51,13 @@ export const SocketProvider = ({ children }) => {
     socket.on('connect', () => {
       setIsConnected(true);
       console.log(`⚡ [Socket.io] Connected to ${socketUrl} (ID: ${socket.id})`);
+
+      // Query initial online users
+      socket.emit('presence:get', (res) => {
+        if (Array.isArray(res?.onlineUserIds)) {
+          setOnlineUserIds(res.onlineUserIds);
+        }
+      });
     });
 
     socket.on('disconnect', (reason) => {
@@ -64,7 +71,84 @@ export const SocketProvider = ({ children }) => {
     });
 
     // ------------------------------------------------------------------
-    // 1. Employee Registration Approval & Count Events
+    // 1. Presence Tracking (Online / Offline status)
+    // ------------------------------------------------------------------
+    socket.on('presence:update', (payload) => {
+      if (payload?.userId) {
+        setOnlineUserIds((prev) => {
+          const uid = Number(payload.userId);
+          if (payload.status === 'online') {
+            return prev.includes(uid) ? prev : [...prev, uid];
+          } else {
+            return prev.filter((id) => id !== uid);
+          }
+        });
+
+        queryClient.invalidateQueries({ queryKey: ['chat-directory'] });
+        queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+      }
+    });
+
+    // ------------------------------------------------------------------
+    // 2. Chat & Communication Real-Time Sync
+    // ------------------------------------------------------------------
+    socket.on('message:new', (payload) => {
+      if (payload?.conversation_id) {
+        queryClient.invalidateQueries({ queryKey: ['chat-messages', payload.conversation_id] });
+        queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+        queryClient.invalidateQueries({ queryKey: ['chat-conversation', payload.conversation_id] });
+      }
+    });
+
+    socket.on('message:edited', (payload) => {
+      if (payload?.conversation_id) {
+        queryClient.invalidateQueries({ queryKey: ['chat-messages', payload.conversation_id] });
+      }
+    });
+
+    socket.on('message:deleted', (payload) => {
+      if (payload?.conversation_id) {
+        queryClient.invalidateQueries({ queryKey: ['chat-messages', payload.conversation_id] });
+      }
+    });
+
+    socket.on('reaction:change', (payload) => {
+      if (payload?.conversation_id) {
+        queryClient.invalidateQueries({ queryKey: ['chat-messages', payload.conversation_id] });
+      }
+    });
+
+    socket.on('read:receipt', (payload) => {
+      if (payload?.conversation_id) {
+        queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+        queryClient.invalidateQueries({ queryKey: ['chat-conversation', payload.conversation_id] });
+      }
+    });
+
+    socket.on('conversation:new', () => {
+      queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+    });
+
+    socket.on('conversation:activity', () => {
+      queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+    });
+
+    socket.on('conversation:updated', (payload) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+      if (payload?.id) {
+        queryClient.invalidateQueries({ queryKey: ['chat-conversation', payload.id] });
+      }
+    });
+
+    socket.on('member:removed', (payload) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+      if (payload?.conversation_id) {
+        queryClient.invalidateQueries({ queryKey: ['chat-conversation', payload.conversation_id] });
+      }
+    });
+
+    // ------------------------------------------------------------------
+    // 3. Employee Registration Approval & Count Events
     // ------------------------------------------------------------------
     socket.on('registration:pending_count', (payload) => {
       if (typeof payload?.count === 'number') {
@@ -74,7 +158,6 @@ export const SocketProvider = ({ children }) => {
     });
 
     socket.on('registration:new', (payload) => {
-      // Invalidate queries so admin sees the badge count and employee list instantly
       queryClient.invalidateQueries({ queryKey: ['pending-registration-count'] });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       queryClient.invalidateQueries({ queryKey: ['admin-overview'] });
@@ -89,7 +172,7 @@ export const SocketProvider = ({ children }) => {
       }
     });
 
-    socket.on('registration:updated', (payload) => {
+    socket.on('registration:updated', () => {
       queryClient.invalidateQueries({ queryKey: ['pending-registration-count'] });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
     });
@@ -107,10 +190,9 @@ export const SocketProvider = ({ children }) => {
     });
 
     // ------------------------------------------------------------------
-    // 2. Real-Time Time Tracking Events
+    // 4. Real-Time Time Tracking Events
     // ------------------------------------------------------------------
-    socket.on('time_tracking:change', (payload) => {
-      // Instantly invalidate TanStack queries so admin and employee views reflect state
+    socket.on('time_tracking:change', () => {
       queryClient.invalidateQueries({ queryKey: ['admin-time-records'] });
       queryClient.invalidateQueries({ queryKey: ['admin-time-overview'] });
       queryClient.invalidateQueries({ queryKey: ['today-time-summary'] });
@@ -125,7 +207,7 @@ export const SocketProvider = ({ children }) => {
     });
 
     // ------------------------------------------------------------------
-    // 3. Notifications & Leave Workflow Events
+    // 5. In-App Notifications & Leave Workflow Events
     // ------------------------------------------------------------------
     socket.on('notification:new', (notification) => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -148,73 +230,48 @@ export const SocketProvider = ({ children }) => {
   }, [queryClient]);
 
   // ------------------------------------------------------------------
-  //  Future-Proof Chat & Messaging Architecture API
+  //  Chat Helper API
   // ------------------------------------------------------------------
-  const sendMessage = useCallback(({ recipientId, channelId, content, metadata }) => {
-    return new Promise((resolve, reject) => {
-      if (!socketRef.current || !socketRef.current.connected) {
-        return reject(new Error('Socket is not connected.'));
-      }
-      socketRef.current.emit(
-        'message:send',
-        { recipientId, channelId, content, metadata },
-        (res) => {
-          if (res?.success) resolve(res.message);
-          else reject(new Error(res?.error || 'Failed to send message.'));
-        }
-      );
-    });
-  }, []);
-
-  const joinChannel = useCallback((channelId) => {
-    if (socketRef.current) {
-      socketRef.current.emit('channel:join', channelId);
+  const joinConversation = useCallback((conversationId) => {
+    if (socketRef.current && conversationId) {
+      socketRef.current.emit('conversation:join', Number(conversationId));
     }
   }, []);
 
-  const leaveChannel = useCallback((channelId) => {
-    if (socketRef.current) {
-      socketRef.current.emit('channel:leave', channelId);
+  const leaveConversation = useCallback((conversationId) => {
+    if (socketRef.current && conversationId) {
+      socketRef.current.emit('conversation:leave', Number(conversationId));
     }
   }, []);
 
-  const sendTyping = useCallback(({ recipientId, channelId }) => {
-    if (socketRef.current) {
-      socketRef.current.emit('chat:typing', { recipientId, channelId });
+  const startTyping = useCallback((conversationId) => {
+    if (socketRef.current && conversationId) {
+      socketRef.current.emit('typing:start', { conversationId: Number(conversationId) });
     }
   }, []);
 
-  const sendStopTyping = useCallback(({ recipientId, channelId }) => {
-    if (socketRef.current) {
-      socketRef.current.emit('chat:stop_typing', { recipientId, channelId });
+  const stopTyping = useCallback((conversationId) => {
+    if (socketRef.current && conversationId) {
+      socketRef.current.emit('typing:stop', { conversationId: Number(conversationId) });
     }
   }, []);
 
-  const onMessage = useCallback((listener) => {
-    const s = socketRef.current;
-    if (!s) return () => {};
-    s.on('message:receive', listener);
-    return () => s.off('message:receive', listener);
-  }, []);
-
-  const onTyping = useCallback((listener) => {
-    const s = socketRef.current;
-    if (!s) return () => {};
-    s.on('chat:typing', listener);
-    return () => s.off('chat:typing', listener);
-  }, []);
+  const isOnline = useCallback(
+    (userId) => {
+      return onlineUserIds.includes(Number(userId));
+    },
+    [onlineUserIds]
+  );
 
   const value = {
     socket: socketRef.current,
     isConnected,
     onlineUserIds,
-    sendMessage,
-    joinChannel,
-    leaveChannel,
-    sendTyping,
-    sendStopTyping,
-    onMessage,
-    onTyping,
+    isOnline,
+    joinConversation,
+    leaveConversation,
+    startTyping,
+    stopTyping,
   };
 
   return (

@@ -25,6 +25,7 @@ import LeavePolicies from './pages/admin/LeavePolicies';
 import LeaveCalendarAdmin from './pages/admin/LeaveCalendarAdmin';
 import ReportsAndAudit from './pages/admin/ReportsAndAudit';
 import TimeTrackingAdmin from './pages/admin/TimeTrackingAdmin';
+import ChatTeams from './pages/chat/ChatTeams';
 
 // Employee Pages
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
@@ -104,6 +105,14 @@ function App() {
           element: (
             <RoleGuard allowedRoles={['admin']}>
               <AdminDashboard />
+            </RoleGuard>
+          )
+        },
+        {
+          path: '/admin/chat',
+          element: (
+            <RoleGuard allowedRoles={['admin']}>
+              <ChatTeams />
             </RoleGuard>
           )
         },
@@ -194,6 +203,14 @@ function App() {
           element: (
             <RoleGuard allowedRoles={['employee', 'admin']}>
               <EmployeeDashboard />
+            </RoleGuard>
+          )
+        },
+        {
+          path: '/employee/chat',
+          element: (
+            <RoleGuard allowedRoles={['employee', 'admin']}>
+              <ChatTeams />
             </RoleGuard>
           )
         },

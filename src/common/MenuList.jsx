@@ -13,6 +13,13 @@ export const adminMenuList = [
     roles: ['admin'],
   },
   {
+    id: 'admin-chat',
+    title: 'Chat & Teams',
+    path: '/admin/chat',
+    iconName: 'Chat',
+    roles: ['admin'],
+  },
+  {
     id: 'admin-employees',
     title: 'Employee Directory',
     path: '/admin/employees',
@@ -62,6 +69,13 @@ export const employeeMenuList = [
     title: 'Dashboard',
     path: '/employee/dashboard',
     iconName: 'Dashboard',
+    roles: ['employee'],
+  },
+  {
+    id: 'employee-chat',
+    title: 'Chat & Teams',
+    path: '/employee/chat',
+    iconName: 'Chat',
     roles: ['employee'],
   },
   {

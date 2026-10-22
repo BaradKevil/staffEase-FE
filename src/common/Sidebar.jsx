@@ -4,7 +4,7 @@
  * ===========================================
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Drawer,
   Box,
@@ -29,14 +29,16 @@ import {
   PersonOutlineOutlined as PersonOutlineOutlinedIcon,
   DateRangeOutlined as DateRangeOutlinedIcon,
   AccessTimeOutlined as AccessTimeOutlinedIcon,
+  ForumOutlined as ChatOutlinedIcon,
   LogoutOutlined as LogoutOutlinedIcon,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { adminMenuList, employeeMenuList } from './MenuList';
-import { usePendingRegistrationCount } from '../Api/Api';
+import { usePendingRegistrationCount, useConversations } from '../Api/Api';
 
 const iconMap = {
   Dashboard: <DashboardOutlinedIcon sx={{ fontSize: 20 }} />,
+  Chat: <ChatOutlinedIcon sx={{ fontSize: 20 }} />,
   People: <PeopleAltOutlinedIcon sx={{ fontSize: 20 }} />,
   HowToReg: <HowToRegOutlinedIcon sx={{ fontSize: 20 }} />,
   EventNote: <EventNoteOutlinedIcon sx={{ fontSize: 20 }} />,
@@ -59,6 +61,11 @@ const Sidebar = ({ isMobileOpen, onMobileClose, onLogoutClick }) => {
   const role = localStorage.getItem('role') || 'employee';
   const menuItems = role === 'admin' ? adminMenuList : employeeMenuList;
   const { data: pendingCount = 0 } = usePendingRegistrationCount(role === 'admin');
+  const { data: conversations = [] } = useConversations();
+
+  const unreadChatCount = useMemo(() => {
+    return conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0);
+  }, [conversations]);
 
   const content = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -83,6 +90,7 @@ const Sidebar = ({ isMobileOpen, onMobileClose, onLogoutClick }) => {
       <List sx={{ px: 1.5, py: 0, flexGrow: 1 }}>
         {menuItems.map((item) => {
           const isActive = location.pathname.startsWith(item.path);
+          const isChatItem = item.id === 'admin-chat' || item.id === 'employee-chat';
 
           return (
             <ListItemButton
@@ -120,6 +128,8 @@ const Sidebar = ({ isMobileOpen, onMobileClose, onLogoutClick }) => {
                   fontWeight: isActive ? 700 : 500,
                 }}
               />
+
+              {/* Registration Pending Badge */}
               {item.id === 'admin-approvals' && pendingCount > 0 && (
                 <Chip
                   label={pendingCount}
@@ -133,6 +143,25 @@ const Sidebar = ({ isMobileOpen, onMobileClose, onLogoutClick }) => {
                     bgcolor: '#EF4444',
                     color: '#FFFFFF',
                     boxShadow: '0 2px 4px rgba(239, 68, 68, 0.35)',
+                    '& .MuiChip-label': { px: 0.8 },
+                  }}
+                />
+              )}
+
+              {/* Unread Chat Badge */}
+              {isChatItem && unreadChatCount > 0 && (
+                <Chip
+                  label={unreadChatCount}
+                  size="small"
+                  sx={{
+                    ml: 1,
+                    height: 20,
+                    minWidth: 20,
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    bgcolor: '#5B5FC7',
+                    color: '#FFFFFF',
+                    boxShadow: '0 2px 4px rgba(91, 95, 199, 0.35)',
                     '& .MuiChip-label': { px: 0.8 },
                   }}
                 />

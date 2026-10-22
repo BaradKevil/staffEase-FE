@@ -818,3 +818,258 @@ export const useTriggerAutoClose = (onSuccess, onError) => {
     onError,
   });
 };
+
+
+// -------------------------------------------------------------
+//  Chat & Real-Time Communication Hooks
+// -------------------------------------------------------------
+
+export const useChatDirectory = (search = '') => {
+  return useQuery({
+    queryKey: ['chat-directory', search],
+    queryFn: async () => {
+      const res = await apiClient.get('/chat/directory', { params: { search } });
+      return unwrap(res) || [];
+    },
+    staleTime: 10000,
+  });
+};
+
+export const useConversations = (filter = 'all') => {
+  return useQuery({
+    queryKey: ['chat-conversations', filter],
+    queryFn: async () => {
+      const res = await apiClient.get('/chat/conversations', { params: { filter } });
+      return unwrap(res) || [];
+    },
+    staleTime: 0,
+  });
+};
+
+export const useConversation = (id) => {
+  return useQuery({
+    queryKey: ['chat-conversation', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const res = await apiClient.get(`/chat/conversations/${id}`);
+      return unwrap(res);
+    },
+    enabled: !!id,
+    staleTime: 0,
+  });
+};
+
+export const useConversationMessages = (conversationId, params = {}) => {
+  return useQuery({
+    queryKey: ['chat-messages', conversationId, params],
+    queryFn: async () => {
+      if (!conversationId) return { messages: [], has_more: false };
+      const res = await apiClient.get(`/chat/conversations/${conversationId}/messages`, { params });
+      return unwrap(res);
+    },
+    enabled: !!conversationId,
+    staleTime: 0,
+  });
+};
+
+export const useStartDirectConversation = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (recipientId) => {
+      const res = await apiClient.post('/chat/conversations/direct', { recipient_id: recipientId });
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useCreateGroupConversation = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload) => {
+      const res = await apiClient.post('/chat/conversations/group', payload);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useStartAdminSupport = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload) => {
+      const res = await apiClient.post('/chat/conversations/admin-support', payload || {});
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useSendMessage = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ conversationId, data }) => {
+      const res = await apiClient.post(`/chat/conversations/${conversationId}/messages`, data);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-messages', variables.conversationId] });
+      queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useEditMessage = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ messageId, content }) => {
+      const res = await apiClient.put(`/chat/messages/${messageId}`, { content });
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-messages'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useDeleteMessage = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (messageId) => {
+      const res = await apiClient.delete(`/chat/messages/${messageId}`);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-messages'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useToggleReaction = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ messageId, emoji }) => {
+      const res = await apiClient.post(`/chat/messages/${messageId}/reactions`, { emoji });
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-messages'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useMarkConversationRead = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ conversationId, lastMessageId }) => {
+      const res = await apiClient.post(`/chat/conversations/${conversationId}/read`, {
+        last_message_id: lastMessageId,
+      });
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useAddGroupMember = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ conversationId, userId }) => {
+      const res = await apiClient.post(`/chat/conversations/${conversationId}/members`, {
+        user_id: userId,
+      });
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-conversation', variables.conversationId] });
+      queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useRemoveGroupMember = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ conversationId, userId }) => {
+      const res = await apiClient.delete(`/chat/conversations/${conversationId}/members/${userId}`);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-conversation', variables.conversationId] });
+      queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useToggleFavouriteConversation = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (conversationId) => {
+      const res = await apiClient.post(`/chat/conversations/${conversationId}/favourite`);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useToggleMuteConversation = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (conversationId) => {
+      const res = await apiClient.post(`/chat/conversations/${conversationId}/mute`);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useUploadChatAttachment = (onSuccess, onError) => {
+  return useMutation({
+    mutationFn: async (file) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await apiClient.post('/chat/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return unwrap(res);
+    },
+    onSuccess,
+    onError,
+  });
+};
