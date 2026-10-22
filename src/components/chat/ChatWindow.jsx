@@ -1,10 +1,10 @@
 /**
  * ===========================================
- *  Teams-Style Chat Window Component
+ *  Staff Chat Window Component
  * ===========================================
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -19,26 +19,31 @@ import {
   ListItemText,
   Divider,
   CircularProgress,
+  Chip,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
-  VideocamOutlined as MeetIcon,
   PeopleAltOutlined as PeopleIcon,
-  MoreHoriz as MoreIcon,
-  EditOutlined as EditIcon,
+  MoreVert as MoreIcon,
   StarBorderRounded as StarIcon,
   StarRounded as StarFilledIcon,
   NotificationsOffOutlined as MuteIcon,
   NotificationsActiveOutlined as UnmuteIcon,
   ExitToApp as LeaveIcon,
-  Close as CloseIcon,
-  LinkOutlined as LinkIcon,
   GroupsOutlined as GroupIcon,
   SupportAgentOutlined as SupportIcon,
+  InfoOutlined as InfoIcon,
+  Search as SearchIcon,
+  CloseRounded as CloseIcon,
+  ForumOutlined as ChatPlaceholderIcon,
+  LinkOutlined as LinkIcon,
 } from '@mui/icons-material';
 import ChatMessageItem from './ChatMessageItem';
 import ChatInput from './ChatInput';
-import { getAvatarFullUrl } from './chatUtils';
+import ConversationDetailsPanel from './ConversationDetailsPanel';
+import { getAvatarFullUrl, formatDateDivider, isSameDay } from './chatUtils';
 import { toast } from 'react-toastify';
 
 export default function ChatWindow({
@@ -57,11 +62,13 @@ export default function ChatWindow({
   onToggleFavourite,
   onToggleMute,
   onOpenMembersModal,
-  onOpenAddMemberModal,
+  onLeaveGroup,
 }) {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
-  const [showInviteBanner, setShowInviteBanner] = useState(true);
+  const [detailsPanelOpen, setDetailsPanelOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef(null);
 
   // Auto scroll to bottom
@@ -72,6 +79,18 @@ export default function ChatWindow({
   useEffect(() => {
     scrollToBottom();
   }, [messages.length, typingUsers.length]);
+
+  // Filter messages if search active
+  const displayedMessages = useMemo(() => {
+    if (!searchQuery.trim()) return messages;
+    const q = searchQuery.toLowerCase();
+    return messages.filter(
+      (m) =>
+        m.content?.toLowerCase().includes(q) ||
+        m.sender?.first_name?.toLowerCase().includes(q) ||
+        m.sender?.last_name?.toLowerCase().includes(q)
+    );
+  }, [messages, searchQuery]);
 
   if (!conversation) {
     return (
@@ -84,18 +103,27 @@ export default function ChatWindow({
           alignItems: 'center',
           justifyContent: 'center',
           bgcolor: '#FFFFFF',
-          color: '#8A8886',
+          color: '#64748B',
           p: 3,
         }}
       >
-        <Avatar sx={{ width: 64, height: 64, bgcolor: '#F3F2F1', color: '#5B5FC7', mb: 2 }}>
-          <GroupIcon sx={{ fontSize: 32 }} />
+        <Avatar
+          sx={{
+            width: 72,
+            height: 72,
+            bgcolor: '#E0F2FE',
+            color: '#0284C7',
+            mb: 2,
+            boxShadow: '0 4px 14px rgba(2, 132, 199, 0.15)',
+          }}
+        >
+          <ChatPlaceholderIcon sx={{ fontSize: 36 }} />
         </Avatar>
-        <Typography sx={{ fontSize: '18px', fontWeight: 700, color: '#242424', mb: 0.5 }}>
-          Microsoft Teams Chat
+        <Typography sx={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', mb: 0.5 }}>
+          Staff Chat
         </Typography>
-        <Typography sx={{ fontSize: '13px', color: '#616161', textAlign: 'center', maxWidth: 360 }}>
-          Select an employee or group from the left to start messaging in real time.
+        <Typography sx={{ fontSize: '13px', color: '#64748B', textAlign: 'center', maxWidth: 360 }}>
+          Select a colleague or group from the left to start collaborating in real time.
         </Typography>
       </Box>
     );
@@ -104,12 +132,7 @@ export default function ChatWindow({
   const isDirect = conversation.type === 'direct';
   const isGroup = conversation.type === 'group';
   const isSupport = conversation.type === 'admin_support';
-  const otherUser = conversation.other_user;
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast.success('Conversation link copied to clipboard!');
-  };
+  const otherUser = conversation.other_user || {};
 
   return (
     <Box
@@ -117,283 +140,518 @@ export default function ChatWindow({
         flexGrow: 1,
         height: '100%',
         display: 'flex',
-        flexDirection: 'column',
-        bgcolor: '#FFFFFF',
         overflow: 'hidden',
+        position: 'relative',
       }}
     >
-      {/* ------------------------------------------------------------- */}
-      {/* Top Chat Header (Matching Teams Screenshot)                    */}
-      {/* ------------------------------------------------------------- */}
+      {/* Main Conversation Column */}
       <Box
         sx={{
+          flexGrow: 1,
+          height: '100%',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          px: { xs: 1.5, md: 2.5 },
-          py: 1.2,
-          borderBottom: '1px solid #EDEBE9',
+          flexDirection: 'column',
           bgcolor: '#FFFFFF',
+          overflow: 'hidden',
+          minWidth: 0,
         }}
       >
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-          {/* Mobile Back Button */}
-          {onBack && (
-            <IconButton onClick={onBack} size="small" sx={{ display: { xs: 'flex', md: 'none' } }}>
-              <BackIcon sx={{ fontSize: 20 }} />
-            </IconButton>
-          )}
-
-          {/* Conversation Avatar */}
-          <Box sx={{ position: 'relative', flexShrink: 0 }}>
-            {isDirect && otherUser ? (
-              <Avatar
-                src={getAvatarFullUrl(otherUser.profile_photo)}
-                sx={{ width: 36, height: 36, bgcolor: '#EDEBE9', color: '#5B5FC7', fontWeight: 700 }}
-              >
-                {otherUser.first_name?.[0] || 'U'}
-              </Avatar>
-            ) : isSupport ? (
-              <Avatar sx={{ width: 36, height: 36, bgcolor: '#F0F9FF', color: '#0284C7' }}>
-                <SupportIcon sx={{ fontSize: 20 }} />
-              </Avatar>
-            ) : (
-              <Avatar sx={{ width: 36, height: 36, bgcolor: '#F5F5F5', color: '#5B5FC7' }}>
-                <GroupIcon sx={{ fontSize: 20 }} />
-              </Avatar>
-            )}
-          </Box>
-
-          {/* Title & Subtitle */}
-          <Box sx={{ minWidth: 0 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-              <Typography
-                sx={{
-                  fontSize: '15px',
-                  fontWeight: 700,
-                  color: '#242424',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {conversation.title}
-              </Typography>
-              {isGroup && conversation.my_role === 'admin' && (
-                <Tooltip title="Edit group">
-                  <IconButton size="small" onClick={onOpenMembersModal} sx={{ p: 0.2 }}>
-                    <EditIcon sx={{ fontSize: 14, color: '#707070' }} />
-                  </IconButton>
-                </Tooltip>
-              )}
-            </Box>
-
-            <Typography sx={{ fontSize: '11.5px', color: '#707070' }}>
-              {isDirect
-                ? isOtherOnline
-                  ? 'Active now'
-                  : 'Offline'
-                : `${conversation.participant_count || conversation.members?.length || 0} members`}
-            </Typography>
-          </Box>
-        </Stack>
-
-        {/* Action Controls on Right */}
-        <Stack direction="row" spacing={1} alignItems="center">
-          {/* Meet Now Button */}
-          <Button
-            size="small"
-            startIcon={<MeetIcon sx={{ fontSize: 17 }} />}
-            sx={{
-              color: '#242424',
-              borderColor: '#E1DFDD',
-              borderWidth: '1px',
-              borderStyle: 'solid',
-              textTransform: 'none',
-              fontSize: '12.5px',
-              fontWeight: 600,
-              borderRadius: '6px',
-              py: 0.5,
-              px: 1.2,
-              '&:hover': { bgcolor: '#F3F2F1' },
-            }}
-            onClick={() => toast.info('Video calling integration is ready for deployment.')}
-          >
-            Meet now
-          </Button>
-
-          {/* Group Member Count Icon */}
-          {isGroup && (
-            <Tooltip title="View members">
-              <Button
-                size="small"
-                onClick={onOpenMembersModal}
-                startIcon={<PeopleIcon sx={{ fontSize: 17 }} />}
-                sx={{
-                  color: '#424242',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  minWidth: 'auto',
-                  py: 0.5,
-                  px: 1,
-                  '&:hover': { bgcolor: '#F3F2F1' },
-                }}
-              >
-                {conversation.participant_count || conversation.members?.length || 0}
-              </Button>
-            </Tooltip>
-          )}
-
-          {/* More Menu */}
-          <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} sx={{ color: '#424242' }}>
-            <MoreIcon sx={{ fontSize: 20 }} />
-          </IconButton>
-        </Stack>
-      </Box>
-
-      {/* More Options Dropdown */}
-      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
-        <MenuItem
-          onClick={() => {
-            onToggleFavourite();
-            setMenuAnchor(null);
-          }}
-        >
-          <ListItemIcon>{conversation.is_favourite ? <StarFilledIcon sx={{ color: '#F59E0B' }} /> : <StarIcon />}</ListItemIcon>
-          <ListItemText>{conversation.is_favourite ? 'Remove from Favourites' : 'Add to Favourites'}</ListItemText>
-        </MenuItem>
-
-        <MenuItem
-          onClick={() => {
-            onToggleMute();
-            setMenuAnchor(null);
-          }}
-        >
-          <ListItemIcon>{conversation.is_muted ? <UnmuteIcon /> : <MuteIcon />}</ListItemIcon>
-          <ListItemText>{conversation.is_muted ? 'Unmute Chat' : 'Mute Notifications'}</ListItemText>
-        </MenuItem>
-
-        {isGroup && (
-          <MenuItem
-            onClick={() => {
-              onOpenMembersModal();
-              setMenuAnchor(null);
-            }}
-          >
-            <ListItemIcon><PeopleIcon /></ListItemIcon>
-            <ListItemText>Manage Group Members</ListItemText>
-          </MenuItem>
-        )}
-      </Menu>
-
-      {/* ------------------------------------------------------------- */}
-      {/* Sub-Banner: "Invite others to chat" (From User Screenshot)    */}
-      {/* ------------------------------------------------------------- */}
-      {showInviteBanner && isGroup && (
+        {/* ------------------------------------------------------------- */}
+        {/* Top Header Bar                                                */}
+        {/* ------------------------------------------------------------- */}
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            px: 2.5,
-            py: 0.8,
-            bgcolor: '#F8FAFC',
-            borderBottom: '1px solid #EDEBE9',
+            px: { xs: 1.5, md: 2.5 },
+            py: 1.2,
+            borderBottom: '1px solid #E2E8F0',
+            bgcolor: '#FFFFFF',
           }}
         >
-          <Stack direction="row" spacing={1} alignItems="center">
-            <LinkIcon sx={{ fontSize: 16, color: '#64748B' }} />
-            <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>
-              Invite others to chat
-            </Typography>
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+            {/* Mobile Back Button */}
+            {onBack && (
+              <IconButton onClick={onBack} size="small" sx={{ mr: -0.5, color: '#0F172A' }}>
+                <BackIcon fontSize="small" />
+              </IconButton>
+            )}
+
+            {/* Avatar with Presence */}
+            <Box sx={{ position: 'relative' }}>
+              {isDirect ? (
+                <>
+                  <Avatar
+                    src={getAvatarFullUrl(otherUser.profile_photo)}
+                    sx={{
+                      width: 42,
+                      height: 42,
+                      bgcolor: '#0284C7',
+                      color: '#FFFFFF',
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      boxShadow: '0 2px 6px rgba(2, 132, 199, 0.2)',
+                    }}
+                  >
+                    {otherUser.first_name?.[0] || 'U'}
+                  </Avatar>
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      bottom: -1,
+                      right: -1,
+                      width: 12,
+                      height: 12,
+                      borderRadius: '50%',
+                      bgcolor: isOtherOnline ? '#10B981' : '#CBD5E1',
+                      border: '2px solid #FFFFFF',
+                    }}
+                  />
+                </>
+              ) : isSupport ? (
+                <Avatar sx={{ width: 42, height: 42, bgcolor: '#FEF3C7', color: '#D97706' }}>
+                  <SupportIcon sx={{ fontSize: 22 }} />
+                </Avatar>
+              ) : (
+                <Avatar sx={{ width: 42, height: 42, bgcolor: '#E0F2FE', color: '#0284C7' }}>
+                  <GroupIcon sx={{ fontSize: 22 }} />
+                </Avatar>
+              )}
+            </Box>
+
+            {/* Header Titles */}
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                noWrap
+                variant="subtitle1"
+                sx={{ fontWeight: 700, color: '#0F172A', fontSize: '15px' }}
+              >
+                {conversation.title}
+              </Typography>
+              <Typography
+                noWrap
+                variant="caption"
+                sx={{
+                  color: isDirect && isOtherOnline ? '#10B981' : '#64748B',
+                  fontWeight: 600,
+                  fontSize: '11.5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                }}
+              >
+                {isDirect ? (
+                  isOtherOnline ? (
+                    '🟢 Active now'
+                  ) : (
+                    '⚪ Offline'
+                  )
+                ) : isSupport ? (
+                  '🛡️ HR & Admin Support Desk'
+                ) : (
+                  `${conversation.members?.length || 0} participants`
+                )}
+                {otherUser.designation && !isGroup && (
+                  <span style={{ color: '#94A3B8', fontWeight: 400 }}>
+                    • {otherUser.designation}
+                  </span>
+                )}
+              </Typography>
+            </Box>
           </Stack>
 
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Button
-              size="small"
-              onClick={handleCopyLink}
-              sx={{
-                bgcolor: '#FFFFFF',
-                color: '#334155',
-                border: '1px solid #CBD5E1',
-                textTransform: 'none',
-                fontSize: '11px',
-                fontWeight: 600,
-                py: 0.3,
-                px: 1,
-                borderRadius: '4px',
-                '&:hover': { bgcolor: '#F1F5F9' },
+          {/* Right Header Action Controls */}
+          <Stack direction="row" spacing={0.6} alignItems="center">
+            {/* Search in chat toggle */}
+            <Tooltip title={isSearching ? 'Close Search' : 'Search in Conversation'}>
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setIsSearching(!isSearching);
+                  if (isSearching) setSearchQuery('');
+                }}
+                sx={{
+                  color: isSearching ? '#0284C7' : '#64748B',
+                  bgcolor: isSearching ? '#F0F9FF' : 'transparent',
+                }}
+              >
+                <SearchIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+
+            {/* Star Favourite Toggle */}
+            <Tooltip title={conversation.is_favourite ? 'Remove from Favourites' : 'Star Favourite'}>
+              <IconButton
+                size="small"
+                onClick={onToggleFavourite}
+                sx={{ color: conversation.is_favourite ? '#F59E0B' : '#64748B' }}
+              >
+                {conversation.is_favourite ? (
+                  <StarFilledIcon fontSize="small" />
+                ) : (
+                  <StarIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+
+            {/* Mute Toggle */}
+            <Tooltip title={conversation.is_muted ? 'Unmute Chat' : 'Mute Notifications'}>
+              <IconButton size="small" onClick={onToggleMute} sx={{ color: '#64748B' }}>
+                {conversation.is_muted ? (
+                  <MuteIcon fontSize="small" sx={{ color: '#EF4444' }} />
+                ) : (
+                  <UnmuteIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+
+            {/* Group Members Button (if group) */}
+            {isGroup && (
+              <Tooltip title="Manage Participants">
+                <IconButton size="small" onClick={onOpenMembersModal} sx={{ color: '#64748B' }}>
+                  <PeopleIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+
+            {/* Side Details Panel Toggle */}
+            <Tooltip title={detailsPanelOpen ? 'Hide Details' : 'Conversation Info'}>
+              <IconButton
+                size="small"
+                onClick={() => setDetailsPanelOpen(!detailsPanelOpen)}
+                sx={{
+                  color: detailsPanelOpen ? '#0284C7' : '#64748B',
+                  bgcolor: detailsPanelOpen ? '#F0F9FF' : 'transparent',
+                }}
+              >
+                <InfoIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+
+            {/* More Menu (3-dot) */}
+            <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} sx={{ color: '#64748B' }}>
+              <MoreIcon fontSize="small" />
+            </IconButton>
+
+            <Menu
+              anchorEl={menuAnchor}
+              open={Boolean(menuAnchor)}
+              onClose={() => setMenuAnchor(null)}
+              PaperProps={{
+                sx: {
+                  borderRadius: '12px',
+                  boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)',
+                  border: '1px solid #E2E8F0',
+                  minWidth: 190,
+                  py: 0.5,
+                },
               }}
             >
-              Share link
-            </Button>
-            <IconButton size="small" onClick={() => setShowInviteBanner(false)} sx={{ p: 0.4 }}>
-              <CloseIcon sx={{ fontSize: 14, color: '#64748B' }} />
-            </IconButton>
+              <MenuItem
+                onClick={() => {
+                  setMenuAnchor(null);
+                  setDetailsPanelOpen(true);
+                }}
+                sx={{ fontSize: '13px', py: 0.8 }}
+              >
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <InfoIcon fontSize="small" sx={{ color: '#0284C7' }} />
+                </ListItemIcon>
+                <ListItemText primary={isGroup ? 'Group Information' : 'Staff Profile'} />
+              </MenuItem>
+
+              <MenuItem
+                onClick={() => {
+                  setMenuAnchor(null);
+                  setIsSearching(true);
+                }}
+                sx={{ fontSize: '13px', py: 0.8 }}
+              >
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <SearchIcon fontSize="small" sx={{ color: '#64748B' }} />
+                </ListItemIcon>
+                <ListItemText primary="Search Messages" />
+              </MenuItem>
+
+              <MenuItem
+                onClick={() => {
+                  setMenuAnchor(null);
+                  onToggleFavourite();
+                }}
+                sx={{ fontSize: '13px', py: 0.8 }}
+              >
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  {conversation.is_favourite ? (
+                    <StarFilledIcon fontSize="small" sx={{ color: '#F59E0B' }} />
+                  ) : (
+                    <StarIcon fontSize="small" sx={{ color: '#64748B' }} />
+                  )}
+                </ListItemIcon>
+                <ListItemText primary={conversation.is_favourite ? 'Unstar Chat' : 'Star as Favourite'} />
+              </MenuItem>
+
+              <MenuItem
+                onClick={() => {
+                  setMenuAnchor(null);
+                  onToggleMute();
+                }}
+                sx={{ fontSize: '13px', py: 0.8 }}
+              >
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  {conversation.is_muted ? (
+                    <UnmuteIcon fontSize="small" sx={{ color: '#0284C7' }} />
+                  ) : (
+                    <MuteIcon fontSize="small" sx={{ color: '#64748B' }} />
+                  )}
+                </ListItemIcon>
+                <ListItemText primary={conversation.is_muted ? 'Unmute Notifications' : 'Mute Notifications'} />
+              </MenuItem>
+
+              <MenuItem
+                onClick={() => {
+                  setMenuAnchor(null);
+                  navigator.clipboard.writeText(window.location.href);
+                  toast.success('Conversation link copied to clipboard!');
+                }}
+                sx={{ fontSize: '13px', py: 0.8 }}
+              >
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <LinkIcon fontSize="small" sx={{ color: '#64748B' }} />
+                </ListItemIcon>
+                <ListItemText primary="Copy Link" />
+              </MenuItem>
+
+              {isGroup && <Divider sx={{ my: 0.5 }} />}
+
+              {isGroup && (
+                <MenuItem
+                  onClick={() => {
+                    setMenuAnchor(null);
+                    onOpenMembersModal();
+                  }}
+                  sx={{ fontSize: '13px', py: 0.8 }}
+                >
+                  <ListItemIcon sx={{ minWidth: 32 }}>
+                    <PeopleIcon fontSize="small" sx={{ color: '#0284C7' }} />
+                  </ListItemIcon>
+                  <ListItemText primary="Manage Members" />
+                </MenuItem>
+              )}
+
+              {isGroup && (
+                <MenuItem
+                  onClick={() => {
+                    setMenuAnchor(null);
+                    if (onLeaveGroup) onLeaveGroup();
+                  }}
+                  sx={{ fontSize: '13px', py: 0.8, color: '#EF4444' }}
+                >
+                  <ListItemIcon sx={{ minWidth: 32, color: '#EF4444' }}>
+                    <LeaveIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary="Leave Group" />
+                </MenuItem>
+              )}
+            </Menu>
           </Stack>
         </Box>
-      )}
 
-      {/* ------------------------------------------------------------- */}
-      {/* Message History Feed                                          */}
-      {/* ------------------------------------------------------------- */}
-      <Box
-        sx={{
-          flexGrow: 1,
-          overflowY: 'auto',
-          py: 2,
-          display: 'flex',
-          flexDirection: 'column',
-          bgcolor: '#FFFFFF',
-        }}
-      >
-        {isLoadingMessages ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1 }}>
-            <CircularProgress size={28} sx={{ color: '#5B5FC7' }} />
-          </Box>
-        ) : messages.length === 0 ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexGrow: 1, color: '#8A8886' }}>
-            <Typography sx={{ fontSize: '13px', fontWeight: 500 }}>
-              No messages yet in this conversation.
-            </Typography>
-            <Typography sx={{ fontSize: '11.5px', color: '#A19F9D' }}>
-              Say hello to start communicating!
-            </Typography>
-          </Box>
-        ) : (
-          messages.map((msg) => (
-            <ChatMessageItem
-              key={msg.id}
-              message={msg}
-              currentUserId={currentUserId}
-              userRole={userRole}
-              onReply={(m) => setReplyingTo(m)}
-              onEdit={onEditMessage}
-              onDelete={onDeleteMessage}
-              onToggleReaction={onToggleReaction}
+        {/* In-Chat Search Bar (Collapsible) */}
+        {isSearching && (
+          <Box
+            sx={{
+              p: 1.2,
+              px: 2,
+              bgcolor: '#F8FAFC',
+              borderBottom: '1px solid #E2E8F0',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            <TextField
+              fullWidth
+              size="small"
+              autoFocus
+              placeholder="Search in this conversation..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: '#94A3B8', fontSize: 18 }} />
+                  </InputAdornment>
+                ),
+                endAdornment: searchQuery && (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setSearchQuery('')}>
+                      <CloseIcon sx={{ fontSize: 16, color: '#94A3B8' }} />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#FFFFFF',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                },
+              }}
             />
-          ))
-        )}
-
-        {/* Live Typing Indicator */}
-        {typingUsers.length > 0 && (
-          <Box sx={{ px: 2, py: 0.8, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography sx={{ fontSize: '12px', color: '#616161', fontStyle: 'italic' }}>
-              {typingUsers.map((u) => u.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
-            </Typography>
+            {searchQuery && (
+              <Typography sx={{ fontSize: '11.5px', color: '#64748B', whiteSpace: 'nowrap' }}>
+                {displayedMessages.length} results
+              </Typography>
+            )}
           </Box>
         )}
 
-        <div ref={messagesEndRef} />
+        {/* ------------------------------------------------------------- */}
+        {/* Scrollable Message History Area                               */}
+        {/* ------------------------------------------------------------- */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            overflowY: 'auto',
+            p: { xs: 1.5, sm: 2.5 },
+            bgcolor: '#FAFAFA',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {isLoadingMessages ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+              <CircularProgress size={28} sx={{ color: '#0284C7' }} />
+            </Box>
+          ) : displayedMessages.length === 0 ? (
+            <Box sx={{ m: 'auto', textAlign: 'center', py: 4 }}>
+              <Avatar
+                sx={{
+                  width: 54,
+                  height: 54,
+                  bgcolor: '#F0F9FF',
+                  color: '#0284C7',
+                  mx: 'auto',
+                  mb: 1.5,
+                }}
+              >
+                <ChatPlaceholderIcon sx={{ fontSize: 28 }} />
+              </Avatar>
+              <Typography sx={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', mb: 0.5 }}>
+                {searchQuery ? 'No matching messages found' : 'No messages yet'}
+              </Typography>
+              <Typography sx={{ fontSize: '12.5px', color: '#64748B' }}>
+                {searchQuery ? 'Try a different keyword' : 'Send a friendly greeting to start the conversation!'}
+              </Typography>
+            </Box>
+          ) : (
+            displayedMessages.map((msg, index) => {
+              const prevMsg = displayedMessages[index - 1];
+
+              const msgDate = msg.createdAt || msg.created_at;
+              const prevMsgDate = prevMsg ? (prevMsg.createdAt || prevMsg.created_at) : null;
+
+              // Check if date divider is needed
+              const isFirstOfDay = !prevMsgDate || !isSameDay(prevMsgDate, msgDate);
+              const dateLabel = isFirstOfDay && msgDate ? formatDateDivider(msgDate) : null;
+
+              // Check if message is grouped (consecutive messages from same sender within 5 mins on the same day)
+              const msgTime = msgDate ? new Date(msgDate).getTime() : 0;
+              const prevMsgTime = prevMsgDate ? new Date(prevMsgDate).getTime() : 0;
+              const isGrouped =
+                !isFirstOfDay &&
+                prevMsg &&
+                Number(prevMsg.sender_id) === Number(msg.sender_id) &&
+                msgTime - prevMsgTime < 5 * 60 * 1000;
+
+              return (
+                <React.Fragment key={msg.id}>
+                  {/* Date Divider (Only rendered if dateLabel is valid and non-empty) */}
+                  {dateLabel && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', my: 2 }}>
+                      <Divider sx={{ flexGrow: 1, borderColor: '#E2E8F0' }} />
+                      <Chip
+                        label={dateLabel}
+                        size="small"
+                        sx={{
+                          mx: 2,
+                          bgcolor: '#FFFFFF',
+                          border: '1px solid #E2E8F0',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          color: '#64748B',
+                          height: 22,
+                        }}
+                      />
+                      <Divider sx={{ flexGrow: 1, borderColor: '#E2E8F0' }} />
+                    </Box>
+                  )}
+
+                  <ChatMessageItem
+                    message={msg}
+                    currentUserId={currentUserId}
+                    userRole={userRole}
+                    isGrouped={isGrouped}
+                    onReply={(item) => setReplyingTo(item)}
+                    onEdit={onEditMessage}
+                    onDelete={onDeleteMessage}
+                    onToggleReaction={onToggleReaction}
+                  />
+                </React.Fragment>
+              );
+            })
+          )}
+
+          {/* Typing Indicator Bar */}
+          {typingUsers.length > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 0.5, mt: 'auto' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.4,
+                  bgcolor: '#FFFFFF',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '12px',
+                  px: 1.4,
+                  py: 0.5,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                }}
+              >
+                <Box sx={{ width: 6, height: 6, bgcolor: '#0284C7', borderRadius: '50%', animation: 'blink 1.4s infinite' }} />
+                <Typography sx={{ fontSize: '11.5px', color: '#64748B', fontStyle: 'italic', ml: 0.5 }}>
+                  {typingUsers.map((u) => u.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+                </Typography>
+              </Box>
+            </Box>
+          )}
+
+          <div ref={messagesEndRef} />
+        </Box>
+
+        {/* ------------------------------------------------------------- */}
+        {/* Chat Input Dock                                               */}
+        {/* ------------------------------------------------------------- */}
+        <ChatInput
+          onSendMessage={onSendMessage}
+          replyingTo={replyingTo}
+          onCancelReply={() => setReplyingTo(null)}
+        />
       </Box>
 
       {/* ------------------------------------------------------------- */}
-      {/* Bottom Input Area                                             */}
+      {/* Slide-out Details Panel                                       */}
       {/* ------------------------------------------------------------- */}
-      <ChatInput
-        onSendMessage={onSendMessage}
-        replyingTo={replyingTo}
-        onCancelReply={() => setReplyingTo(null)}
+      <ConversationDetailsPanel
+        open={detailsPanelOpen}
+        onClose={() => setDetailsPanelOpen(false)}
+        conversation={conversation}
+        messages={messages}
+        currentUserId={currentUserId}
+        userRole={userRole}
+        onOpenMembersModal={onOpenMembersModal}
+        onLeaveGroup={onLeaveGroup}
       />
     </Box>
   );

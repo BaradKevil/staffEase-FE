@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Box, Toolbar, useMediaQuery, useTheme } from '@mui/material';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
@@ -20,8 +20,10 @@ const Layout = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
+  const isChatRoute = location.pathname.includes('/chat');
 
   const handleClearSession = () => {
     localStorage.clear();
@@ -74,9 +76,12 @@ const Layout = () => {
           id="main-scroll"
           sx={{
             flexGrow: 1,
-            overflowY: 'auto',
+            overflowY: isChatRoute ? 'hidden' : 'auto',
             overflowX: 'hidden',
-            p: { xs: 2, sm: 2.5, md: 3 },
+            p: isChatRoute ? 0 : { xs: 2, sm: 2.5, md: 3 },
+            height: isChatRoute ? 'calc(100vh - 64px)' : 'auto',
+            display: isChatRoute ? 'flex' : 'block',
+            flexDirection: 'column',
           }}
         >
           <Outlet />

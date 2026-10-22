@@ -1,6 +1,6 @@
 /**
  * ===========================================
- *  Teams-Style Chat Message Item Component
+ *  Staff Chat Message Item Component
  * ===========================================
  */
 
@@ -13,12 +13,9 @@ import {
   Tooltip,
   Chip,
   Stack,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   TextField,
+  Button,
+  Dialog,
 } from '@mui/material';
 import {
   CheckCircleOutlineRounded as ReadIcon,
@@ -31,12 +28,13 @@ import {
 } from '@mui/icons-material';
 import { formatMessageTime, getAvatarFullUrl, formatFileSize } from './chatUtils';
 
-const QUICK_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
+const QUICK_EMOJIS = ['👍', '❤️', '😂', '🔥', '🎉', '👏'];
 
 export default function ChatMessageItem({
   message,
   currentUserId,
   userRole,
+  isGrouped = false,
   onReply,
   onEdit,
   onDelete,
@@ -50,7 +48,7 @@ export default function ChatMessageItem({
   const isSelf = Number(message.sender_id) === Number(currentUserId);
   const isSystem = message.message_type === 'system';
   const sender = message.sender || {};
-  const senderName = `${sender.first_name || ''} ${sender.last_name || ''}`.trim() || 'Employee';
+  const senderName = `${sender.first_name || ''} ${sender.last_name || ''}`.trim() || 'Staff';
 
   if (isSystem) {
     return (
@@ -59,11 +57,12 @@ export default function ChatMessageItem({
           label={message.content}
           size="small"
           sx={{
-            bgcolor: '#F3F2F1',
-            color: '#616161',
-            fontSize: '11px',
-            height: 22,
+            bgcolor: '#F1F5F9',
+            color: '#64748B',
+            fontSize: '11.5px',
+            height: 24,
             fontWeight: 500,
+            border: '1px solid #E2E8F0',
           }}
         />
       </Box>
@@ -86,28 +85,32 @@ export default function ChatMessageItem({
         flexDirection: isSelf ? 'row-reverse' : 'row',
         alignItems: 'flex-start',
         gap: 1.2,
-        my: 1.2,
+        mt: isGrouped ? 0.4 : 1.5,
+        mb: 0.4,
         position: 'relative',
-        px: { xs: 1, md: 2 },
+        px: { xs: 1, sm: 2 },
       }}
     >
-      {/* Sender Avatar for other users */}
+      {/* Sender Avatar for other users (hidden if consecutive grouped message) */}
       {!isSelf && (
-        <Avatar
-          src={getAvatarFullUrl(sender.profile_photo)}
-          sx={{
-            width: 32,
-            height: 32,
-            bgcolor: '#EDEBE9',
-            color: '#5B5FC7',
-            fontSize: '12px',
-            fontWeight: 700,
-            flexShrink: 0,
-            mt: 0.5,
-          }}
-        >
-          {sender.first_name?.[0] || 'U'}
-        </Avatar>
+        <Box sx={{ width: 34, height: 34, flexShrink: 0 }}>
+          {!isGrouped && (
+            <Avatar
+              src={getAvatarFullUrl(sender.profile_photo)}
+              sx={{
+                width: 34,
+                height: 34,
+                bgcolor: '#0284C7',
+                color: '#FFFFFF',
+                fontSize: '13px',
+                fontWeight: 700,
+                boxShadow: '0 2px 6px rgba(2, 132, 199, 0.2)',
+              }}
+            >
+              {sender.first_name?.[0] || 'U'}
+            </Avatar>
+          )}
+        </Box>
       )}
 
       {/* Message Bubble Container */}
@@ -116,14 +119,21 @@ export default function ChatMessageItem({
           display: 'flex',
           flexDirection: 'column',
           alignItems: isSelf ? 'flex-end' : 'flex-start',
-          maxWidth: { xs: '85%', sm: '75%', md: '65%' },
+          maxWidth: { xs: '85%', sm: '72%', md: '62%' },
         }}
       >
-        {/* Sender Name (Other users only) */}
-        {!isSelf && (
-          <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#616161', mb: 0.3, ml: 0.5 }}>
-            {senderName}
-          </Typography>
+        {/* Sender Name (Other users only, hidden if grouped) */}
+        {!isSelf && !isGrouped && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.4, ml: 0.5 }}>
+            <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#0F172A' }}>
+              {senderName}
+            </Typography>
+            {sender.designation && (
+              <Typography sx={{ fontSize: '11px', color: '#64748B', fontWeight: 500 }}>
+                • {sender.designation}
+              </Typography>
+            )}
+          </Box>
         )}
 
         {/* Replied-To Quote Preview */}
@@ -135,22 +145,22 @@ export default function ChatMessageItem({
               gap: 1,
               px: 1.5,
               py: 0.6,
-              mb: 0.3,
-              borderRadius: '6px',
-              bgcolor: isSelf ? 'rgba(91, 95, 199, 0.15)' : '#EAE8E6',
-              borderLeft: isSelf ? '3px solid #5B5FC7' : '3px solid #8A8886',
+              mb: 0.5,
+              borderRadius: '8px',
+              bgcolor: isSelf ? 'rgba(2, 132, 199, 0.12)' : '#F1F5F9',
+              borderLeft: isSelf ? '3px solid #0284C7' : '3px solid #94A3B8',
               fontSize: '11px',
-              color: '#424242',
+              color: '#334155',
               maxWidth: '100%',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
             }}
           >
-            <Typography sx={{ fontSize: '11px', fontWeight: 700 }}>
-              {message.reply_to.sender?.first_name || 'Someone'}:
+            <Typography sx={{ fontSize: '11px', fontWeight: 700, color: isSelf ? '#0284C7' : '#0F172A' }}>
+              {message.reply_to.sender?.first_name || 'Staff'}:
             </Typography>
-            <Typography sx={{ fontSize: '11px', color: '#616161', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <Typography sx={{ fontSize: '11px', color: '#64748B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {message.reply_to.content}
             </Typography>
           </Box>
@@ -162,10 +172,21 @@ export default function ChatMessageItem({
             position: 'relative',
             px: 2,
             py: 1.2,
-            borderRadius: isSelf ? '14px 4px 14px 14px' : '4px 14px 14px 14px',
-            bgcolor: isSelf ? '#5B5FC7' : '#F1F2F4',
-            color: isSelf ? '#FFFFFF' : '#242424',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
+            borderRadius: isSelf
+              ? isGrouped
+                ? '16px 6px 6px 16px'
+                : '18px 18px 4px 18px'
+              : isGrouped
+              ? '6px 16px 16px 6px'
+              : '18px 18px 18px 4px',
+            background: isSelf
+              ? 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)'
+              : '#FFFFFF',
+            color: isSelf ? '#FFFFFF' : '#0F172A',
+            border: isSelf ? 'none' : '1px solid #E2E8F0',
+            boxShadow: isSelf
+              ? '0 3px 10px rgba(2, 132, 199, 0.22)'
+              : '0 2px 8px rgba(15, 23, 42, 0.04)',
             wordBreak: 'break-word',
           }}
         >
@@ -180,16 +201,32 @@ export default function ChatMessageItem({
                 autoFocus
                 sx={{
                   bgcolor: '#FFFFFF',
-                  borderRadius: '4px',
+                  borderRadius: '6px',
                   mb: 1,
-                  '& .MuiInputBase-input': { fontSize: '13px', color: '#242424' },
+                  '& .MuiInputBase-input': { fontSize: '13px', color: '#0F172A' },
                 }}
               />
               <Stack direction="row" spacing={1} justifyContent="flex-end">
-                <Button size="small" onClick={() => setIsEditing(false)} sx={{ color: isSelf ? '#FFFFFF' : '#616161', fontSize: '11px' }}>
+                <Button
+                  size="small"
+                  onClick={() => setIsEditing(false)}
+                  sx={{ color: isSelf ? '#FFFFFF' : '#64748B', fontSize: '11px', textTransform: 'none' }}
+                >
                   Cancel
                 </Button>
-                <Button size="small" variant="contained" onClick={handleSaveEdit} sx={{ bgcolor: isSelf ? '#FFFFFF' : '#5B5FC7', color: isSelf ? '#5B5FC7' : '#FFFFFF', fontSize: '11px' }}>
+                <Button
+                  size="small"
+                  variant="contained"
+                  onClick={handleSaveEdit}
+                  sx={{
+                    bgcolor: isSelf ? '#FFFFFF' : '#0284C7',
+                    color: isSelf ? '#0284C7' : '#FFFFFF',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    textTransform: 'none',
+                    '&:hover': { bgcolor: isSelf ? '#F0F9FF' : '#0369A1' },
+                  }}
+                >
                   Save
                 </Button>
               </Stack>
@@ -200,7 +237,7 @@ export default function ChatMessageItem({
               {message.attachments && message.attachments.length > 0 && (
                 <Stack spacing={1} sx={{ mb: message.content ? 1 : 0 }}>
                   {message.attachments.map((att) => {
-                    const isImg = att.file_type.startsWith('image/');
+                    const isImg = att.file_type && att.file_type.startsWith('image/');
                     const fullUrl = getAvatarFullUrl(att.file_path);
 
                     if (isImg) {
@@ -209,12 +246,15 @@ export default function ChatMessageItem({
                           key={att.id}
                           onClick={() => setPreviewImage(fullUrl)}
                           sx={{
-                            borderRadius: '8px',
+                            borderRadius: '10px',
                             overflow: 'hidden',
                             cursor: 'pointer',
-                            maxHeight: 240,
-                            maxWidth: 320,
-                            bgcolor: '#EDEBE9',
+                            maxHeight: 260,
+                            maxWidth: 340,
+                            bgcolor: '#F8FAFC',
+                            border: '1px solid #E2E8F0',
+                            transition: 'transform 0.15s ease',
+                            '&:hover': { transform: 'scale(1.02)' },
                           }}
                         >
                           <img
@@ -237,25 +277,33 @@ export default function ChatMessageItem({
                           display: 'flex',
                           alignItems: 'center',
                           gap: 1.2,
-                          p: 1,
-                          borderRadius: '8px',
-                          bgcolor: isSelf ? 'rgba(255,255,255,0.15)' : '#FFFFFF',
+                          p: 1.2,
+                          borderRadius: '10px',
+                          bgcolor: isSelf ? 'rgba(255,255,255,0.15)' : '#F8FAFC',
                           color: 'inherit',
                           textDecoration: 'none',
-                          border: isSelf ? '1px solid rgba(255,255,255,0.25)' : '1px solid #E1DFDD',
-                          '&:hover': { opacity: 0.9 },
+                          border: isSelf ? '1px solid rgba(255,255,255,0.25)' : '1px solid #E2E8F0',
+                          '&:hover': { bgcolor: isSelf ? 'rgba(255,255,255,0.22)' : '#F1F5F9' },
                         }}
                       >
-                        <FileIcon sx={{ fontSize: 24, color: isSelf ? '#FFFFFF' : '#5B5FC7' }} />
+                        <FileIcon sx={{ fontSize: 26, color: isSelf ? '#FFFFFF' : '#0284C7' }} />
                         <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-                          <Typography sx={{ fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <Typography
+                            sx={{
+                              fontSize: '12.5px',
+                              fontWeight: 600,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
                             {att.file_name}
                           </Typography>
-                          <Typography sx={{ fontSize: '10.5px', opacity: 0.75 }}>
+                          <Typography sx={{ fontSize: '11px', opacity: 0.8 }}>
                             {formatFileSize(att.file_size)}
                           </Typography>
                         </Box>
-                        <DownloadIcon sx={{ fontSize: 18, opacity: 0.8 }} />
+                        <DownloadIcon sx={{ fontSize: 18, opacity: 0.9 }} />
                       </Box>
                     );
                   })}
@@ -267,7 +315,7 @@ export default function ChatMessageItem({
                 <Typography
                   sx={{
                     fontSize: '13.5px',
-                    lineHeight: 1.45,
+                    lineHeight: 1.5,
                     fontStyle: message.is_deleted ? 'italic' : 'normal',
                     opacity: message.is_deleted ? 0.75 : 1,
                     whiteSpace: 'pre-wrap',
@@ -285,17 +333,17 @@ export default function ChatMessageItem({
               display: 'flex',
               alignItems: 'center',
               justifyContent: isSelf ? 'flex-end' : 'flex-start',
-              gap: 0.6,
+              gap: 0.5,
               mt: 0.4,
               fontSize: '10.5px',
-              opacity: 0.75,
+              opacity: isSelf ? 0.85 : 0.65,
             }}
           >
-            <span>{formatMessageTime(message.created_at)}</span>
+            <span>{formatMessageTime(message.createdAt || message.created_at)}</span>
             {message.is_edited && <span>(edited)</span>}
             {isSelf && (
-              <Tooltip title="Sent">
-                <ReadIcon sx={{ fontSize: 13, color: '#FFFFFF' }} />
+              <Tooltip title="Delivered">
+                <ReadIcon sx={{ fontSize: 13, color: '#BAE6FD' }} />
               </Tooltip>
             )}
           </Box>
@@ -303,7 +351,7 @@ export default function ChatMessageItem({
 
         {/* Reaction Pill Badges */}
         {message.reaction_groups && message.reaction_groups.length > 0 && (
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6, mt: 0.5, ml: 0.5 }}>
             {message.reaction_groups.map((rg) => {
               const hasReacted = rg.users?.some((u) => u.id === currentUserId);
               return (
@@ -319,11 +367,12 @@ export default function ChatMessageItem({
                       height: 22,
                       fontSize: '11px',
                       cursor: 'pointer',
-                      bgcolor: hasReacted ? '#EEF2FF' : '#F3F2F1',
-                      border: hasReacted ? '1px solid #5B5FC7' : '1px solid transparent',
-                      color: hasReacted ? '#5B5FC7' : '#424242',
+                      bgcolor: hasReacted ? '#E0F2FE' : '#FFFFFF',
+                      border: hasReacted ? '1px solid #0284C7' : '1px solid #E2E8F0',
+                      color: hasReacted ? '#0284C7' : '#475569',
                       fontWeight: 600,
-                      '&:hover': { bgcolor: '#E0E7FF' },
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                      '&:hover': { bgcolor: '#F0F9FF' },
                     }}
                   />
                 </Tooltip>
@@ -333,20 +382,20 @@ export default function ChatMessageItem({
         )}
       </Box>
 
-      {/* Floating Hover Action Bar */}
+      {/* Floating Hover Action Toolbar */}
       {isHovered && !isEditing && !message.is_deleted && (
         <Box
           sx={{
             position: 'absolute',
             top: -14,
-            [isSelf ? 'left' : 'right']: { xs: 8, md: 24 },
+            [isSelf ? 'left' : 'right']: { xs: 8, sm: 20 },
             display: 'flex',
             alignItems: 'center',
             gap: 0.3,
             bgcolor: '#FFFFFF',
-            borderRadius: '20px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            border: '1px solid #EDEBE9',
+            borderRadius: '24px',
+            boxShadow: '0 4px 16px rgba(15, 23, 42, 0.12)',
+            border: '1px solid #E2E8F0',
             px: 0.8,
             py: 0.3,
             zIndex: 10,
@@ -357,7 +406,7 @@ export default function ChatMessageItem({
               key={emoji}
               size="small"
               onClick={() => onToggleReaction(message.id, emoji)}
-              sx={{ width: 26, height: 26, fontSize: '13px', '&:hover': { bgcolor: '#F3F2F1' } }}
+              sx={{ width: 26, height: 26, fontSize: '13px', '&:hover': { bgcolor: '#F1F5F9' } }}
             >
               {emoji}
             </IconButton>
@@ -367,7 +416,7 @@ export default function ChatMessageItem({
             <IconButton
               size="small"
               onClick={() => onReply(message)}
-              sx={{ width: 26, height: 26, color: '#424242' }}
+              sx={{ width: 26, height: 26, color: '#64748B', '&:hover': { color: '#0284C7' } }}
             >
               <ReplyIcon sx={{ fontSize: 15 }} />
             </IconButton>
@@ -378,7 +427,7 @@ export default function ChatMessageItem({
               <IconButton
                 size="small"
                 onClick={() => setIsEditing(true)}
-                sx={{ width: 26, height: 26, color: '#424242' }}
+                sx={{ width: 26, height: 26, color: '#64748B', '&:hover': { color: '#0284C7' } }}
               >
                 <EditIcon sx={{ fontSize: 15 }} />
               </IconButton>
@@ -390,7 +439,7 @@ export default function ChatMessageItem({
               <IconButton
                 size="small"
                 onClick={() => onDelete(message.id)}
-                sx={{ width: 26, height: 26, color: '#DC2626' }}
+                sx={{ width: 26, height: 26, color: '#EF4444', '&:hover': { bgcolor: '#FEE2E2' } }}
               >
                 <DeleteIcon sx={{ fontSize: 15 }} />
               </IconButton>
@@ -399,10 +448,10 @@ export default function ChatMessageItem({
         </Box>
       )}
 
-      {/* Image Zoom Preview Modal */}
+      {/* Image Lightbox Modal */}
       <Dialog open={!!previewImage} onClose={() => setPreviewImage(null)} maxWidth="md">
-        <Box sx={{ p: 1, bgcolor: '#000000', display: 'flex', justifyContent: 'center' }}>
-          <img src={previewImage || ''} alt="Zoom" style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }} />
+        <Box sx={{ p: 1, bgcolor: '#0F172A', display: 'flex', justifyContent: 'center' }}>
+          <img src={previewImage || ''} alt="Preview" style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }} />
         </Box>
       </Dialog>
     </Box>

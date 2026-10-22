@@ -14,7 +14,7 @@ export const adminMenuList = [
   },
   {
     id: 'admin-chat',
-    title: 'Chat & Teams',
+    title: 'Staff Chat',
     path: '/admin/chat',
     iconName: 'Chat',
     roles: ['admin'],
@@ -73,7 +73,7 @@ export const employeeMenuList = [
   },
   {
     id: 'employee-chat',
-    title: 'Chat & Teams',
+    title: 'Staff Chat',
     path: '/employee/chat',
     iconName: 'Chat',
     roles: ['employee'],

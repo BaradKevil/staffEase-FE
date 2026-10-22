@@ -1,10 +1,10 @@
 /**
  * ===========================================
- *  Teams-Style Chat Input Component
+ *  Staff Chat Input Dock Component
  * ===========================================
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Box,
   IconButton,
@@ -92,7 +92,7 @@ export default function ChatInput({
     if (onTypingStop) onTypingStop();
   };
 
-  const handleFileSelect = (e, type = 'any') => {
+  const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -101,12 +101,10 @@ export default function ChatInput({
       return;
     }
 
-    uploadAttachment(file);
+    const formData = new FormData();
+    formData.append('file', file);
+    uploadAttachment(formData);
     e.target.value = '';
-  };
-
-  const handleRemoveAttachment = (index) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleAddEmoji = (emoji) => {
@@ -114,201 +112,232 @@ export default function ChatInput({
     setEmojiAnchor(null);
   };
 
+  const handleRemoveAttachment = (index) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const canSend = (text.trim().length > 0 || attachments.length > 0) && !disabled && !isUploading;
+
   return (
-    <Box sx={{ p: 2, bgcolor: '#FFFFFF', borderTop: '1px solid #EDEBE9' }}>
-      {/* Replying-To Banner */}
+    <Box sx={{ p: { xs: 1.5, sm: 2 }, pt: 0.5, bgcolor: '#FFFFFF' }}>
+      {/* Hidden file inputs */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
+      />
+      <input
+        type="file"
+        ref={imageInputRef}
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+        accept="image/jpeg,image/png,image/webp,image/gif"
+      />
+
+      {/* Replying Banner */}
       {replyingTo && (
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            px: 1.5,
-            py: 0.8,
-            mb: 1,
-            borderRadius: '6px',
-            bgcolor: '#F3F2F1',
-            borderLeft: '3px solid #5B5FC7',
+            bgcolor: '#F0F9FF',
+            border: '1px solid #BAE6FD',
+            borderBottom: 'none',
+            borderRadius: '12px 12px 0 0',
+            px: 2,
+            py: 1,
+            mb: 0,
           }}
         >
-          <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
-            <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#5B5FC7' }}>
-              Replying to {replyingTo.sender?.first_name || 'Someone'}
+          <Box sx={{ overflow: 'hidden', mr: 2 }}>
+            <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#0369A1' }}>
+              Replying to {replyingTo.sender?.first_name || 'Staff'}:
             </Typography>
-            <Typography sx={{ fontSize: '12px', color: '#616161', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <Typography noWrap sx={{ fontSize: '12px', color: '#334155' }}>
               {replyingTo.content}
             </Typography>
           </Box>
-          <IconButton size="small" onClick={onCancelReply}>
-            <CloseIcon sx={{ fontSize: 16 }} />
+          <IconButton size="small" onClick={onCancelReply} sx={{ color: '#64748B' }}>
+            <CloseIcon fontSize="small" />
           </IconButton>
         </Box>
       )}
 
-      {/* Attachment Previews */}
-      {attachments.length > 0 && (
-        <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: 'wrap', gap: 1 }}>
-          {attachments.map((att, idx) => (
-            <Chip
-              key={idx}
-              icon={<FileIcon sx={{ fontSize: 16 }} />}
-              label={`${att.file_name}`}
-              onDelete={() => handleRemoveAttachment(idx)}
-              size="small"
-              sx={{ bgcolor: '#F3F2F1', color: '#242424', fontSize: '11px', fontWeight: 600 }}
-            />
-          ))}
-        </Stack>
-      )}
-
-      {/* Main Input Box (Teams Style Container) */}
+      {/* Main Input Dock Card */}
       <Box
         sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          border: '1px solid #E1DFDD',
-          borderRadius: '8px',
-          bgcolor: '#FFFFFF',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-          transition: 'border-color 0.15s ease',
+          borderRadius: replyingTo ? '0 0 14px 14px' : '14px',
+          border: '1px solid #E2E8F0',
+          bgcolor: '#F8FAFC',
+          transition: 'all 0.15s ease',
+          boxShadow: '0 2px 8px rgba(15, 23, 42, 0.03)',
           '&:focus-within': {
-            borderColor: '#5B5FC7',
-            boxShadow: '0 0 0 2px rgba(91, 95, 199, 0.2)',
+            borderColor: '#0284C7',
+            bgcolor: '#FFFFFF',
+            boxShadow: '0 0 0 3px rgba(2, 132, 199, 0.12)',
           },
         }}
       >
-        <InputBase
-          fullWidth
-          multiline
-          minRows={1}
-          maxRows={6}
-          placeholder="Type a message"
-          value={text}
-          onChange={handleTextChange}
-          onKeyDown={handleKeyDown}
-          disabled={disabled || isUploading}
-          sx={{
-            px: 2,
-            pt: 1.2,
-            pb: 0.8,
-            fontSize: '13.5px',
-            color: '#242424',
-          }}
-        />
+        {/* Pending Uploads Bar */}
+        {(attachments.length > 0 || isUploading) && (
+          <Box sx={{ p: 1, px: 1.5, display: 'flex', flexWrap: 'wrap', gap: 1, borderBottom: '1px solid #E2E8F0' }}>
+            {attachments.map((att, idx) => (
+              <Chip
+                key={idx}
+                icon={<FileIcon sx={{ fontSize: 16 }} />}
+                label={att.file_name}
+                size="small"
+                onDelete={() => handleRemoveAttachment(idx)}
+                sx={{
+                  bgcolor: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  color: '#0F172A',
+                }}
+              />
+            ))}
+            {isUploading && (
+              <Chip
+                icon={<CircularProgress size={14} sx={{ color: '#0284C7' }} />}
+                label="Uploading..."
+                size="small"
+                sx={{ bgcolor: '#E0F2FE', color: '#0369A1', fontSize: '11.5px', fontWeight: 600 }}
+              />
+            )}
+          </Box>
+        )}
 
-        {/* Action Bar Footer */}
+        {/* Text Input Base */}
+        <Box sx={{ px: 2, pt: 1.2, pb: 0.5 }}>
+          <InputBase
+            fullWidth
+            multiline
+            minRows={1}
+            maxRows={5}
+            placeholder={disabled ? 'You cannot reply to this conversation' : 'Type a message... (Shift + Enter for new line)'}
+            value={text}
+            onChange={handleTextChange}
+            onKeyDown={handleKeyDown}
+            disabled={disabled}
+            sx={{
+              fontSize: '14px',
+              color: '#0F172A',
+              '& ::placeholder': { color: '#94A3B8', opacity: 1 },
+            }}
+          />
+        </Box>
+
+        {/* Bottom Actions Toolbar */}
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'flex-end',
+            justifyContent: 'space-between',
             px: 1,
             py: 0.6,
-            gap: 0.5,
           }}
         >
-          {isUploading && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mr: 1 }}>
-              <CircularProgress size={16} sx={{ color: '#5B5FC7' }} />
-              <Typography sx={{ fontSize: '11px', color: '#616161' }}>Uploading...</Typography>
-            </Box>
-          )}
+          {/* Left Media Actions */}
+          <Stack direction="row" spacing={0.5}>
+            <Tooltip title="Attach Document (PDF, Word, Excel, TXT)">
+              <span>
+                <IconButton
+                  size="small"
+                  disabled={disabled || isUploading}
+                  onClick={() => fileInputRef.current?.click()}
+                  sx={{ color: '#64748B', '&:hover': { color: '#0284C7', bgcolor: '#F0F9FF' } }}
+                >
+                  <AttachIcon sx={{ fontSize: 20 }} />
+                </IconButton>
+              </span>
+            </Tooltip>
 
-          {/* Emoji Picker Button */}
-          <Tooltip title="Add emoji">
-            <IconButton
-              size="small"
-              onClick={(e) => setEmojiAnchor(e.currentTarget)}
-              sx={{ color: '#616161', '&:hover': { color: '#5B5FC7' } }}
-            >
-              <EmojiIcon sx={{ fontSize: 20 }} />
-            </IconButton>
+            <Tooltip title="Attach Photo or Image">
+              <span>
+                <IconButton
+                  size="small"
+                  disabled={disabled || isUploading}
+                  onClick={() => imageInputRef.current?.click()}
+                  sx={{ color: '#64748B', '&:hover': { color: '#0284C7', bgcolor: '#F0F9FF' } }}
+                >
+                  <ImageIcon sx={{ fontSize: 20 }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+
+            <Tooltip title="Add Emoji">
+              <span>
+                <IconButton
+                  size="small"
+                  disabled={disabled}
+                  onClick={(e) => setEmojiAnchor(e.currentTarget)}
+                  sx={{ color: '#64748B', '&:hover': { color: '#0284C7', bgcolor: '#F0F9FF' } }}
+                >
+                  <EmojiIcon sx={{ fontSize: 20 }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Stack>
+
+          {/* Right Send Action */}
+          <Tooltip title={canSend ? 'Send message (Enter)' : 'Enter message to send'}>
+            <span>
+              <IconButton
+                size="small"
+                onClick={handleSend}
+                disabled={!canSend}
+                sx={{
+                  bgcolor: canSend ? '#0284C7' : '#E2E8F0',
+                  color: canSend ? '#FFFFFF' : '#94A3B8',
+                  width: 34,
+                  height: 34,
+                  boxShadow: canSend ? '0 2px 6px rgba(2, 132, 199, 0.35)' : 'none',
+                  transition: 'all 0.15s ease',
+                  '&:hover': {
+                    bgcolor: canSend ? '#0369A1' : '#E2E8F0',
+                  },
+                }}
+              >
+                <SendIcon sx={{ fontSize: 17 }} />
+              </IconButton>
+            </span>
           </Tooltip>
-
-          {/* Attachment Button */}
-          <Tooltip title="Attach file">
-            <IconButton
-              size="small"
-              onClick={() => fileInputRef.current?.click()}
-              sx={{ color: '#616161', '&:hover': { color: '#5B5FC7' } }}
-            >
-              <AttachIcon sx={{ fontSize: 20 }} />
-            </IconButton>
-          </Tooltip>
-
-          {/* Image Upload Button */}
-          <Tooltip title="Upload image">
-            <IconButton
-              size="small"
-              onClick={() => imageInputRef.current?.click()}
-              sx={{ color: '#616161', '&:hover': { color: '#5B5FC7' } }}
-            >
-              <ImageIcon sx={{ fontSize: 20 }} />
-            </IconButton>
-          </Tooltip>
-
-          {/* Hidden File Inputs */}
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={(e) => handleFileSelect(e, 'any')}
-            style={{ display: 'none' }}
-          />
-          <input
-            type="file"
-            ref={imageInputRef}
-            accept="image/*"
-            onChange={(e) => handleFileSelect(e, 'image')}
-            style={{ display: 'none' }}
-          />
-
-          {/* Send Button */}
-          <IconButton
-            size="small"
-            onClick={handleSend}
-            disabled={(!text.trim() && attachments.length === 0) || disabled || isUploading}
-            sx={{
-              ml: 0.5,
-              bgcolor: (text.trim() || attachments.length > 0) && !disabled && !isUploading ? '#5B5FC7' : '#EDEBE9',
-              color: (text.trim() || attachments.length > 0) && !disabled && !isUploading ? '#FFFFFF' : '#A19F9D',
-              width: 32,
-              height: 32,
-              '&:hover': {
-                bgcolor: (text.trim() || attachments.length > 0) ? '#4F52B2' : '#EDEBE9',
-              },
-            }}
-          >
-            <SendIcon sx={{ fontSize: 16 }} />
-          </IconButton>
         </Box>
       </Box>
 
-      {/* Emoji Palette Popover */}
+      {/* Emoji Picker Popover */}
       <Popover
         open={Boolean(emojiAnchor)}
         anchorEl={emojiAnchor}
         onClose={() => setEmojiAnchor(null)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         PaperProps={{
           sx: {
             p: 1.5,
-            width: 260,
             borderRadius: '12px',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+            boxShadow: '0 8px 24px rgba(15, 23, 42, 0.15)',
+            border: '1px solid #E2E8F0',
+            maxWidth: 280,
           },
         }}
       >
-        <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#8A8886', mb: 1, textTransform: 'uppercase' }}>
-          Quick Reactions & Emojis
-        </Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 0.8 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 0.5 }}>
           {EMOJI_PALETTE.map((emoji) => (
             <IconButton
               key={emoji}
               onClick={() => handleAddEmoji(emoji)}
-              size="small"
-              sx={{ fontSize: '18px', width: 34, height: 34, '&:hover': { bgcolor: '#F3F2F1' } }}
+              sx={{
+                width: 36,
+                height: 36,
+                fontSize: '18px',
+                borderRadius: '8px',
+                '&:hover': { bgcolor: '#F1F5F9', transform: 'scale(1.15)' },
+              }}
             >
               {emoji}
             </IconButton>
