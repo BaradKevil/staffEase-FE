@@ -913,8 +913,18 @@ export default function TimeTrackingAdmin() {
                               {sess.start_selfie_url ? (
                                 <Tooltip title="Clock-In Selfie (Start)">
                                   <Avatar
-                                    src={getSelfieUrl(sess.start_selfie_url)}
-                                    sx={{
+      src={getSelfieUrl(sess.start_selfie_url)}
+      imgProps={{
+        crossOrigin: 'anonymous',
+        onError: (e) => {
+          const currentSrc = e.currentTarget.src;
+          if (!currentSrc.includes('staffease-be.onrender.com') && sess.start_selfie_url) {
+            const cleanPath = sess.start_selfie_url.replace(/^\/?/, '/');
+            e.currentTarget.src = `https://staffease-be.onrender.com${cleanPath}`;
+          }
+        },
+      }}
+      sx={{
                                       width: 28,
                                       height: 28,
                                       border: '2px solid #10B981',
@@ -932,8 +942,18 @@ export default function TimeTrackingAdmin() {
                               {sess.end_selfie_url ? (
                                 <Tooltip title={`Clock-Out Selfie (Stop): ${sess.notes || 'No reason'}`}>
                                   <Avatar
-                                    src={getSelfieUrl(sess.end_selfie_url)}
-                                    sx={{
+      src={getSelfieUrl(sess.end_selfie_url)}
+      imgProps={{
+        crossOrigin: 'anonymous',
+        onError: (e) => {
+          const currentSrc = e.currentTarget.src;
+          if (!currentSrc.includes('staffease-be.onrender.com') && sess.end_selfie_url) {
+            const cleanPath = sess.end_selfie_url.replace(/^\/?/, '/');
+            e.currentTarget.src = `https://staffease-be.onrender.com${cleanPath}`;
+          }
+        },
+      }}
+      sx={{
                                       width: 28,
                                       height: 28,
                                       border: '2px solid #EF4444',

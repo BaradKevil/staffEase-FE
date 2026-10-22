@@ -588,16 +588,36 @@ export default function TimeTracking() {
                           {sess.start_selfie_url && (
                             <Tooltip title="Clock-In selfie verified">
                               <Avatar
-                                src={getSelfieUrl(sess.start_selfie_url)}
-                                sx={{ width: 22, height: 22, border: '1.5px solid #10B981' }}
+      src={getSelfieUrl(sess.start_selfie_url)}
+      imgProps={{
+        crossOrigin: 'anonymous',
+        onError: (e) => {
+          const currentSrc = e.currentTarget.src;
+          if (!currentSrc.includes('staffease-be.onrender.com') && sess.start_selfie_url) {
+            const cleanPath = sess.start_selfie_url.replace(/^\/?/, '/');
+            e.currentTarget.src = `https://staffease-be.onrender.com${cleanPath}`;
+          }
+        },
+      }}
+      sx={{ width: 22, height: 22, border: '1.5px solid #10B981' }}
                               />
                             </Tooltip>
                           )}
                           {sess.end_selfie_url && (
                             <Tooltip title={`Clock-Out selfie verified: ${sess.notes || 'Paused'}`}>
                               <Avatar
-                                src={getSelfieUrl(sess.end_selfie_url)}
-                                sx={{ width: 22, height: 22, border: '1.5px solid #EF4444' }}
+      src={getSelfieUrl(sess.end_selfie_url)}
+      imgProps={{
+        crossOrigin: 'anonymous',
+        onError: (e) => {
+          const currentSrc = e.currentTarget.src;
+          if (!currentSrc.includes('staffease-be.onrender.com') && sess.end_selfie_url) {
+            const cleanPath = sess.end_selfie_url.replace(/^\/?/, '/');
+            e.currentTarget.src = `https://staffease-be.onrender.com${cleanPath}`;
+          }
+        },
+      }}
+      sx={{ width: 22, height: 22, border: '1.5px solid #EF4444' }}
                               />
                             </Tooltip>
                           )}

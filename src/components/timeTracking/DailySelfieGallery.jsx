@@ -36,12 +36,33 @@ import {
 } from '@mui/icons-material';
 
 // Helper to resolve backend upload URLs
-const SERVER_BASE_URL = (import.meta.env.VITE_BASEURL || 'http://localhost:5000/api/v1').replace(/\/api\/v1\/?$/, '');
+const resolveServerBaseUrl = () => {
+  const rawBase = import.meta.env.VITE_BASEURL || 'http://localhost:5000/api/v1';
+  const cleanBase = String(rawBase)
+    .trim()
+    .replace(/\s+/g, '')
+    .replace(/\/api\/v1\/?$/, '')
+    .replace(/\/api\/?$/, '')
+    .replace(/\/+$/, '');
+
+  if (
+    typeof window !== 'undefined' &&
+    window.location.hostname !== 'localhost' &&
+    window.location.hostname !== '127.0.0.1' &&
+    cleanBase.includes('localhost')
+  ) {
+    return 'https://staffease-be.onrender.com';
+  }
+
+  return cleanBase;
+};
 
 export const getSelfieUrl = (url) => {
   if (!url) return null;
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return `${SERVER_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  const serverBase = resolveServerBaseUrl();
+  const cleanUrl = String(url).trim().replace(/\s+/g, '');
+  return `${serverBase}${cleanUrl.startsWith('/') ? '' : '/'}${cleanUrl}`;
 };
 
 const formatTimeOnly = (dateStr) => {
@@ -172,7 +193,15 @@ export default function DailySelfieGallery({
                           <img
                             src={getSelfieUrl(sess.start_selfie_url)}
                             alt="Clock In Selfie"
+                            crossOrigin="anonymous"
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e) => {
+                              const currentSrc = e.currentTarget.src;
+                              if (!currentSrc.includes('staffease-be.onrender.com') && sess.start_selfie_url) {
+                                const cleanPath = sess.start_selfie_url.replace(/^\/?/, '/');
+                                e.currentTarget.src = `https://staffease-be.onrender.com${cleanPath}`;
+                              }
+                            }}
                           />
                           <Box
                             className="zoom-overlay"
@@ -275,7 +304,15 @@ export default function DailySelfieGallery({
                           <img
                             src={getSelfieUrl(sess.end_selfie_url)}
                             alt="Clock Out Selfie"
+                            crossOrigin="anonymous"
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e) => {
+                              const currentSrc = e.currentTarget.src;
+                              if (!currentSrc.includes('staffease-be.onrender.com') && sess.end_selfie_url) {
+                                const cleanPath = sess.end_selfie_url.replace(/^\/?/, '/');
+                                e.currentTarget.src = `https://staffease-be.onrender.com${cleanPath}`;
+                              }
+                            }}
                           />
                           <Box
                             className="zoom-overlay"
@@ -423,6 +460,16 @@ export default function DailySelfieGallery({
               <img
                 src={lightboxData.url}
                 alt="Verification Selfie"
+                crossOrigin="anonymous"
+                onError={(e) => {
+                  const currentSrc = e.currentTarget.src;
+                  if (!currentSrc.includes('staffease-be.onrender.com')) {
+                    try {
+                      const parsed = new URL(currentSrc);
+                      e.currentTarget.src = `https://staffease-be.onrender.com${parsed.pathname}`;
+                    } catch (_) {}
+                  }
+                }}
                 style={{
                   width: '100%',
                   maxHeight: 460,

@@ -7,9 +7,13 @@
 export const getAvatarFullUrl = (url) => {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  const backendBase = (import.meta.env.VITE_BASEURL || 'http://localhost:5000/api/v1')
-    .replace(/\/api\/v1\/?$/, '')
-    .replace(/\/api\/?$/, '');
+  const rawBase = import.meta.env.VITE_BASEURL || 'http://localhost:5000/api/v1';
+  let backendBase = String(rawBase).trim().replace(/\s+/g, '').replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '').replace(/\/+$/, '');
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && backendBase.includes('localhost')) {
+    backendBase = 'https://staffease-be.onrender.com';
+  }
+
+
   return `${backendBase}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
