@@ -237,7 +237,7 @@ export default function ChatMessageItem({
               {message.attachments && message.attachments.length > 0 && (
                 <Stack spacing={1} sx={{ mb: message.content ? 1 : 0 }}>
                   {message.attachments.map((att) => {
-                    const isImg = att.file_type && att.file_type.startsWith('image/');
+                    const isImg = (att.file_type && att.file_type.startsWith('image/')) || /\.(jpg|jpeg|png|webp|gif|svg|bmp|ico)$/i.test(att.file_name || att.file_path || '');
                     const fullUrl = getAvatarFullUrl(att.file_path);
 
                     if (isImg) {

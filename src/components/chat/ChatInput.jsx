@@ -51,6 +51,7 @@ export default function ChatInput({
   const { mutate: uploadAttachment, isPending: isUploading } = useUploadChatAttachment(
     (saved) => {
       setAttachments((prev) => [...prev, saved]);
+      toast.success(`Attached "${saved.file_name}"`);
     },
     (err) => {
       toast.error(err?.response?.data?.message || 'Failed to upload attachment.');
@@ -80,8 +81,18 @@ export default function ChatInput({
       return;
     }
 
+    const hasOnlyImages =
+      attachments.length > 0 &&
+      attachments.every(
+        (a) =>
+          (a.file_type && a.file_type.startsWith('image/')) ||
+          /\.(jpg|jpeg|png|webp|gif|svg|bmp)$/i.test(a.file_name || '')
+      );
+    const messageType = hasOnlyImages ? 'image' : attachments.length > 0 ? 'file' : 'text';
+
     onSendMessage({
       content: trimmed || (attachments.length > 0 ? attachments[0].file_name : ''),
+      message_type: messageType,
       attachments: attachments.length > 0 ? attachments : undefined,
       reply_to_id: replyingTo?.id || null,
     });
@@ -96,14 +107,14 @@ export default function ChatInput({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('File size cannot exceed 10MB.');
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error('File size cannot exceed 50MB.');
+      e.target.value = '';
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
-    uploadAttachment(formData);
+    // Pass the File object directly to uploadAttachment
+    uploadAttachment(file);
     e.target.value = '';
   };
 
@@ -120,20 +131,20 @@ export default function ChatInput({
 
   return (
     <Box sx={{ p: { xs: 1.5, sm: 2 }, pt: 0.5, bgcolor: '#FFFFFF' }}>
-      {/* Hidden file inputs */}
+      {/* Hidden file inputs - Accept ANY file or image */}
       <input
         type="file"
         ref={fileInputRef}
         onChange={handleFileSelect}
         style={{ display: 'none' }}
-        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
+        accept="*/*"
       />
       <input
         type="file"
         ref={imageInputRef}
         onChange={handleFileSelect}
         style={{ display: 'none' }}
-        accept="image/jpeg,image/png,image/webp,image/gif"
+        accept="image/*"
       />
 
       {/* Replying Banner */}
@@ -184,22 +195,27 @@ export default function ChatInput({
         {/* Pending Uploads Bar */}
         {(attachments.length > 0 || isUploading) && (
           <Box sx={{ p: 1, px: 1.5, display: 'flex', flexWrap: 'wrap', gap: 1, borderBottom: '1px solid #E2E8F0' }}>
-            {attachments.map((att, idx) => (
-              <Chip
-                key={idx}
-                icon={<FileIcon sx={{ fontSize: 16 }} />}
-                label={att.file_name}
-                size="small"
-                onDelete={() => handleRemoveAttachment(idx)}
-                sx={{
-                  bgcolor: '#FFFFFF',
-                  border: '1px solid #CBD5E1',
-                  fontSize: '11.5px',
-                  fontWeight: 600,
-                  color: '#0F172A',
-                }}
-              />
-            ))}
+            {attachments.map((att, idx) => {
+              const isImg =
+                (att.file_type && att.file_type.startsWith('image/')) ||
+                /\.(jpg|jpeg|png|webp|gif|svg|bmp)$/i.test(att.file_name || '');
+              return (
+                <Chip
+                  key={idx}
+                  icon={isImg ? <ImageIcon sx={{ fontSize: 16 }} /> : <FileIcon sx={{ fontSize: 16 }} />}
+                  label={att.file_name}
+                  size="small"
+                  onDelete={() => handleRemoveAttachment(idx)}
+                  sx={{
+                    bgcolor: '#FFFFFF',
+                    border: '1px solid #CBD5E1',
+                    fontSize: '11.5px',
+                    fontWeight: 600,
+                    color: '#0F172A',
+                  }}
+                />
+              );
+            })}
             {isUploading && (
               <Chip
                 icon={<CircularProgress size={14} sx={{ color: '#0284C7' }} />}
@@ -243,7 +259,7 @@ export default function ChatInput({
         >
           {/* Left Media Actions */}
           <Stack direction="row" spacing={0.5}>
-            <Tooltip title="Attach Document (PDF, Word, Excel, TXT)">
+            <Tooltip title="Attach Any File or Document">
               <span>
                 <IconButton
                   size="small"
@@ -284,7 +300,7 @@ export default function ChatInput({
           </Stack>
 
           {/* Right Send Action */}
-          <Tooltip title={canSend ? 'Send message (Enter)' : 'Enter message to send'}>
+          <Tooltip title={canSend ? 'Send message (Enter)' : 'Enter message or attachment to send'}>
             <span>
               <IconButton
                 size="small"

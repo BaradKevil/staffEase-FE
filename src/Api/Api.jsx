@@ -1063,7 +1063,7 @@ export const useUploadChatAttachment = (onSuccess, onError) => {
   return useMutation({
     mutationFn: async (file) => {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', file instanceof FormData ? file.get('file') : file);
       const res = await apiClient.post('/chat/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -1073,3 +1073,4 @@ export const useUploadChatAttachment = (onSuccess, onError) => {
     onError,
   });
 };
+
