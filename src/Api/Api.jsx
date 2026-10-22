@@ -711,13 +711,28 @@ export const useTrigger7PmReminder = (onSuccess, onError) => {
   });
 };
 
-export const useTodayTimeSummary = (refetchInterval = 30000) => {
+
+export const usePendingRegistrationCount = (enabled = true) => {
+  return useQuery({
+    queryKey: ['pending-registration-count'],
+    queryFn: async () => {
+      const res = await apiClient.get('/employees/pending-count');
+      const data = unwrap(res);
+      return typeof data?.count === 'number' ? data.count : 0;
+    },
+    staleTime: 0,
+    enabled,
+  });
+};
+
+export const useTodayTimeSummary = (refetchInterval = 10000) => {
   return useQuery({
     queryKey: ['today-time-summary'],
     queryFn: async () => {
       const res = await apiClient.get('/time-tracking/today-summary');
       return unwrap(res);
     },
+    staleTime: 0,
     refetchInterval,
   });
 };
@@ -739,6 +754,7 @@ export const useAdminTimeRecords = (params = {}) => {
       const res = await apiClient.get('/time-tracking/admin/records', { params });
       return unwrapPaginated(res);
     },
+    staleTime: 0,
   });
 };
 
@@ -749,7 +765,8 @@ export const useAdminTimeOverview = () => {
       const res = await apiClient.get('/time-tracking/admin/overview');
       return unwrap(res);
     },
-    refetchInterval: 30000,
+    staleTime: 0,
+    refetchInterval: 15000,
   });
 };
 

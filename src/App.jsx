@@ -2,6 +2,7 @@ import './App.css';
 import { RouterProvider, createBrowserRouter, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { SocketProvider } from './common/SocketContext';
 
 // Guards & Layout
 import { AuthGaurd, LogGaurd, RoleGuard, HomeRedirect } from './common/Gaurd';
@@ -247,7 +248,7 @@ function App() {
   ]);
 
   return (
-    <>
+    <SocketProvider>
       <RouterProvider router={router} />
       <ToastContainer
         position="top-right"
@@ -261,7 +262,7 @@ function App() {
         pauseOnHover
         theme="colored"
       />
-    </>
+    </SocketProvider>
   );
 }
 

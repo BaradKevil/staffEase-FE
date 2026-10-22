@@ -14,6 +14,7 @@ import {
   ListItemText,
   Typography,
   Divider,
+  Chip,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -32,6 +33,7 @@ import {
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { adminMenuList, employeeMenuList } from './MenuList';
+import { usePendingRegistrationCount } from '../Api/Api';
 
 const iconMap = {
   Dashboard: <DashboardOutlinedIcon sx={{ fontSize: 20 }} />,
@@ -56,6 +58,7 @@ const Sidebar = ({ isMobileOpen, onMobileClose, onLogoutClick }) => {
 
   const role = localStorage.getItem('role') || 'employee';
   const menuItems = role === 'admin' ? adminMenuList : employeeMenuList;
+  const { data: pendingCount = 0 } = usePendingRegistrationCount(role === 'admin');
 
   const content = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -117,6 +120,23 @@ const Sidebar = ({ isMobileOpen, onMobileClose, onLogoutClick }) => {
                   fontWeight: isActive ? 700 : 500,
                 }}
               />
+              {item.id === 'admin-approvals' && pendingCount > 0 && (
+                <Chip
+                  label={pendingCount}
+                  size="small"
+                  sx={{
+                    ml: 1,
+                    height: 20,
+                    minWidth: 20,
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    bgcolor: '#EF4444',
+                    color: '#FFFFFF',
+                    boxShadow: '0 2px 4px rgba(239, 68, 68, 0.35)',
+                    '& .MuiChip-label': { px: 0.8 },
+                  }}
+                />
+              )}
             </ListItemButton>
           );
         })}

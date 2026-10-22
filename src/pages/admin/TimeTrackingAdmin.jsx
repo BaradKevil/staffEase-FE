@@ -141,7 +141,42 @@ export default function TimeTrackingAdmin() {
   const records = useMemo(() => {
     return rawRecords.filter((rec) => rec.user?.role !== 'admin');
   }, [rawRecords]);
+
   const pagination = recordsData?.pagination || { currentPage: 1, totalPages: 1, totalCount: 0 };
+
+  // Drill-down State
+  const [selectedUserDate, setSelectedUserDate] = useState(null); // { userId, date }
+  const {
+    data: drillDownData,
+    isLoading: isDrillDownLoading,
+    refetch: refetchDrillDown,
+  } = useEmployeeDateSessions(
+    selectedUserDate?.userId,
+    selectedUserDate?.date
+  );
+
+  // Real-time second-by-second ticker for active sessions on admin view
+  const [tickerNow, setTickerNow] = useState(Date.now());
+
+  React.useEffect(() => {
+    const hasActive = records.some((r) => r.has_active_session) || drillDownData?.sessions?.some((s) => s.status === 'active');
+    if (!hasActive) return;
+
+    const interval = setInterval(() => {
+      setTickerNow(Date.now());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [records, drillDownData]);
+
+  const getComputedActualSeconds = (rec) => {
+    if (rec.has_active_session && rec.active_session_started_at) {
+      const startMs = new Date(rec.active_session_started_at).getTime();
+      const elapsed = Math.max(0, Math.floor((tickerNow - startMs) / 1000));
+      return (rec.completed_seconds || 0) + elapsed;
+    }
+    return rec.actual_seconds ?? (rec.actual_minutes ? rec.actual_minutes * 60 : 0);
+  };
 
   // Manual Trigger Auto-Close
   const { mutate: triggerAutoClose, isPending: isTriggering } = useTriggerAutoClose(
@@ -163,17 +198,6 @@ export default function TimeTrackingAdmin() {
     (err) => {
       toast.error(err?.response?.data?.message || 'Failed to dispatch 7:00 PM alert.');
     }
-  );
-
-  // Drill-down State
-  const [selectedUserDate, setSelectedUserDate] = useState(null); // { userId, date }
-  const {
-    data: drillDownData,
-    isLoading: isDrillDownLoading,
-    refetch: refetchDrillDown,
-  } = useEmployeeDateSessions(
-    selectedUserDate?.userId,
-    selectedUserDate?.date
   );
 
   // Correction Modal State
@@ -653,7 +677,7 @@ export default function TimeTrackingAdmin() {
               ) : (
                 records.map((rec) => {
                   const target = rec.target_minutes ?? 480;
-                  const actualSecs = rec.actual_seconds ?? (rec.actual_minutes ? rec.actual_minutes * 60 : 0);
+                  const actualSecs = getComputedActualSeconds(rec);
                   const isTargetMet = target > 0 ? actualSecs >= target * 60 : actualSecs > 0;
 
                   return (
@@ -835,7 +859,14 @@ export default function TimeTrackingAdmin() {
                   <Box sx={{ textAlign: 'right' }}>
                     <Typography sx={{ fontSize: '12px', color: '#64748B' }}>Target / Actual</Typography>
                     <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>
-                      {formatMinutesToHours(drillDownData.target_minutes)} / {drillDownData.actual_seconds ? formatSecondsHuman(drillDownData.actual_seconds) : formatMinutesToHours(drillDownData.actual_minutes)}
+                      {formatMinutesToHours(drillDownData.target_minutes)} / {formatSecondsHuman(
+                        drillDownData.sessions?.reduce((acc, s) => {
+                          if (s.status === 'active' && s.started_at) {
+                            return acc + Math.max(0, Math.floor((tickerNow - new Date(s.started_at).getTime()) / 1000));
+                          }
+                          return acc + (s.duration_seconds ?? (s.duration_minutes ? s.duration_minutes * 60 : 0));
+                        }, 0) || drillDownData.actual_seconds || 0
+                      )}
                     </Typography>
                   </Box>
                   <StatusBadge status={drillDownData.status} />
@@ -928,7 +959,9 @@ export default function TimeTrackingAdmin() {
                             {sess.ended_at ? formatTimeOnly(sess.ended_at) : 'Active'}
                           </TableCell>
                           <TableCell sx={{ fontWeight: 700, color: '#0F172A', fontFamily: 'monospace' }}>
-                            {sess.duration_seconds !== null && sess.duration_seconds !== undefined
+                            {sess.status === 'active' && sess.started_at
+                              ? formatSecondsHuman(Math.max(0, Math.floor((tickerNow - new Date(sess.started_at).getTime()) / 1000)))
+                              : sess.duration_seconds !== null && sess.duration_seconds !== undefined
                               ? formatSecondsHuman(sess.duration_seconds)
                               : formatMinutesToHours(sess.duration_minutes)}
                           </TableCell>
