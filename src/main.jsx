@@ -7,6 +7,14 @@ import { ThemeProvider } from '@mui/material/styles';
 import theme from './theme';
 import { registerSW } from 'virtual:pwa-register';
 
+// Capture PWA beforeinstallprompt globally as early as possible
+window.__staffEaseInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  window.__staffEaseInstallPrompt = e;
+  window.dispatchEvent(new CustomEvent('staffease:installable'));
+});
+
 // Register PWA service worker for native push notifications and offline caching
 registerSW({
   immediate: true,

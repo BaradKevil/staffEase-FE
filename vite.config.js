@@ -14,6 +14,10 @@ export default defineConfig({
       injectManifest: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
+      devOptions: {
+        enabled: true,
+        type: 'module',
+      },
       manifest: {
         name: 'staffEase — Enterprise HRMS',
         short_name: 'staffEase',

@@ -64,6 +64,8 @@ const Navbar = ({ toggleSidebar, onToggleCollapse, isCollapsed = false, onLogout
     isSupported: isPushSupported,
     isSubscribed: isPushSubscribed,
     isInstallable,
+    isInstallModalOpen,
+    setIsInstallModalOpen,
     subscribe: subscribePush,
     unsubscribe: unsubscribePush,
     installApp,
@@ -246,6 +248,36 @@ const Navbar = ({ toggleSidebar, onToggleCollapse, isCollapsed = false, onLogout
 
         {/* Right: Role, Work Tracking Status, Notifications, Avatar Profile */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 } }}>
+          {/* PWA Install App Button */}
+          {isInstallable && (
+            <Tooltip title="Install staffEase app on your desktop or phone">
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={installApp}
+                startIcon={<DownloadIcon sx={{ fontSize: '15px !important' }} />}
+                sx={{
+                  fontWeight: 700,
+                  fontSize: '11px',
+                  borderRadius: '6px',
+                  height: 24,
+                  textTransform: 'none',
+                  borderColor: '#23A4E8',
+                  color: '#0284C7',
+                  bgcolor: '#F0F9FF',
+                  borderWidth: '1.5px',
+                  px: 1.2,
+                  '&:hover': {
+                    bgcolor: '#E0F2FE',
+                    borderColor: '#0284C7',
+                  },
+                }}
+              >
+                Install App
+              </Button>
+            </Tooltip>
+          )}
+
           <Chip
             size="small"
             label={role === 'admin' ? 'HR Admin' : 'Employee'}
@@ -559,6 +591,46 @@ const Navbar = ({ toggleSidebar, onToggleCollapse, isCollapsed = false, onLogout
           </Menu>
         </Box>
       </Toolbar>
+
+      {/* PWA Install Guide Modal */}
+      <Dialog
+        open={isInstallModalOpen}
+        onClose={() => setIsInstallModalOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '14px', p: 1 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, fontSize: '16px', color: '#0F172A', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <DownloadIcon sx={{ color: '#23A4E8' }} /> Install staffEase App
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography sx={{ fontSize: '13px', color: '#334155', mb: 2 }}>
+            Install staffEase as an independent app on your computer or mobile device for 1-click access and desktop push alerts:
+          </Typography>
+          <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0', mb: 1.5 }}>
+            <Typography sx={{ fontWeight: 700, fontSize: '13px', color: '#0F172A', mb: 0.5 }}>
+              🖥️ Chrome / Edge on Desktop
+            </Typography>
+            <Typography sx={{ fontSize: '12px', color: '#64748B' }}>
+              Look at the right side of your browser URL bar at the top: click the <strong>Install icon</strong> (monitor with down arrow), or click the browser menu (⋮) → <strong>Install staffEase</strong>.
+            </Typography>
+          </Box>
+          <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+            <Typography sx={{ fontWeight: 700, fontSize: '13px', color: '#0F172A', mb: 0.5 }}>
+              📱 Mobile (Android / iOS)
+            </Typography>
+            <Typography sx={{ fontSize: '12px', color: '#64748B' }}>
+              • On Safari (iOS): Tap the <strong>Share</strong> icon → <strong>Add to Home Screen</strong>.<br/>
+              • On Chrome (Android): Tap menu (⋮) → <strong>Install App</strong>.
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={() => setIsInstallModalOpen(false)} variant="contained" sx={{ bgcolor: '#23A4E8', textTransform: 'none' }}>
+            Got it
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Selfie Verification & Mandatory Reason Modal for Status Changes */}
       <SelfieCaptureModal

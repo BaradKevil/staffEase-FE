@@ -33,8 +33,9 @@ export function usePushNotifications() {
   const [permission, setPermission] = useState('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null);
-  const [isInstallable, setIsInstallable] = useState(false);
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
 
   // Check browser support and existing push subscription on mount
   useEffect(() => {
@@ -46,27 +47,44 @@ export function usePushNotifications() {
 
     setIsSupported(supported);
 
+    // Detect if already installed / running in standalone window
+    const standaloneMode =
+      typeof window !== 'undefined' &&
+      (window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true);
+    setIsStandalone(Boolean(standaloneMode));
+
     if (supported) {
       setPermission(Notification.permission);
 
-      navigator.serviceWorker.ready.then((reg) => {
-        reg.pushManager.getSubscription().then((sub) => {
+      navigator.serviceWorker.ready
+        .then((reg) => reg.pushManager.getSubscription())
+        .then((sub) => {
           setIsSubscribed(Boolean(sub));
-        });
-      });
+        })
+        .catch(() => {});
     }
 
-    // Capture PWA install prompt
-    const handleBeforeInstall = (e) => {
-      e.preventDefault();
-      setDeferredInstallPrompt(e);
-      setIsInstallable(true);
+    // Check if global prompt was already captured
+    if (typeof window !== 'undefined' && window.__staffEaseInstallPrompt) {
+      setDeferredInstallPrompt(window.__staffEaseInstallPrompt);
+    }
+
+    const handleInstallable = () => {
+      if (window.__staffEaseInstallPrompt) {
+        setDeferredInstallPrompt(window.__staffEaseInstallPrompt);
+      }
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('staffease:installable', handleInstallable);
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      window.__staffEaseInstallPrompt = e;
+      setDeferredInstallPrompt(e);
+    });
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('staffease:installable', handleInstallable);
     };
   }, []);
 
@@ -82,12 +100,31 @@ export function usePushNotifications() {
     try {
       setIsLoading(true);
 
+      // Check if permission was already denied by the user
+      if (Notification.permission === 'denied') {
+        toast.warn(
+          'Notifications are blocked in your browser. Click the lock/settings icon next to the URL to allow notifications.',
+          { autoClose: 7000 }
+        );
+        setIsLoading(false);
+        return false;
+      }
+
       // 1. Request notification permission
       const perm = await Notification.requestPermission();
       setPermission(perm);
 
+      if (perm === 'denied') {
+        toast.warn(
+          'Notification permission was blocked. Click the lock/settings icon next to the URL to enable notifications.',
+          { autoClose: 7000 }
+        );
+        setIsLoading(false);
+        return false;
+      }
+
       if (perm !== 'granted') {
-        toast.warn('Notification permission was not granted.');
+        toast.info('Notification permission was dismissed.');
         setIsLoading(false);
         return false;
       }
@@ -118,7 +155,7 @@ export function usePushNotifications() {
       });
 
       setIsSubscribed(true);
-      toast.success('🔔 Push notifications enabled! You will now receive alerts even when offline.');
+      toast.success('🔔 Push notifications active! You will now receive alerts even when offline.');
       setIsLoading(false);
       return true;
     } catch (err) {
@@ -157,18 +194,21 @@ export function usePushNotifications() {
   }, []);
 
   /**
-   * Triggers the native PWA browser install dialog (Desktop taskbar or Mobile homescreen)
+   * Triggers the native PWA browser install dialog or opens helpful install guide
    */
   const installApp = useCallback(async () => {
-    if (!deferredInstallPrompt) return;
-
-    deferredInstallPrompt.prompt();
-    const { outcome } = await deferredInstallPrompt.userChoice;
-
-    if (outcome === 'accepted') {
-      toast.success('staffEase app installed successfully!');
-      setIsInstallable(false);
-      setDeferredInstallPrompt(null);
+    const prompt = deferredInstallPrompt || window.__staffEaseInstallPrompt;
+    if (prompt) {
+      prompt.prompt();
+      const { outcome } = await prompt.userChoice;
+      if (outcome === 'accepted') {
+        toast.success('staffEase app installed successfully!');
+        setDeferredInstallPrompt(null);
+        window.__staffEaseInstallPrompt = null;
+      }
+    } else {
+      // If native prompt is not active, open modal with browser-specific instructions
+      setIsInstallModalOpen(true);
     }
   }, [deferredInstallPrompt]);
 
@@ -177,7 +217,10 @@ export function usePushNotifications() {
     permission,
     isSubscribed,
     isLoading,
-    isInstallable,
+    isStandalone,
+    isInstallable: !isStandalone, // Show unless already installed in standalone window
+    isInstallModalOpen,
+    setIsInstallModalOpen,
     subscribe,
     unsubscribe,
     installApp,
