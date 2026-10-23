@@ -6,6 +6,7 @@ import {
   CardContent,
   Grid,
   LinearProgress,
+  CircularProgress,
   Table,
   TableBody,
   TableCell,
@@ -45,15 +46,19 @@ import {
   PlayCircleFilledRounded as RunningIcon,
   CameraAltRounded as CameraIcon,
 } from '@mui/icons-material';
+import { toast } from 'react-toastify';
 import {
   useTodayTimeSummary,
   useMyTimeHistory,
   useEmployeeDateSessions,
+  useStartWorkSession,
+  useStopWorkSession,
 } from '../../Api/Api';
 import StatusBadge from '../../common/custom/StatusBadge';
 import CustomTableLoader from '../../common/custom/CustomTableLoader';
 import CustomPagination from '../../common/custom/CustomPagination';
 import DailySelfieGallery, { getSelfieUrl } from '../../components/timeTracking/DailySelfieGallery';
+import SelfieCaptureModal from '../../components/timeTracking/SelfieCaptureModal';
 
 // Formats total seconds to digital clock display (HH:MM:SS)
 const formatSecondsToHMS = (totalSeconds = 0) => {
@@ -187,6 +192,52 @@ export default function TimeTracking() {
   const isCompleted = targetSeconds > 0 ? totalWorkedSeconds >= targetSeconds : totalWorkedSeconds > 0;
   const isTrackingActive = Boolean(summary?.is_tracking_active);
 
+  // Live Work Tracking Selfie Verification Modal & Mutations
+  const [selfieModalOpen, setSelfieModalOpen] = useState(false);
+  const [selfieModalMode, setSelfieModalMode] = useState('start'); // 'start' | 'stop'
+
+  const { mutate: startWorkMutate, isPending: isStarting } = useStartWorkSession(
+    () => {
+      toast.success('Selfie verified! Status changed to Active & timer started.');
+      setSelfieModalOpen(false);
+      refetchSummary();
+    },
+    (err) => {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to start session.';
+      toast.error(msg);
+    }
+  );
+
+  const { mutate: stopWorkMutate, isPending: isStopping } = useStopWorkSession(
+    () => {
+      toast.success('Selfie & reason verified! Status changed to Inactive & session stopped.');
+      setSelfieModalOpen(false);
+      refetchSummary();
+    },
+    (err) => {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to stop session.';
+      toast.error(msg);
+    }
+  );
+
+  const handleInitiateActive = () => {
+    setSelfieModalMode('start');
+    setSelfieModalOpen(true);
+  };
+
+  const handleInitiateInactive = () => {
+    setSelfieModalMode('stop');
+    setSelfieModalOpen(true);
+  };
+
+  const handleSelfieSubmit = ({ selfie, reason }) => {
+    if (selfieModalMode === 'start') {
+      startWorkMutate({ selfie });
+    } else {
+      stopWorkMutate({ reason, selfie });
+    }
+  };
+
   // Personal History State
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -280,14 +331,14 @@ export default function TimeTracking() {
             <strong>Workday Policy:</strong> Daily 8-hour target must be completed by <strong>12:00 AM (Midnight)</strong>. Daily progress alert notification is sent at <strong>7:00 PM</strong>.
           </Typography>
           <Typography sx={{ fontSize: '12px', color: '#0284C7' }}>
-            💡 <strong>Status-Linked Tracking:</strong> Work sessions start automatically when your status is changed to <strong>Active</strong>, and stop when changed to <strong>Inactive</strong> via the <strong>Profile Menu</strong> (top-right avatar).
+            💡 <strong>Status-Linked Tracking:</strong> Work sessions start automatically when your status is changed to <strong>Active</strong>, and stop when changed to <strong>Inactive</strong> via the <strong>Profile Menu</strong> (top-right avatar) or using the action button below.
           </Typography>
         </Box>
       </Alert>
 
-      {/* Hero Overview: Live Working Timers & Target Progress Cards */}
+      {/* Hero Overview: Live Working Timers & Today's Sessions Cards */}
       <Grid container spacing={3}>
-        {/* Left Card: Live Working Timers & Active Status */}
+        {/* Left Card: Circular Progress, Hero Digital Clock & Action Button */}
         <Grid item xs={12} md={6}>
           <Card
             sx={{
@@ -302,162 +353,179 @@ export default function TimeTracking() {
               p: 3,
             }}
           >
-            <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
-                  Today's Working Timers
-                </Typography>
-                <Chip
-                  size="small"
-                  icon={
-                    <StatusDotIcon
-                      sx={{
-                        fontSize: '10px !important',
-                        color: isTrackingActive ? '#10B981 !important' : '#94A3B8 !important',
-                      }}
-                    />
-                  }
-                  label={isTrackingActive ? 'TRACKING ACTIVE' : 'TRACKING INACTIVE'}
-                  sx={{
-                    bgcolor: isTrackingActive ? '#ECFDF5' : '#F1F5F9',
-                    color: isTrackingActive ? '#059669' : '#64748B',
-                    fontWeight: 700,
-                    fontSize: '11px',
-                  }}
-                />
-              </Box>
-
-              {/* Dual Digital Clocks: Total Worked & Remaining Left Time */}
-              <Grid container spacing={2} sx={{ mb: 2.5 }}>
-                {/* Total Worked Clock */}
-                <Grid item xs={12} sm={6}>
-                  <Box
-                    sx={{
-                      bgcolor: isTrackingActive ? '#F0FDF4' : '#F8FAFC',
-                      border: `1.5px solid ${isTrackingActive ? '#86EFAC' : '#E2E8F0'}`,
-                      borderRadius: '14px',
-                      p: 2,
-                      textAlign: 'center',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
-                      Total Worked Today
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontFamily: 'monospace',
-                        fontSize: { xs: '28px', sm: '32px' },
-                        fontWeight: 800,
-                        color: isTrackingActive ? '#15803D' : '#1E293B',
-                        letterSpacing: '0.04em',
-                        my: 0.5,
-                        lineHeight: 1.1,
-                      }}
-                    >
-                      {formatSecondsToHMS(totalWorkedSeconds)}
-                    </Typography>
-                    <Typography sx={{ fontSize: '11px', color: '#64748B' }}>
-                      {isTrackingActive ? 'Counting up live' : 'Paused'}
-                    </Typography>
-                  </Box>
-                </Grid>
-
-                {/* Left / Remaining Time Clock */}
-                <Grid item xs={12} sm={6}>
-                  <Box
-                    sx={{
-                      bgcolor: isCompleted ? '#ECFDF5' : '#FFF7ED',
-                      border: `1.5px solid ${isCompleted ? '#A7F3D0' : '#FED7AA'}`,
-                      borderRadius: '14px',
-                      p: 2,
-                      textAlign: 'center',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        color: isCompleted ? '#059669' : '#C2410C',
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {isCompleted ? 'Overtime Worked' : 'Time Left For 8h'}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontFamily: 'monospace',
-                        fontSize: { xs: '28px', sm: '32px' },
-                        fontWeight: 800,
-                        color: isCompleted ? '#047857' : '#EA580C',
-                        letterSpacing: '0.04em',
-                        my: 0.5,
-                        lineHeight: 1.1,
-                      }}
-                    >
-                      {isCompleted ? `+${formatSecondsToHMS(overtimeSeconds)}` : formatSecondsToHMS(remainingTargetSeconds)}
-                    </Typography>
-                    <Typography sx={{ fontSize: '11px', color: isCompleted ? '#059669' : '#9A3412' }}>
-                      {isCompleted ? 'Goal achieved!' : isTrackingActive ? 'Counting down live' : 'Resume to countdown'}
-                    </Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-
-              {/* Status and Active Session Details Panel */}
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'center', sm: 'center' },
+                gap: { xs: 3, sm: 3.5 },
+                my: 'auto',
+              }}
+            >
+              {/* Circular Progress Gauge */}
               <Box
                 sx={{
-                  p: 2,
-                  bgcolor: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '12px',
+                  position: 'relative',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
                 }}
               >
-                {isTrackingActive ? (
-                  <Stack spacing={0.5}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <RunningIcon sx={{ color: '#10B981', fontSize: 18 }} />
-                      <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
-                        Session in progress
-                      </Typography>
-                    </Box>
-                    <Typography sx={{ fontSize: '12px', color: '#64748B' }}>
-                      Started at <strong>{formatTimeOnly(summary?.active_session?.started_at)}</strong> (Current session: <strong>{formatSecondsHuman(currentSessionSeconds)}</strong>)
-                    </Typography>
-                    <Typography sx={{ fontSize: '11px', color: '#059669', fontWeight: 600 }}>
-                      ✓ Seconds are being recorded to your daily target.
-                    </Typography>
-                  </Stack>
-                ) : (
-                  <Stack spacing={0.5}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <PausedIcon sx={{ color: '#94A3B8', fontSize: 18 }} />
-                      <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>
-                        Work tracking is paused (Inactive)
-                      </Typography>
-                    </Box>
-                    <Typography sx={{ fontSize: '12px', color: '#64748B' }}>
-                      To resume work, click your <strong>Profile avatar</strong> (top-right) and select <strong>Change Status: Active</strong>.
-                    </Typography>
-                  </Stack>
-                )}
+                {/* Background Ring Track */}
+                <CircularProgress
+                  variant="determinate"
+                  value={100}
+                  size={120}
+                  thickness={4.5}
+                  sx={{ color: '#EEF2F6' }}
+                />
+                {/* Active Progress Stroke */}
+                <CircularProgress
+                  variant="determinate"
+                  value={Math.min(100, Math.max(0, progressPercent))}
+                  size={120}
+                  thickness={4.5}
+                  sx={{
+                    color: isCompleted ? '#10B981' : '#2563EB',
+                    position: 'absolute',
+                    left: 0,
+                    '& .MuiCircularProgress-circle': {
+                      strokeLinecap: 'round',
+                    },
+                  }}
+                />
+                {/* Centered Percentage Label */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: '24px',
+                      fontWeight: 800,
+                      color: '#0F172A',
+                      letterSpacing: '-0.02em',
+                    }}
+                  >
+                    {progressPercent}%
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Hero Clock, Status Pill, Target, and Action Button */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: { xs: 'center', sm: 'flex-start' },
+                  textAlign: { xs: 'center', sm: 'left' },
+                  flex: 1,
+                }}
+              >
+                {/* Header: WORKED TODAY + Status Pill */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 0.5 }}>
+                  <Typography
+                    sx={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      color: '#64748B',
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Worked Today
+                  </Typography>
+                  <Chip
+                    size="small"
+                    icon={
+                      <StatusDotIcon
+                        sx={{
+                          fontSize: '8px !important',
+                          color: isTrackingActive ? '#10B981 !important' : '#D97706 !important',
+                        }}
+                      />
+                    }
+                    label={isTrackingActive ? 'Active' : 'Paused'}
+                    sx={{
+                      bgcolor: isTrackingActive ? '#ECFDF5' : '#FEF3C7',
+                      color: isTrackingActive ? '#059669' : '#B45309',
+                      fontWeight: 700,
+                      fontSize: '11px',
+                      height: 22,
+                      borderRadius: '12px',
+                      border: `1px solid ${isTrackingActive ? '#A7F3D0' : '#FDE68A'}`,
+                      '& .MuiChip-label': { px: 0.8 },
+                    }}
+                  />
+                </Box>
+
+                {/* Digital Clock Display */}
+                <Typography
+                  sx={{
+                    fontFamily: 'monospace, sans-serif',
+                    fontSize: { xs: '32px', sm: '38px', md: '42px' },
+                    fontWeight: 800,
+                    color: '#0F172A',
+                    letterSpacing: '-0.02em',
+                    lineHeight: 1.15,
+                    my: 0.5,
+                  }}
+                >
+                  {formatSecondsToHMS(totalWorkedSeconds)}
+                </Typography>
+
+                {/* Target Subtext */}
+                <Typography sx={{ fontSize: '13px', color: '#64748B', fontWeight: 500, mb: 2 }}>
+                  Target {formatMinutesToHours(summary?.target_minutes ?? 480)}
+                </Typography>
+
+                {/* Dark Pill Action Button */}
+                <Button
+                  variant="contained"
+                  onClick={isTrackingActive ? handleInitiateInactive : handleInitiateActive}
+                  startIcon={isTrackingActive ? <PausedIcon sx={{ fontSize: 18 }} /> : <RunningIcon sx={{ fontSize: 18 }} />}
+                  sx={{
+                    bgcolor: '#0F172A',
+                    color: '#FFFFFF',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '13px',
+                    borderRadius: '10px',
+                    px: 2.2,
+                    py: 0.9,
+                    boxShadow: '0 2px 8px rgba(15, 23, 42, 0.12)',
+                    '&:hover': {
+                      bgcolor: '#1E293B',
+                    },
+                  }}
+                >
+                  {isTrackingActive ? 'Go Inactive and pause' : 'Go Active and resume'}
+                </Button>
               </Box>
             </Box>
 
-            <Typography sx={{ fontSize: '11px', color: '#94A3B8', textAlign: 'center', mt: 2 }}>
+            {/* Subtle Workday Closing Note */}
+            <Typography
+              sx={{
+                fontSize: '11px',
+                color: '#94A3B8',
+                textAlign: { xs: 'center', sm: 'left' },
+                mt: 2.5,
+                pt: 1.5,
+                borderTop: '1px solid #F8FAFC',
+              }}
+            >
               Open work sessions close automatically at 12:00 AM (Midnight) IST
             </Typography>
           </Card>
         </Grid>
 
-        {/* Right Card: Daily Target Progress & Today's Sessions Record */}
+        {/* Right Card: Metrics Breakdown & Today's Sessions Record */}
         <Grid item xs={12} md={6}>
           <Card
             sx={{
@@ -473,173 +541,189 @@ export default function TimeTracking() {
             }}
           >
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
-                  Today's Target Progress
-                </Typography>
-                <Chip
-                  size="small"
-                  icon={isCompleted ? <CompleteIcon sx={{ fontSize: '16px !important' }} /> : <IncompleteIcon sx={{ fontSize: '16px !important' }} />}
-                  label={isCompleted ? 'Target Achieved' : 'In Progress'}
-                  sx={{
-                    bgcolor: isCompleted ? '#ECFDF5' : '#FFFBEB',
-                    color: isCompleted ? '#059669' : '#D97706',
-                    fontWeight: 700,
-                    fontSize: '11px',
-                  }}
-                />
-              </Box>
-
-              {/* Progress Bar & Percentage */}
-              <Box sx={{ my: 1.5 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 1 }}>
-                  <Typography sx={{ fontSize: '24px', fontWeight: 800, color: '#0F172A' }}>
-                    {formatSecondsToHMS(totalWorkedSeconds)}
-                    <Typography component="span" sx={{ fontSize: '13px', color: '#64748B', fontWeight: 500, ml: 1 }}>
-                      / {formatSecondsToHMS(targetSeconds)} target
-                    </Typography>
-                  </Typography>
-                  <Typography sx={{ fontSize: '20px', fontWeight: 800, color: isCompleted ? '#059669' : '#23A4E8' }}>
-                    {progressPercent}%
-                  </Typography>
-                </Box>
-
-                <LinearProgress
-                  variant="determinate"
-                  value={progressPercent}
-                  sx={{
-                    height: 10,
-                    borderRadius: 5,
-                    bgcolor: '#F1F5F9',
-                    '& .MuiLinearProgress-bar': {
-                      bgcolor: isCompleted ? '#10B981' : '#23A4E8',
-                      borderRadius: 5,
-                    },
-                  }}
-                />
-              </Box>
-
-              {/* Stat breakdown pills */}
-              <Grid container spacing={1.5} sx={{ mt: 0.5 }}>
+              {/* Top 3 Stat Metric Tiles */}
+              <Grid container spacing={1.5} sx={{ mb: 2.5 }}>
+                {/* Tile 1: Target */}
                 <Grid item xs={4}>
-                  <Box sx={{ p: 1.2, bgcolor: '#F8FAFC', borderRadius: '10px', textAlign: 'center' }}>
-                    <Typography sx={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Target</Typography>
-                    <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', mt: 0.3 }}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      bgcolor: '#F8FAFC',
+                      border: '1px solid #F1F5F9',
+                      borderRadius: '12px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Typography sx={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>
+                      Target
+                    </Typography>
+                    <Typography sx={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', mt: 0.5 }}>
                       {formatMinutesToHours(summary?.target_minutes ?? 480)}
                     </Typography>
                   </Box>
                 </Grid>
+
+                {/* Tile 2: Recorded */}
                 <Grid item xs={4}>
-                  <Box sx={{ p: 1.2, bgcolor: '#F0F9FF', borderRadius: '10px', textAlign: 'center' }}>
-                    <Typography sx={{ fontSize: '11px', color: '#0284C7', fontWeight: 600 }}>Recorded</Typography>
-                    <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#0369A1', mt: 0.3 }}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      bgcolor: '#EFF6FF',
+                      border: '1px solid #DBEAFE',
+                      borderRadius: '12px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Typography sx={{ fontSize: '12px', color: '#0284C7', fontWeight: 600 }}>
+                      Recorded
+                    </Typography>
+                    <Typography sx={{ fontSize: '15px', fontWeight: 800, color: '#0284C7', mt: 0.5 }}>
                       {formatSecondsHuman(totalWorkedSeconds)}
                     </Typography>
                   </Box>
                 </Grid>
+
+                {/* Tile 3: Remaining / Overtime */}
                 <Grid item xs={4}>
-                  <Box sx={{ p: 1.2, bgcolor: isCompleted ? '#ECFDF5' : '#FFF7ED', borderRadius: '10px', textAlign: 'center' }}>
-                    <Typography sx={{ fontSize: '11px', color: isCompleted ? '#059669' : '#EA580C', fontWeight: 600 }}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      bgcolor: isCompleted ? '#ECFDF5' : '#FFFBEB',
+                      border: `1px solid ${isCompleted ? '#A7F3D0' : '#FEF3C7'}`,
+                      borderRadius: '12px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: '12px',
+                        color: isCompleted ? '#059669' : '#B45309',
+                        fontWeight: 600,
+                      }}
+                    >
                       {isCompleted ? 'Overtime' : 'Remaining'}
                     </Typography>
-                    <Typography sx={{ fontSize: '14px', fontWeight: 700, color: isCompleted ? '#047857' : '#C2410C', mt: 0.3 }}>
+                    <Typography
+                      sx={{
+                        fontSize: '15px',
+                        fontWeight: 800,
+                        color: isCompleted ? '#047857' : '#B45309',
+                        mt: 0.5,
+                      }}
+                    >
                       {isCompleted ? `+${formatSecondsHuman(overtimeSeconds)}` : formatSecondsHuman(remainingTargetSeconds)}
                     </Typography>
                   </Box>
                 </Grid>
               </Grid>
-            </Box>
 
-            {/* Today's Recorded Sessions List */}
-            <Box sx={{ mt: 2.5, pt: 2, borderTop: '1px solid #F1F5F9' }}>
-              <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#64748B', mb: 1 }}>
-                Today's Sessions Record ({summary?.sessions?.length || 0})
-              </Typography>
-              {summary?.sessions && summary.sessions.length > 0 ? (
-                <Stack spacing={1} sx={{ maxHeight: 160, overflowY: 'auto', pr: 0.5 }}>
-                  {summary.sessions.map((sess, idx) => {
-                    const durSecs =
-                      sess.duration_seconds !== null && sess.duration_seconds !== undefined
-                        ? sess.duration_seconds
-                        : (sess.status === 'active'
-                            ? currentSessionSeconds
-                            : sess.ended_at && sess.started_at
-                              ? Math.max(0, Math.round((new Date(sess.ended_at) - new Date(sess.started_at)) / 1000))
-                              : (sess.duration_minutes || 0) * 60);
-
-                    return (
-                      <Box
-                        key={sess.id}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          px: 1.5,
-                          py: 0.8,
-                          borderRadius: '8px',
-                          bgcolor: sess.status === 'active' ? '#F0FDF4' : '#F8FAFC',
-                          border: `1px solid ${sess.status === 'active' ? '#BBF7D0' : '#E2E8F0'}`,
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
-                            #{idx + 1}
-                          </Typography>
-                          {sess.start_selfie_url && (
-                            <Tooltip title="Clock-In selfie verified">
-                              <Avatar
-      src={getSelfieUrl(sess.start_selfie_url)}
-      imgProps={{
-        crossOrigin: 'anonymous',
-        onError: (e) => {
-          const currentSrc = e.currentTarget.src;
-          if (!currentSrc.includes('staffease-be.onrender.com') && sess.start_selfie_url) {
-            const cleanPath = sess.start_selfie_url.replace(/^\/?/, '/');
-            e.currentTarget.src = `https://staffease-be.onrender.com${cleanPath}`;
-          }
-        },
-      }}
-      sx={{ width: 22, height: 22, border: '1.5px solid #10B981' }}
-                              />
-                            </Tooltip>
-                          )}
-                          {sess.end_selfie_url && (
-                            <Tooltip title={`Clock-Out selfie verified: ${sess.notes || 'Paused'}`}>
-                              <Avatar
-      src={getSelfieUrl(sess.end_selfie_url)}
-      imgProps={{
-        crossOrigin: 'anonymous',
-        onError: (e) => {
-          const currentSrc = e.currentTarget.src;
-          if (!currentSrc.includes('staffease-be.onrender.com') && sess.end_selfie_url) {
-            const cleanPath = sess.end_selfie_url.replace(/^\/?/, '/');
-            e.currentTarget.src = `https://staffease-be.onrender.com${cleanPath}`;
-          }
-        },
-      }}
-      sx={{ width: 22, height: 22, border: '1.5px solid #EF4444' }}
-                              />
-                            </Tooltip>
-                          )}
-                          <Typography sx={{ fontSize: '12px', color: '#64748B' }}>
-                            {formatTimeOnly(sess.started_at)} → {sess.ended_at ? formatTimeOnly(sess.ended_at) : 'Active'}
-                          </Typography>
-                        </Box>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#0F172A', fontFamily: 'monospace' }}>
-                            {formatSecondsHuman(durSecs)}
-                          </Typography>
-                          <StatusBadge status={sess.status} size="small" />
-                        </Stack>
-                      </Box>
-                    );
-                  })}
-                </Stack>
-              ) : (
-                <Typography sx={{ fontSize: '12px', color: '#94A3B8', fontStyle: 'italic' }}>
-                  No work sessions recorded yet today.
+              {/* Today's Recorded Sessions List */}
+              <Box>
+                <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', mb: 1.5 }}>
+                  Today's sessions ({summary?.sessions?.length || 0})
                 </Typography>
-              )}
+
+                {summary?.sessions && summary.sessions.length > 0 ? (
+                  <Stack spacing={1} sx={{ maxHeight: 180, overflowY: 'auto', pr: 0.5 }}>
+                    {summary.sessions.map((sess, idx) => {
+                      const durSecs =
+                        sess.duration_seconds !== null && sess.duration_seconds !== undefined
+                          ? sess.duration_seconds
+                          : (sess.status === 'active'
+                              ? currentSessionSeconds
+                              : sess.ended_at && sess.started_at
+                                ? Math.max(0, Math.round((new Date(sess.ended_at) - new Date(sess.started_at)) / 1000))
+                                : (sess.duration_minutes || 0) * 60);
+
+                      return (
+                        <Box
+                          key={sess.id || idx}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            px: 1.5,
+                            py: 1,
+                            borderRadius: '10px',
+                            bgcolor: sess.status === 'active' ? '#F0FDF4' : '#F8FAFC',
+                            border: `1px solid ${sess.status === 'active' ? '#BBF7D0' : '#F1F5F9'}`,
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                            <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#64748B' }}>
+                              #{idx + 1}
+                            </Typography>
+                            {sess.start_selfie_url && (
+                              <Tooltip title="Clock-In selfie verified">
+                                <Avatar
+                                  src={getSelfieUrl(sess.start_selfie_url)}
+                                  imgProps={{
+                                    crossOrigin: 'anonymous',
+                                    onError: (e) => {
+                                      const currentSrc = e.currentTarget.src;
+                                      if (!currentSrc.includes('staffease-be.onrender.com') && sess.start_selfie_url) {
+                                        const cleanPath = sess.start_selfie_url.replace(/^\/?/, '/');
+                                        e.currentTarget.src = `https://staffease-be.onrender.com${cleanPath}`;
+                                      }
+                                    },
+                                  }}
+                                  sx={{ width: 22, height: 22, border: '1.5px solid #10B981' }}
+                                />
+                              </Tooltip>
+                            )}
+                            {sess.end_selfie_url && (
+                              <Tooltip title={`Clock-Out selfie verified: ${sess.notes || 'Paused'}`}>
+                                <Avatar
+                                  src={getSelfieUrl(sess.end_selfie_url)}
+                                  imgProps={{
+                                    crossOrigin: 'anonymous',
+                                    onError: (e) => {
+                                      const currentSrc = e.currentTarget.src;
+                                      if (!currentSrc.includes('staffease-be.onrender.com') && sess.end_selfie_url) {
+                                        const cleanPath = sess.end_selfie_url.replace(/^\/?/, '/');
+                                        e.currentTarget.src = `https://staffease-be.onrender.com${cleanPath}`;
+                                      }
+                                    },
+                                  }}
+                                  sx={{ width: 22, height: 22, border: '1.5px solid #EF4444' }}
+                                />
+                              </Tooltip>
+                            )}
+                            <Typography sx={{ fontSize: '12px', color: '#475569', fontWeight: 500 }}>
+                              {formatTimeOnly(sess.started_at)} → {sess.ended_at ? formatTimeOnly(sess.ended_at) : 'Active'}
+                            </Typography>
+                          </Box>
+
+                          <Stack direction="row" spacing={1.5} alignItems="center">
+                            <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#0F172A', fontFamily: 'monospace' }}>
+                              {formatSecondsHuman(durSecs)}
+                            </Typography>
+                            <Chip
+                              size="small"
+                              label={sess.status === 'active' ? 'Active' : 'Completed'}
+                              sx={{
+                                height: 22,
+                                fontSize: '11px',
+                                fontWeight: 600,
+                                borderRadius: '12px',
+                                bgcolor: sess.status === 'active' ? '#ECFDF5' : '#F1F5F9',
+                                color: sess.status === 'active' ? '#059669' : '#475569',
+                                border: `1px solid ${sess.status === 'active' ? '#A7F3D0' : '#E2E8F0'}`,
+                              }}
+                            />
+                          </Stack>
+                        </Box>
+                      );
+                    })}
+                  </Stack>
+                ) : (
+                  <Box sx={{ py: 3, textAlign: 'center' }}>
+                    <Typography sx={{ fontSize: '12px', color: '#94A3B8', fontStyle: 'italic' }}>
+                      No work sessions recorded yet today.
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
             </Box>
           </Card>
         </Grid>
@@ -964,6 +1048,15 @@ export default function TimeTracking() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Selfie Verification Modal for Clock-In & Clock-Out */}
+      <SelfieCaptureModal
+        open={selfieModalOpen}
+        onClose={() => setSelfieModalOpen(false)}
+        onSubmit={handleSelfieSubmit}
+        mode={selfieModalMode}
+        isLoading={isStarting || isStopping}
+      />
     </Box>
   );
 }
