@@ -1,0 +1,27 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="staffEaseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#23A4E8" />
+        <stop offset="50%" stop-color="#0284C7" />
+        <stop offset="100%" stop-color="#0369A1" />
+      </linearGradient>
+      <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+        <feDropShadow dx="0" dy="2.56" stdDeviation="3.2" flood-color="#0369A1" flood-opacity="0.35"/>
+      </filter>
+    </defs>
+    
+    <!-- Background -->
+    <rect width="128" height="128" rx="28.16" fill="url(#staffEaseGrad)" />
+    
+    <!-- Stylized 'S' Icon for staffEase -->
+    <g transform="translate(10.24, 10.24) scale(1.0752)">
+      <path d="M50 15 C33 15 22 24 22 36 C22 55 78 45 78 64 C78 74 67 82 50 82 C35 82 25 74 23 62" 
+            fill="none" 
+            stroke="#FFFFFF" 
+            stroke-width="12" 
+            stroke-linecap="round" 
+            filter="url(#shadow)" />
+      <!-- Accent collaboration dot -->
+      <circle cx="78" cy="24" r="7" fill="#38BDF8" />
+    </g>
+  </svg>

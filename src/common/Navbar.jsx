@@ -41,6 +41,8 @@ import {
   FiberManualRecord as FiberManualRecordIcon,
   PlayArrowRounded as PlayArrowRoundedIcon,
   StopRounded as StopRoundedIcon,
+  DownloadForOfflineOutlined as DownloadIcon,
+  NotificationsActiveOutlined as NotificationsActiveIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -53,10 +55,19 @@ import {
   useStopWorkSession,
 } from '../Api/Api';
 import SelfieCaptureModal from '../components/timeTracking/SelfieCaptureModal';
+import { usePushNotifications } from './usePushNotifications';
 
 const Navbar = ({ toggleSidebar, onToggleCollapse, isCollapsed = false, onLogoutClick }) => {
   const navigate = useNavigate();
   const role = localStorage.getItem('role') || 'employee';
+  const {
+    isSupported: isPushSupported,
+    isSubscribed: isPushSubscribed,
+    isInstallable,
+    subscribe: subscribePush,
+    unsubscribe: unsubscribePush,
+    installApp,
+  } = usePushNotifications();
 
   // Current user info cached in localStorage with live updates
   const [user, setUser] = useState(() => {
@@ -330,6 +341,77 @@ const Navbar = ({ toggleSidebar, onToggleCollapse, isCollapsed = false, onLogout
                 </Button>
               )}
             </Box>
+            {/* Native Web Push Notification Banner */}
+            {isPushSupported && (
+              <Box
+                sx={{
+                  px: 2,
+                  py: 1.2,
+                  bgcolor: isPushSubscribed ? '#ECFDF5' : '#F0F9FF',
+                  borderBottom: `1px solid ${isPushSubscribed ? '#A7F3D0' : '#BAE6FD'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <NotificationsActiveIcon
+                    sx={{
+                      fontSize: 18,
+                      color: isPushSubscribed ? '#059669' : '#0284C7',
+                    }}
+                  />
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        color: isPushSubscribed ? '#065F46' : '#0369A1',
+                      }}
+                    >
+                      {isPushSubscribed ? 'Push Alerts Active' : 'Offline Push Alerts'}
+                    </Typography>
+                    <Typography sx={{ fontSize: '10px', color: '#64748B', lineHeight: 1.2 }}>
+                      {isPushSubscribed
+                        ? 'Alerts active even when tab is closed'
+                        : 'Get notified for chat & leave updates'}
+                    </Typography>
+                  </Box>
+                </Box>
+                {isPushSubscribed ? (
+                  <Button
+                    size="small"
+                    onClick={unsubscribePush}
+                    sx={{
+                      fontSize: '10px',
+                      height: 22,
+                      minWidth: 50,
+                      textTransform: 'none',
+                      color: '#64748B',
+                    }}
+                  >
+                    Disable
+                  </Button>
+                ) : (
+                  <Button
+                    size="small"
+                    variant="contained"
+                    onClick={subscribePush}
+                    sx={{
+                      fontSize: '10px',
+                      height: 24,
+                      minWidth: 60,
+                      textTransform: 'none',
+                      bgcolor: '#0284C7',
+                      boxShadow: 'none',
+                      '&:hover': { bgcolor: '#0369A1' },
+                    }}
+                  >
+                    Enable
+                  </Button>
+                )}
+              </Box>
+            )}
 
             <List sx={{ p: 0, maxHeight: 340, overflowY: 'auto' }}>
               {notifications.length === 0 ? (
