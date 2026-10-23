@@ -248,36 +248,6 @@ const Navbar = ({ toggleSidebar, onToggleCollapse, isCollapsed = false, onLogout
 
         {/* Right: Role, Work Tracking Status, Notifications, Avatar Profile */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 } }}>
-          {/* PWA Install App Button */}
-          {isInstallable && (
-            <Tooltip title="Install staffEase app on your desktop or phone">
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={installApp}
-                startIcon={<DownloadIcon sx={{ fontSize: '15px !important' }} />}
-                sx={{
-                  fontWeight: 700,
-                  fontSize: '11px',
-                  borderRadius: '6px',
-                  height: 24,
-                  textTransform: 'none',
-                  borderColor: '#23A4E8',
-                  color: '#0284C7',
-                  bgcolor: '#F0F9FF',
-                  borderWidth: '1.5px',
-                  px: 1.2,
-                  '&:hover': {
-                    bgcolor: '#E0F2FE',
-                    borderColor: '#0284C7',
-                  },
-                }}
-              >
-                Install App
-              </Button>
-            </Tooltip>
-          )}
-
           <Chip
             size="small"
             label={role === 'admin' ? 'HR Admin' : 'Employee'}

@@ -1184,6 +1184,23 @@ export const useSendCommunication = (onSuccess, onError) => {
   });
 };
 
+export const useSendOfferLetter = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload) => {
+      const res = await apiClient.post('/communications/send-offer-letter', payload);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['communication-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['email-history'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-documents'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
 export const useEmailHistory = (params = {}) => {
   return useQuery({
     queryKey: ['email-history', params],

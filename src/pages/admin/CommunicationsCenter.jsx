@@ -1,14 +1,14 @@
 /**
  * ===========================================
- *  Admin Employee Communication Center
+ *  Admin Employee Communications & Offer Dispatch
  * ===========================================
  *
- * Enterprise hub for automated onboarding communications,
- * email template management, bulk messaging, document requests triage,
- * and HR document generation.
+ * Page 1: Dedicated to sending official Employee & Internship Offer Letters
+ * with dynamic field generation, real-time preview, and automated dual-PDF
+ * attachment (Offer Letter + Company Policies).
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -18,1567 +18,1047 @@ import {
   Button,
   Grid,
   Chip,
-  IconButton,
   TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
+  FormControlLabel,
+  RadioGroup,
+  Radio,
+  FormLabel,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Stack,
-  Alert,
   Divider,
   CircularProgress,
-  Avatar,
 } from '@mui/material';
 import {
-  EmailOutlined as EmailIcon,
-  DescriptionOutlined as DocumentIcon,
   SendRounded as SendIcon,
-  LibraryBooksOutlined as TemplateIcon,
-  AssignmentOutlined as RequestIcon,
-  HistoryOutlined as HistoryIcon,
-  SettingsOutlined as SettingsIcon,
-  DashboardOutlined as DashboardIcon,
-  AddRounded as AddIcon,
-  PictureAsPdfRounded as PdfIcon,
   VisibilityOutlined as ViewIcon,
-  EditOutlined as EditIcon,
-  ContentCopyRounded as CopyIcon,
+  HistoryOutlined as HistoryIcon,
+  BusinessCenterRounded as EmployeeIcon,
+  SchoolRounded as InternIcon,
+  AttachFileRounded as AttachIcon,
+  PictureAsPdfRounded as PdfIcon,
+  CheckCircleRounded as CheckIcon,
   RefreshRounded as RetryIcon,
-  CheckCircleOutlineRounded as CompleteIcon,
-  CancelOutlined as RejectIcon,
-  HourglassEmptyRounded as PendingIcon,
-  PersonOutlineOutlined as PersonIcon,
-  UploadFileRounded as UploadIcon,
-  BlockRounded as RevokeIcon,
 } from '@mui/icons-material';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 import {
   useCommunicationOverview,
-  useEmailTemplates,
-  useCreateEmailTemplate,
-  useUpdateEmailTemplate,
-  useDuplicateEmailTemplate,
-  usePreviewEmail,
-  useSendCommunication,
+  useSendOfferLetter,
   useEmailHistory,
   useRetryEmail,
-  useCommunicationSettings,
-  useEmployeeDocuments,
-  downloadDocumentFile,
-  useGenerateDocument,
-  useUploadDocument,
-  useRevokeDocument,
-  useAdminDocumentRequests,
-  useAssignDocumentRequest,
-  useUpdateDocumentRequestStatus,
-  useIssueDocumentFromRequest,
   useEmployees,
   useDepartments,
 } from '../../Api/Api';
 
-import TemplateEditorModal from '../../components/communications/TemplateEditorModal';
-import EmailPreviewModal from '../../components/communications/EmailPreviewModal';
-import GenerateDocumentModal from '../../components/documents/GenerateDocumentModal';
-import UploadDocumentModal from '../../components/documents/UploadDocumentModal';
+import OfferLetterPreviewModal from '../../components/communications/OfferLetterPreviewModal';
 
-const TAB_INDEX_MAP = {
-  overview: 0,
-  templates: 1,
-  compose: 2,
-  documents: 3,
-  requests: 4,
-  history: 5,
-  settings: 6,
+const DEFAULT_FORM_DATA = {
+  candidate_source: 'manual', // 'manual' | 'existing'
+  candidate_id: null,
+  employment_type: 'employee', // 'employee' | 'internship'
+  candidate_name: '',
+  candidate_email: '',
+  job_title: 'Software Engineer',
+  department: 'Engineering',
+  joining_date: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+  work_location: 'Hybrid',
+  
+  // Specific to employee
+  salary: '₹8,50,000 per annum',
+  probation_period: '3 Months',
+  reporting_manager: 'Elena Rostova (Director of Engineering)',
+  
+  // Specific to internship
+  duration: '3 Months',
+  is_paid: true,
+  stipend_amount: '₹20,000',
+  stipend_frequency: 'Per Month',
+  mentor_name: 'Lead Software Architect',
+  
+  additional_instructions: 'Please review and return the signed duplicate copy along with your ID proof and educational credentials within 5 business days.',
 };
 
 export default function CommunicationsCenter() {
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  // Determine initial tab from query param or pathname
-  const initialTab = useMemo(() => {
-    const params = new URLSearchParams(location.search);
-    const tabParam = params.get('tab');
-    if (tabParam && TAB_INDEX_MAP[tabParam] !== undefined) {
-      return TAB_INDEX_MAP[tabParam];
-    }
-    if (location.pathname.includes('employee-documents')) return 3;
-    if (location.pathname.includes('document-requests')) return 4;
-    return 0;
-  }, [location]);
-
-  const [activeTab, setActiveTab] = useState(initialTab);
-
-  useEffect(() => {
-    setActiveTab(initialTab);
-  }, [initialTab]);
+  const [activeTab, setActiveTab] = useState(0);
 
   // Queries
-  const { data: overviewData, isLoading: isOverviewLoading, refetch: refetchOverview } = useCommunicationOverview();
-  const { data: templates = [], isLoading: isTemplatesLoading, refetch: refetchTemplates } = useEmailTemplates();
-  const { data: settingsData } = useCommunicationSettings();
-  const { data: empData } = useEmployees({ limit: 200 });
+  const { data: overviewData, refetch: refetchOverview } = useCommunicationOverview();
+  const { data: empData } = useEmployees({ limit: 150 });
   const employees = empData?.data || [];
   const { data: depts = [] } = useDepartments();
 
-  // -------------------------------------------------------------
-  // Tab 1: Template Management State
-  // -------------------------------------------------------------
-  const [templateCategoryFilter, setTemplateCategoryFilter] = useState('all');
-  const [templateSearch, setTemplateSearch] = useState('');
-  const [editorModalOpen, setEditorModalOpen] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState(null);
-
-  const { mutate: createTemplateMutate, isPending: isCreatingTpl } = useCreateEmailTemplate(
-    () => {
-      toast.success('Email template created successfully!');
-      setEditorModalOpen(false);
-      refetchTemplates();
-    },
-    (err) => toast.error(err?.response?.data?.message || 'Failed to create template.')
-  );
-
-  const { mutate: updateTemplateMutate, isPending: isUpdatingTpl } = useUpdateEmailTemplate(
-    () => {
-      toast.success('Email template updated successfully!');
-      setEditorModalOpen(false);
-      refetchTemplates();
-    },
-    (err) => toast.error(err?.response?.data?.message || 'Failed to update template.')
-  );
-
-  const { mutate: duplicateTemplateMutate } = useDuplicateEmailTemplate(
-    () => {
-      toast.success('Template duplicated.');
-      refetchTemplates();
-    },
-    (err) => toast.error(err?.response?.data?.message || 'Failed to duplicate template.')
-  );
-
-  // -------------------------------------------------------------
-  // Tab 2: Compose & Send State
-  // -------------------------------------------------------------
-  const [recipientType, setRecipientType] = useState('single');
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
-  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
-  const [candidateEmail, setCandidateEmail] = useState('');
-  const [candidateName, setCandidateName] = useState('');
-  const [selectedDeptId, setSelectedDeptId] = useState('');
-  const [selectedEmploymentType, setSelectedEmploymentType] = useState('full_time');
-  const [selectedTemplateId, setSelectedTemplateId] = useState('');
-  const [composeSubject, setComposeSubject] = useState('');
-  const [composeHtml, setComposeHtml] = useState('');
-
-  // Preview Modal State
+  // Form State
+  const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
+  const [formErrors, setFormErrors] = useState({});
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
-  const [previewData, setPreviewData] = useState({ subject: '', html: '', missingFields: [] });
-  const { mutate: previewMutate, isPending: isPreviewLoading } = usePreviewEmail();
 
-  // Send Communication Mutation
-  const [confirmSendOpen, setConfirmSendOpen] = useState(false);
-  const { mutate: sendMutate, isPending: isSending } = useSendCommunication(
+  // History State
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historySearch, setHistorySearch] = useState('');
+  const [historyStatus, setHistoryStatus] = useState('');
+  const {
+    data: historyData,
+    isLoading: isHistoryLoading,
+    refetch: refetchHistory,
+  } = useEmailHistory({
+    page: historyPage,
+    limit: 10,
+    search: historySearch,
+    status: historyStatus,
+  });
+
+  const emailLogs = historyData?.data || [];
+  const historyPagination = historyData?.pagination || {};
+
+  // Mutations
+  const { mutate: sendOfferMutate, isPending: isSendingOffer } = useSendOfferLetter(
     (res) => {
-      toast.success(res?.message || 'Emails dispatched successfully!');
-      setConfirmSendOpen(false);
+      toast.success(res?.message || 'Offer letter and company policies email dispatched successfully!');
+      setPreviewModalOpen(false);
       refetchOverview();
-      setActiveTab(5); // Switch to Email History
+      refetchHistory();
+      // Switch to history tab to see the live dispatch record
+      setActiveTab(1);
     },
-    (err) => toast.error(err?.response?.data?.message || 'Failed to send emails.')
+    (err) => {
+      toast.error(err?.response?.data?.message || err.message || 'Failed to send offer email');
+    }
   );
 
-  const handleTemplateSelect = (tId) => {
-    setSelectedTemplateId(tId);
-    if (!tId) {
-      setComposeSubject('');
-      setComposeHtml('');
-      return;
+  const { mutate: retryMutate, isPending: isRetrying } = useRetryEmail(
+    (res) => {
+      toast.success(res?.message || 'Email retry scheduled successfully');
+      refetchHistory();
+      refetchOverview();
+    },
+    (err) => {
+      toast.error(err?.response?.data?.message || err.message || 'Retry failed');
     }
-    const tpl = templates.find((t) => t.id === Number(tId));
-    if (tpl) {
-      setComposeSubject(tpl.subject);
-      setComposeHtml(tpl.html_body);
+  );
+
+  // Handle employee dropdown autofill
+  const handleSelectExistingEmployee = (empId) => {
+    const selected = employees.find((e) => e.id === Number(empId));
+    if (selected) {
+      setFormData((prev) => ({
+        ...prev,
+        candidate_source: 'existing',
+        candidate_id: selected.id,
+        candidate_name: `${selected.first_name || ''} ${selected.last_name || ''}`.trim(),
+        candidate_email: selected.email || '',
+        job_title: selected.job_title || prev.job_title || 'Software Engineer',
+        department: selected.department?.name || prev.department || 'Engineering',
+      }));
     }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.candidate_name.trim()) errors.candidate_name = 'Candidate name is required';
+    if (!formData.candidate_email.trim()) {
+      errors.candidate_email = 'Candidate email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.candidate_email)) {
+      errors.candidate_email = 'Invalid email address format';
+    }
+    if (!formData.job_title.trim()) errors.job_title = 'Role / Job title is required';
+    if (!formData.department.trim()) errors.department = 'Department is required';
+    if (!formData.joining_date) errors.joining_date = 'Joining date is required';
+
+    if (formData.employment_type === 'internship') {
+      if (!formData.duration.trim()) errors.duration = 'Internship duration is required';
+      if (formData.is_paid && !formData.stipend_amount.trim()) {
+        errors.stipend_amount = 'Stipend amount is required for paid internships';
+      }
+    } else {
+      if (!formData.salary.trim()) errors.salary = 'Annual CTC / Salary is required';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleOpenPreview = () => {
-    previewMutate(
-      {
-        template_id: selectedTemplateId ? Number(selectedTemplateId) : undefined,
-        subject: composeSubject,
-        html_body: composeHtml,
-        employee_id: selectedEmployeeId ? Number(selectedEmployeeId) : undefined,
-      },
-      {
-        onSuccess: (data) => {
-          setPreviewData(data);
-          setPreviewModalOpen(true);
-        },
-        onError: (err) => toast.error(err?.response?.data?.message || 'Preview failed.'),
-      }
-    );
+    if (validateForm()) {
+      setPreviewModalOpen(true);
+    } else {
+      toast.warning('Please complete all required fields before previewing.');
+    }
   };
 
-  const handleExecuteSend = () => {
-    sendMutate({
-      template_id: selectedTemplateId ? Number(selectedTemplateId) : undefined,
-      recipient_type: recipientType,
-      recipient_ids:
-        recipientType === 'single' && selectedEmployeeId
-          ? [Number(selectedEmployeeId)]
-          : recipientType === 'multiple'
-            ? selectedEmployeeIds.map(Number)
-            : undefined,
-      recipient_email: recipientType === 'single' ? candidateEmail : undefined,
-      recipient_name: recipientType === 'single' ? candidateName : undefined,
-      department_id: recipientType === 'department' ? Number(selectedDeptId) : undefined,
-      employment_type: recipientType === 'employment_type' ? selectedEmploymentType : undefined,
-      subject: composeSubject,
-      html_body: composeHtml,
-      idempotency_key: `compose-${Date.now()}`,
+  const handleSendOfferEmail = () => {
+    if (!validateForm()) {
+      toast.warning('Please complete all required fields.');
+      return;
+    }
+
+    sendOfferMutate({
+      candidate_id: formData.candidate_id,
+      candidate_name: formData.candidate_name.trim(),
+      candidate_email: formData.candidate_email.trim(),
+      employment_type: formData.employment_type,
+      job_title: formData.job_title.trim(),
+      department: formData.department.trim(),
+      joining_date: formData.joining_date,
+      work_location: formData.work_location,
+      salary: formData.salary,
+      probation_period: formData.probation_period,
+      reporting_manager: formData.reporting_manager,
+      duration: formData.duration,
+      is_paid: formData.is_paid,
+      stipend_amount: formData.stipend_amount,
+      stipend_frequency: formData.stipend_frequency,
+      mentor_name: formData.mentor_name,
+      additional_instructions: formData.additional_instructions,
     });
   };
 
-  // -------------------------------------------------------------
-  // Tab 3: Employee Documents State
-  // -------------------------------------------------------------
-  const [docCategoryFilter, setDocCategoryFilter] = useState('');
-  const [docSearch, setDocSearch] = useState('');
-  const [generateDocModalOpen, setGenerateDocModalOpen] = useState(false);
-  const [uploadDocModalOpen, setUploadDocModalOpen] = useState(false);
-  const [revokeModalOpen, setRevokeModalOpen] = useState(false);
-  const [revokingDocId, setRevokingDocId] = useState(null);
-  const [revocationReason, setRevocationReason] = useState('');
-
-  const { data: docsData, refetch: refetchDocs } = useEmployeeDocuments({
-    category: docCategoryFilter,
-    search: docSearch,
-  });
-  const employeeDocs = docsData?.data || [];
-
-  const { mutate: generateDocMutate, isPending: isGeneratingDoc } = useGenerateDocument(
-    () => {
-      toast.success('Document generated and issued successfully!');
-      setGenerateDocModalOpen(false);
-      refetchDocs();
-      refetchOverview();
-    },
-    (err) => toast.error(err?.response?.data?.message || 'Failed to generate document.')
-  );
-
-  const { mutate: uploadDocMutate, isPending: isUploadingDoc } = useUploadDocument(
-    () => {
-      toast.success('Document uploaded and saved successfully!');
-      setUploadDocModalOpen(false);
-      refetchDocs();
-    },
-    (err) => toast.error(err?.response?.data?.message || 'Upload failed.')
-  );
-
-  const { mutate: revokeDocMutate } = useRevokeDocument(
-    () => {
-      toast.success('Document revoked.');
-      setRevokeModalOpen(false);
-      refetchDocs();
-    },
-    (err) => toast.error(err?.response?.data?.message || 'Failed to revoke document.')
-  );
-
-  // -------------------------------------------------------------
-  // Tab 4: Document Requests Triage State
-  // -------------------------------------------------------------
-  const [reqStatusFilter, setReqStatusFilter] = useState('');
-  const [reqSearch, setReqSearch] = useState('');
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [requestDetailOpen, setRequestDetailOpen] = useState(false);
-  const [assignHandlerId, setAssignHandlerId] = useState('');
-  const [statusUpdateVal, setStatusUpdateVal] = useState('approved');
-  const [employeeResponseText, setEmployeeResponseText] = useState('');
-  const [rejectionReasonText, setRejectionReasonText] = useState('');
-
-  const { data: requestsData, refetch: refetchRequests } = useAdminDocumentRequests({
-    status: reqStatusFilter,
-    search: reqSearch,
-  });
-  const adminRequests = requestsData?.data || [];
-
-  const { mutate: assignRequestMutate } = useAssignDocumentRequest(
-    () => {
-      toast.success('Request assigned to HR handler.');
-      refetchRequests();
-    },
-    (err) => toast.error(err?.response?.data?.message || 'Failed to assign handler.')
-  );
-
-  const { mutate: updateReqStatusMutate } = useUpdateDocumentRequestStatus(
-    () => {
-      toast.success('Request status updated!');
-      setRequestDetailOpen(false);
-      refetchRequests();
-      refetchOverview();
-    },
-    (err) => toast.error(err?.response?.data?.message || 'Failed to update status.')
-  );
-
-  const { mutate: issueFromRequestMutate, isPending: isIssuingDoc } = useIssueDocumentFromRequest(
-    () => {
-      toast.success('Document issued and request completed!');
-      setRequestDetailOpen(false);
-      refetchRequests();
-      refetchDocs();
-      refetchOverview();
-    },
-    (err) => toast.error(err?.response?.data?.message || 'Failed to issue document.')
-  );
-
-  // -------------------------------------------------------------
-  // Tab 5: Email History State
-  // -------------------------------------------------------------
-  const [historySearch, setHistorySearch] = useState('');
-  const [historyStatusFilter, setHistoryStatusFilter] = useState('');
-  const { data: historyData, refetch: refetchHistory } = useEmailHistory({
-    search: historySearch,
-    status: historyStatusFilter,
-  });
-  const emailHistoryLogs = historyData?.data || [];
-
-  const { mutate: retryEmailMutate } = useRetryEmail(
-    () => {
-      toast.success('Retry dispatched.');
-      refetchHistory();
-    },
-    (err) => toast.error(err?.response?.data?.message || 'Retry failed.')
-  );
-
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
+    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1300, mx: 'auto' }}>
       {/* Page Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
-            Employee Communication Center
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#64748B', mt: 0.5 }}>
-            Automated onboarding emails, reusable template library, document generation & self-service triage.
-          </Typography>
-        </Box>
-
-        <Stack direction="row" spacing={1.5}>
-          <Button
-            variant="outlined"
-            startIcon={<TemplateIcon />}
-            onClick={() => {
-              setEditingTemplate(null);
-              setEditorModalOpen(true);
-            }}
-            sx={{
-              borderColor: '#CBD5E1',
-              color: '#334155',
-              textTransform: 'none',
-              fontWeight: 700,
-              borderRadius: '10px',
-              '&:hover': { bgcolor: '#F8FAFC', borderColor: '#94A3B8' },
-            }}
-          >
-            New Template
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<SendIcon />}
-            onClick={() => setActiveTab(2)}
-            sx={{
-              bgcolor: '#0F172A',
-              color: '#FFFFFF',
-              textTransform: 'none',
-              fontWeight: 700,
-              borderRadius: '10px',
-              '&:hover': { bgcolor: '#1E293B' },
-            }}
-          >
-            Compose Email
-          </Button>
-        </Stack>
+      <Box sx={{ mb: 3 }}>
+        <Typography sx={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.5px' }}>
+          Employee Communication Center
+        </Typography>
+        <Typography sx={{ fontSize: '13.5px', color: '#64748B', mt: 0.5 }}>
+          Dispatch formal employee offer letters and internship appointments with automated dual-PDF attachments (Offer Letter + Company Policies).
+        </Typography>
       </Box>
 
-      {/* Tabs Navigation */}
-      <Card sx={{ borderRadius: '14px', border: '1px solid #EEF2F6', boxShadow: 'none' }}>
-        <Tabs
-          value={activeTab}
-          onChange={(_e, v) => setActiveTab(v)}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{
-            px: 2,
-            borderBottom: '1px solid #F1F5F9',
-            '& .MuiTab-root': {
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '13px',
+      {/* Overview Stat Badges */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={6} sm={4} md={3}>
+          <Card
+            elevation={0}
+            sx={{
+              p: 2,
+              borderRadius: '12px',
+              border: '1px solid #E2E8F0',
+              bgcolor: '#FFFFFF',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            }}
+          >
+            <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#64748B' }}>
+              Total Emails Dispatched
+            </Typography>
+            <Typography sx={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', mt: 0.5 }}>
+              {overviewData?.totalEmailsSent ?? 0}
+            </Typography>
+          </Card>
+        </Grid>
+
+        <Grid item xs={6} sm={4} md={3}>
+          <Card
+            elevation={0}
+            sx={{
+              p: 2,
+              borderRadius: '12px',
+              border: '1px solid #E2E8F0',
+              bgcolor: '#FFFFFF',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            }}
+          >
+            <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#10B981' }}>
+              Delivered Successfully
+            </Typography>
+            <Typography sx={{ fontSize: '24px', fontWeight: 800, color: '#10B981', mt: 0.5 }}>
+              {overviewData?.emailsDelivered ?? 0}
+            </Typography>
+          </Card>
+        </Grid>
+
+        <Grid item xs={6} sm={4} md={3}>
+          <Card
+            elevation={0}
+            sx={{
+              p: 2,
+              borderRadius: '12px',
+              border: '1px solid #E2E8F0',
+              bgcolor: '#FFFFFF',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            }}
+          >
+            <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#EF4444' }}>
+              Delivery Notices / Failed
+            </Typography>
+            <Typography sx={{ fontSize: '24px', fontWeight: 800, color: '#EF4444', mt: 0.5 }}>
+              {overviewData?.emailsFailed ?? 0}
+            </Typography>
+          </Card>
+        </Grid>
+
+        <Grid item xs={6} sm={4} md={3}>
+          <Card
+            elevation={0}
+            sx={{
+              p: 2,
+              borderRadius: '12px',
+              border: '1px solid #BAE6FD',
+              bgcolor: '#F0F9FF',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            }}
+          >
+            <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#0284C7' }}>
+              Active Auto-Attachments
+            </Typography>
+            <Typography sx={{ fontSize: '12px', color: '#0369A1', mt: 1, fontWeight: 600 }}>
+              ✓ Offer Letter PDF + Policies PDF
+            </Typography>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Tabs */}
+      <Card
+        elevation={0}
+        sx={{
+          borderRadius: '12px',
+          border: '1px solid #E2E8F0',
+          bgcolor: '#FFFFFF',
+          overflow: 'hidden',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+        }}
+      >
+        <Box sx={{ borderBottom: 1, borderColor: '#E2E8F0', bgcolor: '#F8FAFC', px: 2.5 }}>
+          <Tabs
+            value={activeTab}
+            onChange={(_, val) => setActiveTab(val)}
+            sx={{
               minHeight: 48,
-            },
-          }}
-        >
-          <Tab icon={<DashboardIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Overview" />
-          <Tab icon={<TemplateIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Email Templates" />
-          <Tab icon={<SendIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Compose & Send" />
-          <Tab icon={<DocumentIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Employee Documents" />
-          <Tab icon={<RequestIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Document Requests" />
-          <Tab icon={<HistoryIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Email History" />
-          <Tab icon={<SettingsIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Settings" />
-        </Tabs>
-      </Card>
-
-      {/* ========================================================= */}
-      {/* TAB 0: OVERVIEW DASHBOARD */}
-      {/* ========================================================= */}
-      {activeTab === 0 && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {/* Metrics Grid */}
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={2}>
-              <Card sx={{ p: 2, borderRadius: '12px', border: '1px solid #EEF2F6', textAlign: 'center' }}>
-                <Typography sx={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Total Emails Sent</Typography>
-                <Typography sx={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', mt: 0.5 }}>
-                  {overviewData?.metrics?.totalEmailsSent ?? 0}
-                </Typography>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Card sx={{ p: 2, borderRadius: '12px', border: '1px solid #EEF2F6', bgcolor: '#F0FDF4', textAlign: 'center' }}>
-                <Typography sx={{ fontSize: '11px', color: '#166534', fontWeight: 600 }}>Delivered</Typography>
-                <Typography sx={{ fontSize: '24px', fontWeight: 800, color: '#15803D', mt: 0.5 }}>
-                  {overviewData?.metrics?.emailsDelivered ?? 0}
-                </Typography>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Card sx={{ p: 2, borderRadius: '12px', border: '1px solid #EEF2F6', bgcolor: '#FEF2F2', textAlign: 'center' }}>
-                <Typography sx={{ fontSize: '11px', color: '#991B1B', fontWeight: 600 }}>Delivery Failed</Typography>
-                <Typography sx={{ fontSize: '24px', fontWeight: 800, color: '#DC2626', mt: 0.5 }}>
-                  {overviewData?.metrics?.emailsFailed ?? 0}
-                </Typography>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Card sx={{ p: 2, borderRadius: '12px', border: '1px solid #EEF2F6', bgcolor: '#FFFBEB', textAlign: 'center' }}>
-                <Typography sx={{ fontSize: '11px', color: '#92400E', fontWeight: 600 }}>Pending Requests</Typography>
-                <Typography sx={{ fontSize: '24px', fontWeight: 800, color: '#D97706', mt: 0.5 }}>
-                  {overviewData?.metrics?.pendingDocRequests ?? 0}
-                </Typography>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Card sx={{ p: 2, borderRadius: '12px', border: '1px solid #EEF2F6', bgcolor: '#EFF6FF', textAlign: 'center' }}>
-                <Typography sx={{ fontSize: '11px', color: '#1E40AF', fontWeight: 600 }}>Approved Requests</Typography>
-                <Typography sx={{ fontSize: '24px', fontWeight: 800, color: '#2563EB', mt: 0.5 }}>
-                  {overviewData?.metrics?.approvedDocRequests ?? 0}
-                </Typography>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={2}>
-              <Card sx={{ p: 2, borderRadius: '12px', border: '1px solid #EEF2F6', bgcolor: '#FAF5FF', textAlign: 'center' }}>
-                <Typography sx={{ fontSize: '11px', color: '#6B21A8', fontWeight: 600 }}>Documents Issued</Typography>
-                <Typography sx={{ fontSize: '24px', fontWeight: 800, color: '#7C3AED', mt: 0.5 }}>
-                  {overviewData?.metrics?.documentsGenerated ?? 0}
-                </Typography>
-              </Card>
-            </Grid>
-          </Grid>
-
-          {/* Side by side: Recent Emails & Recent Requests */}
-          <Grid container spacing={3}>
-            {/* Recent Email Activity */}
-            <Grid item xs={12} md={6}>
-              <Card sx={{ borderRadius: '14px', border: '1px solid #EEF2F6', p: 2.5 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography sx={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>
-                    Recent Email Dispatches
-                  </Typography>
-                  <Button size="small" onClick={() => setActiveTab(5)} sx={{ textTransform: 'none', fontWeight: 600 }}>
-                    View All &rarr;
-                  </Button>
-                </Box>
-                {overviewData?.recentEmails && overviewData.recentEmails.length > 0 ? (
-                  <Stack spacing={1.5}>
-                    {overviewData.recentEmails.map((mail) => (
-                      <Box
-                        key={mail.id}
-                        sx={{
-                          p: 1.5,
-                          borderRadius: '8px',
-                          bgcolor: '#F8FAFC',
-                          border: '1px solid #F1F5F9',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <Box>
-                          <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
-                            {mail.subject}
-                          </Typography>
-                          <Typography sx={{ fontSize: '11px', color: '#64748B' }}>
-                            To: {mail.recipient_email} &middot; Sent by {mail.sender?.first_name || 'HR'}
-                          </Typography>
-                        </Box>
-                        <Chip
-                          size="small"
-                          label={mail.status}
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: '10px',
-                            textTransform: 'uppercase',
-                            bgcolor: mail.status === 'sent' || mail.status === 'delivered' ? '#ECFDF5' : '#FEF2F2',
-                            color: mail.status === 'sent' || mail.status === 'delivered' ? '#059669' : '#DC2626',
-                          }}
-                        />
-                      </Box>
-                    ))}
-                  </Stack>
-                ) : (
-                  <Typography sx={{ fontSize: '13px', color: '#94A3B8', py: 3, textAlign: 'center' }}>
-                    No recent email dispatches logged yet.
-                  </Typography>
-                )}
-              </Card>
-            </Grid>
-
-            {/* Recent Document Requests */}
-            <Grid item xs={12} md={6}>
-              <Card sx={{ borderRadius: '14px', border: '1px solid #EEF2F6', p: 2.5 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography sx={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>
-                    Recent Document Requests
-                  </Typography>
-                  <Button size="small" onClick={() => setActiveTab(4)} sx={{ textTransform: 'none', fontWeight: 600 }}>
-                    View Queue &rarr;
-                  </Button>
-                </Box>
-                {overviewData?.recentDocRequests && overviewData.recentDocRequests.length > 0 ? (
-                  <Stack spacing={1.5}>
-                    {overviewData.recentDocRequests.map((req) => (
-                      <Box
-                        key={req.id}
-                        sx={{
-                          p: 1.5,
-                          borderRadius: '8px',
-                          bgcolor: '#F8FAFC',
-                          border: '1px solid #F1F5F9',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <Box>
-                          <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
-                            {req.reference_number}: {req.title || req.document_type}
-                          </Typography>
-                          <Typography sx={{ fontSize: '11px', color: '#64748B' }}>
-                            Requested by {req.employee?.first_name} {req.employee?.last_name}
-                          </Typography>
-                        </Box>
-                        <Chip
-                          size="small"
-                          label={req.status.replace(/_/g, ' ')}
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: '10px',
-                            textTransform: 'uppercase',
-                            bgcolor: req.status === 'completed' || req.status === 'ready_for_download' ? '#ECFDF5' : '#FFFBEB',
-                            color: req.status === 'completed' || req.status === 'ready_for_download' ? '#059669' : '#D97706',
-                          }}
-                        />
-                      </Box>
-                    ))}
-                  </Stack>
-                ) : (
-                  <Typography sx={{ fontSize: '13px', color: '#94A3B8', py: 3, textAlign: 'center' }}>
-                    No pending document requests in queue.
-                  </Typography>
-                )}
-              </Card>
-            </Grid>
-          </Grid>
+              '& .MuiTab-root': {
+                minHeight: 48,
+                fontSize: '13.5px',
+                fontWeight: 600,
+                textTransform: 'none',
+                color: '#64748B',
+                '&.Mui-selected': { color: '#0284C7', fontWeight: 700 },
+              },
+              '& .MuiTabs-indicator': { bgcolor: '#0284C7', height: 3 },
+            }}
+          >
+            <Tab
+              icon={<SendIcon sx={{ fontSize: '18px !important', mr: 0.8 }} />}
+              iconPosition="start"
+              label="Send Offer & Onboarding Email"
+            />
+            <Tab
+              icon={<HistoryIcon sx={{ fontSize: '18px !important', mr: 0.8 }} />}
+              iconPosition="start"
+              label="Email History & Dispatch Logs"
+            />
+          </Tabs>
         </Box>
-      )}
 
-      {/* ========================================================= */}
-      {/* TAB 1: EMAIL TEMPLATES */}
-      {/* ========================================================= */}
-      {activeTab === 1 && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              {['all', 'offer', 'onboarding', 'internship', 'announcement', 'document', 'general'].map((cat) => (
-                <Chip
-                  key={cat}
-                  label={cat.toUpperCase()}
-                  clickable
-                  onClick={() => setTemplateCategoryFilter(cat)}
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: '11px',
-                    bgcolor: templateCategoryFilter === cat ? '#0F172A' : '#F1F5F9',
-                    color: templateCategoryFilter === cat ? '#FFFFFF' : '#475569',
-                  }}
-                />
-              ))}
+        {/* Tab 0: Send Offer Letter Form */}
+        {activeTab === 0 && (
+          <Box sx={{ p: { xs: 2.5, md: 4 } }}>
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ fontSize: '17px', fontWeight: 700, color: '#0F172A' }}>
+                Compose Formal Offer & Auto-Attach Enclosures
+              </Typography>
+              <Typography sx={{ fontSize: '13px', color: '#64748B', mt: 0.3 }}>
+                Select the engagement type below. The form adapts automatically with role-specific parameters and prepares 2 formal PDFs to send.
+              </Typography>
             </Box>
 
-            <TextField
-              size="small"
-              placeholder="Search templates..."
-              value={templateSearch}
-              onChange={(e) => setTemplateSearch(e.target.value)}
-              sx={{ width: 240 }}
-            />
-          </Box>
-
-          <Grid container spacing={2}>
-            {templates
-              .filter((tpl) => templateCategoryFilter === 'all' || tpl.category === templateCategoryFilter)
-              .filter((tpl) => !templateSearch || tpl.name.toLowerCase().includes(templateSearch.toLowerCase()))
-              .map((tpl) => (
-                <Grid item xs={12} sm={6} md={4} key={tpl.id}>
-                  <Card
-                    sx={{
-                      p: 2.5,
-                      borderRadius: '14px',
-                      border: '1px solid #EEF2F6',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      transition: 'all 0.15s ease',
-                      '&:hover': { boxShadow: '0 4px 12px rgba(15, 23, 42, 0.06)' },
-                    }}
-                  >
-                    <Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                        <Chip
-                          size="small"
-                          label={tpl.category.toUpperCase()}
-                          sx={{ fontSize: '10px', fontWeight: 700, bgcolor: '#EFF6FF', color: '#1D4ED8' }}
-                        />
-                        {tpl.is_system && (
-                          <Chip size="small" label="SYSTEM DEFAULT" sx={{ fontSize: '9px', fontWeight: 800, bgcolor: '#FEF3C7', color: '#B45309' }} />
-                        )}
-                      </Box>
-                      <Typography sx={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', mt: 1 }}>
-                        {tpl.name}
+            <Grid container spacing={3}>
+              {/* Left Column: Form Fields */}
+              <Grid item xs={12} lg={8}>
+                {/* 1. Core Engagement Type Selector */}
+                <Card
+                  elevation={0}
+                  sx={{
+                    p: 2.5,
+                    borderRadius: '10px',
+                    border: '2px solid #BAE6FD',
+                    bgcolor: '#F0F9FF',
+                    mb: 3,
+                  }}
+                >
+                  <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} sm={6}>
+                      <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#0369A1', mb: 0.5 }}>
+                        1. Select Employment Type:
                       </Typography>
-                      <Typography sx={{ fontSize: '12px', color: '#64748B', mt: 0.5, fontStyle: 'italic' }}>
-                        Subject: {tpl.subject}
-                      </Typography>
-                    </Box>
-
-                    <Box sx={{ mt: 2.5, pt: 1.5, borderTop: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography sx={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>
-                        v{tpl.version} &middot; {tpl.supported_placeholders?.length || 0} fields
-                      </Typography>
-                      <Stack direction="row" spacing={0.5}>
-                        <Tooltip title="Preview with sample data">
-                          <IconButton
-                            size="small"
-                            onClick={() => {
-                              previewMutate(
-                                { template_id: tpl.id },
-                                {
-                                  onSuccess: (data) => {
-                                    setPreviewData(data);
-                                    setPreviewModalOpen(true);
-                                  },
-                                }
-                              );
-                            }}
-                          >
-                            <ViewIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Duplicate Template">
-                          <IconButton size="small" onClick={() => duplicateTemplateMutate(tpl.id)}>
-                            <CopyIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Edit Template">
-                          <IconButton
-                            size="small"
-                            onClick={() => {
-                              setEditingTemplate(tpl);
-                              setEditorModalOpen(true);
-                            }}
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </Box>
-                  </Card>
-                </Grid>
-              ))}
-          </Grid>
-        </Box>
-      )}
-
-      {/* ========================================================= */}
-      {/* TAB 2: COMPOSE & SEND */}
-      {/* ========================================================= */}
-      {activeTab === 2 && (
-        <Card sx={{ p: 3, borderRadius: '14px', border: '1px solid #EEF2F6', display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <Typography sx={{ fontSize: '16px', fontWeight: 800, color: '#0F172A' }}>
-            Compose & Dispatch Communication
-          </Typography>
-
-          {/* Recipient Mode Selection */}
-          <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-            <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#475569', mb: 1.5, textTransform: 'uppercase' }}>
-              1. Choose Recipient Audience
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={4}>
-                <FormControl size="small" fullWidth>
-                  <InputLabel>Recipient Mode</InputLabel>
-                  <Select
-                    value={recipientType}
-                    label="Recipient Mode"
-                    onChange={(e) => setRecipientType(e.target.value)}
-                  >
-                    <MenuItem value="single">Single Employee / External Candidate</MenuItem>
-                    <MenuItem value="multiple">Multiple Selected Employees</MenuItem>
-                    <MenuItem value="all_active">All Active Employees (Company-Wide)</MenuItem>
-                    <MenuItem value="department">Filtered by Department</MenuItem>
-                    <MenuItem value="employment_type">Filtered by Employment Type</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              {/* Dynamic Recipient Controls */}
-              {recipientType === 'single' && (
-                <>
-                  <Grid item xs={12} sm={4}>
-                    <FormControl size="small" fullWidth>
-                      <InputLabel>Existing Employee (or leave blank for candidate)</InputLabel>
-                      <Select
-                        value={selectedEmployeeId}
-                        label="Existing Employee (or leave blank for candidate)"
-                        onChange={(e) => {
-                          setSelectedEmployeeId(e.target.value);
-                          const emp = employees.find((x) => x.id === Number(e.target.value));
-                          if (emp) {
-                            setCandidateEmail(emp.email);
-                            setCandidateName(`${emp.first_name} ${emp.last_name}`);
-                          }
-                        }}
-                      >
-                        <MenuItem value="">-- External Candidate / Custom Email --</MenuItem>
-                        {employees.map((emp) => (
-                          <MenuItem key={emp.id} value={emp.id}>
-                            {emp.first_name} {emp.last_name} ({emp.email})
+                      <FormControl fullWidth size="small">
+                        <Select
+                          value={formData.employment_type}
+                          onChange={(e) => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              employment_type: e.target.value,
+                              job_title: e.target.value === 'internship' ? 'Software Engineering Intern' : 'Software Engineer',
+                            }));
+                          }}
+                          sx={{
+                            bgcolor: '#FFFFFF',
+                            fontWeight: 700,
+                            color: '#0F172A',
+                            '& .MuiOutlinedInput-notchedOutline': { borderColor: '#7DD3FC' },
+                          }}
+                        >
+                          <MenuItem value="employee" sx={{ fontWeight: 600 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <EmployeeIcon sx={{ fontSize: 18, color: '#0284C7' }} />
+                              Employee (Full-Time Regular)
+                            </Box>
                           </MenuItem>
-                        ))}
+                          <MenuItem value="internship" sx={{ fontWeight: 600 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <InternIcon sx={{ fontSize: 18, color: '#7C3AED' }} />
+                              Internship
+                            </Box>
+                          </MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#475569', mb: 0.5 }}>
+                        Recipient Source:
+                      </Typography>
+                      <FormControl fullWidth size="small">
+                        <Select
+                          value={formData.candidate_source}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormData((prev) => ({
+                              ...prev,
+                              candidate_source: val,
+                              candidate_id: val === 'manual' ? null : prev.candidate_id,
+                            }));
+                          }}
+                          sx={{ bgcolor: '#FFFFFF' }}
+                        >
+                          <MenuItem value="manual">Enter New Candidate Manually</MenuItem>
+                          <MenuItem value="existing">Select from Staff / Candidate Directory</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  </Grid>
+
+                  {/* Existing Employee Select Dropdown (if selected) */}
+                  {formData.candidate_source === 'existing' && (
+                    <Box sx={{ mt: 2 }}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Select Candidate / Employee</InputLabel>
+                        <Select
+                          label="Select Candidate / Employee"
+                          value={formData.candidate_id || ''}
+                          onChange={(e) => handleSelectExistingEmployee(e.target.value)}
+                          sx={{ bgcolor: '#FFFFFF' }}
+                        >
+                          {employees.map((emp) => (
+                            <MenuItem key={emp.id} value={emp.id}>
+                              {emp.first_name} {emp.last_name} ({emp.email}) — {emp.job_title || 'No Title'}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Box>
+                  )}
+                </Card>
+
+                {/* 2. Candidate & Position Details */}
+                <Typography sx={{ fontSize: '14.5px', fontWeight: 700, color: '#0F172A', mb: 1.5 }}>
+                  Candidate Information
+                </Typography>
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Candidate Full Name *"
+                      value={formData.candidate_name}
+                      onChange={(e) => setFormData({ ...formData, candidate_name: e.target.value })}
+                      error={Boolean(formErrors.candidate_name)}
+                      helperText={formErrors.candidate_name}
+                      placeholder="e.g. Rahul Sharma"
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Candidate Email Address *"
+                      value={formData.candidate_email}
+                      onChange={(e) => setFormData({ ...formData, candidate_email: e.target.value })}
+                      error={Boolean(formErrors.candidate_email)}
+                      helperText={formErrors.candidate_email}
+                      placeholder="e.g. rahul@example.com"
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label={formData.employment_type === 'internship' ? 'Internship Role / Position *' : 'Designation / Job Title *'}
+                      value={formData.job_title}
+                      onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
+                      error={Boolean(formErrors.job_title)}
+                      helperText={formErrors.job_title}
+                      placeholder="e.g. Software Engineer"
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Department *</InputLabel>
+                      <Select
+                        label="Department *"
+                        value={formData.department}
+                        onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                      >
+                        {depts.length > 0 ? (
+                          depts.map((d) => (
+                            <MenuItem key={d.id} value={d.name}>
+                              {d.name}
+                            </MenuItem>
+                          ))
+                        ) : (
+                          ['Engineering', 'Product', 'Marketing', 'Operations', 'Human Resources', 'Design', 'Finance'].map((d) => (
+                            <MenuItem key={d} value={d}>
+                              {d}
+                            </MenuItem>
+                          ))
+                        )}
                       </Select>
                     </FormControl>
                   </Grid>
-                  {!selectedEmployeeId && (
-                    <Grid item xs={12} sm={4}>
-                      <TextField
-                        size="small"
-                        label="Candidate Email Address *"
-                        fullWidth
-                        value={candidateEmail}
-                        onChange={(e) => setCandidateEmail(e.target.value)}
-                        placeholder="candidate@example.com"
-                      />
-                    </Grid>
-                  )}
-                </>
-              )}
 
-              {recipientType === 'multiple' && (
-                <Grid item xs={12} sm={8}>
-                  <FormControl size="small" fullWidth>
-                    <InputLabel>Select Specific Employees</InputLabel>
-                    <Select
-                      multiple
-                      value={selectedEmployeeIds}
-                      label="Select Specific Employees"
-                      onChange={(e) => setSelectedEmployeeIds(e.target.value)}
-                      renderValue={(selected) => `${selected.length} employees selected`}
-                    >
-                      {employees.map((emp) => (
-                        <MenuItem key={emp.id} value={emp.id}>
-                          {emp.first_name} {emp.last_name} ({emp.email})
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      type="date"
+                      label="Proposed Joining Date *"
+                      value={formData.joining_date}
+                      onChange={(e) => setFormData({ ...formData, joining_date: e.target.value })}
+                      InputLabelProps={{ shrink: true }}
+                      error={Boolean(formErrors.joining_date)}
+                      helperText={formErrors.joining_date}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Work Location / Mode</InputLabel>
+                      <Select
+                        label="Work Location / Mode"
+                        value={formData.work_location}
+                        onChange={(e) => setFormData({ ...formData, work_location: e.target.value })}
+                      >
+                        <MenuItem value="Hybrid">Hybrid (Flexible Office & Remote)</MenuItem>
+                        <MenuItem value="On-site">On-site (Headquarters)</MenuItem>
+                        <MenuItem value="Remote">Fully Remote</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
                 </Grid>
-              )}
 
-              {recipientType === 'department' && (
-                <Grid item xs={12} sm={6}>
-                  <FormControl size="small" fullWidth>
-                    <InputLabel>Select Department</InputLabel>
-                    <Select
-                      value={selectedDeptId}
-                      label="Select Department"
-                      onChange={(e) => setSelectedDeptId(e.target.value)}
-                    >
-                      {depts.map((d) => (
-                        <MenuItem key={d.id} value={d.id}>
-                          {d.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              )}
+                {/* 3. Conditional Fields: Internship vs Employee */}
+                {formData.employment_type === 'internship' ? (
+                  // INTERNSHIP FIELDS
+                  <Card
+                    elevation={0}
+                    sx={{
+                      p: 2.5,
+                      borderRadius: '10px',
+                      border: '1px solid #DDD6FE',
+                      bgcolor: '#FAF5FF',
+                      mb: 3,
+                    }}
+                  >
+                    <Typography sx={{ fontSize: '14.5px', fontWeight: 700, color: '#6B21A8', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <InternIcon fontSize="small" /> Internship Specific Terms
+                    </Typography>
 
-              {recipientType === 'employment_type' && (
-                <Grid item xs={12} sm={6}>
-                  <FormControl size="small" fullWidth>
-                    <InputLabel>Employment Classification</InputLabel>
-                    <Select
-                      value={selectedEmploymentType}
-                      label="Employment Classification"
-                      onChange={(e) => setSelectedEmploymentType(e.target.value)}
-                    >
-                      <MenuItem value="full_time">Full-Time Employees</MenuItem>
-                      <MenuItem value="intern">Interns</MenuItem>
-                      <MenuItem value="contract">Contractors</MenuItem>
-                      <MenuItem value="part_time">Part-Time</MenuItem>
-                      <MenuItem value="temporary">Temporary</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-              )}
-            </Grid>
-          </Box>
-
-          {/* Template Selection */}
-          <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-            <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#475569', mb: 1.5, textTransform: 'uppercase' }}>
-              2. Load Template (Optional)
-            </Typography>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Choose from Email Template Library</InputLabel>
-              <Select
-                value={selectedTemplateId}
-                label="Choose from Email Template Library"
-                onChange={(e) => handleTemplateSelect(e.target.value)}
-              >
-                <MenuItem value="">-- Start Blank / Custom Email --</MenuItem>
-                {templates.map((tpl) => (
-                  <MenuItem key={tpl.id} value={tpl.id}>
-                    {tpl.name} ({tpl.category.toUpperCase()})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-
-          {/* Subject & Body */}
-          <TextField
-            label="Email Subject Line *"
-            fullWidth
-            size="small"
-            value={composeSubject}
-            onChange={(e) => setComposeSubject(e.target.value)}
-            placeholder="e.g. Formal Offer of Employment — {{jobTitle}}"
-          />
-
-          <TextField
-            label="Email Body (HTML / Plain text) *"
-            fullWidth
-            multiline
-            rows={12}
-            value={composeHtml}
-            onChange={(e) => setComposeHtml(e.target.value)}
-            placeholder="Write your email body here with dynamic {{placeholders}}..."
-          />
-
-          {/* Action Footer */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 1 }}>
-            <Button
-              variant="outlined"
-              startIcon={<ViewIcon />}
-              onClick={handleOpenPreview}
-              disabled={isPreviewLoading || !composeSubject || !composeHtml}
-              sx={{ textTransform: 'none', fontWeight: 700 }}
-            >
-              {isPreviewLoading ? 'Rendering Preview...' : 'Preview with Sample Data'}
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<SendIcon />}
-              onClick={() => setConfirmSendOpen(true)}
-              disabled={isSending || !composeSubject || !composeHtml}
-              sx={{
-                bgcolor: '#0F172A',
-                color: '#FFFFFF',
-                textTransform: 'none',
-                fontWeight: 700,
-                px: 3,
-                '&:hover': { bgcolor: '#1E293B' },
-              }}
-            >
-              Review & Send
-            </Button>
-          </Box>
-        </Card>
-      )}
-
-      {/* ========================================================= */}
-      {/* TAB 3: EMPLOYEE DOCUMENTS REPOSITORY */}
-      {/* ========================================================= */}
-      {activeTab === 3 && (
-        <Card sx={{ p: 3, borderRadius: '14px', border: '1px solid #EEF2F6', display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              {['', 'employment', 'certificate', 'policy', 'submitted'].map((cat) => (
-                <Chip
-                  key={cat}
-                  label={cat ? cat.toUpperCase() : 'ALL CATEGORIES'}
-                  clickable
-                  onClick={() => setDocCategoryFilter(cat)}
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: '11px',
-                    bgcolor: docCategoryFilter === cat ? '#0F172A' : '#F1F5F9',
-                    color: docCategoryFilter === cat ? '#FFFFFF' : '#475569',
-                  }}
-                />
-              ))}
-            </Box>
-
-            <Stack direction="row" spacing={1.5}>
-              <Button
-                variant="outlined"
-                startIcon={<UploadIcon />}
-                onClick={() => setUploadDocModalOpen(true)}
-                sx={{ textTransform: 'none', fontWeight: 700 }}
-              >
-                Upload Document
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<PdfIcon />}
-                onClick={() => setGenerateDocModalOpen(true)}
-                sx={{ bgcolor: '#0284C7', textTransform: 'none', fontWeight: 700, '&:hover': { bgcolor: '#0369A1' } }}
-              >
-                Generate HR PDF
-              </Button>
-            </Stack>
-          </Box>
-
-          <TableContainer>
-            <Table size="small">
-              <TableHead sx={{ bgcolor: '#F8FAFC' }}>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B' }}>REF NO</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B' }}>EMPLOYEE</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B' }}>TITLE</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B' }}>CATEGORY</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B' }}>ISSUE DATE</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B' }}>STATUS</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B', textAlign: 'right' }}>ACTIONS</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {employeeDocs.length > 0 ? (
-                  employeeDocs.map((doc) => (
-                    <TableRow key={doc.id} hover>
-                      <TableCell sx={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '12px', color: '#0284C7' }}>
-                        {doc.reference_number}
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#0F172A' }}>
-                        {doc.employee?.first_name} {doc.employee?.last_name}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: '13px', color: '#334155', fontWeight: 500 }}>
-                        {doc.title}
-                      </TableCell>
-                      <TableCell>
-                        <Chip size="small" label={doc.category.toUpperCase()} sx={{ fontSize: '10px', fontWeight: 700 }} />
-                      </TableCell>
-                      <TableCell sx={{ fontSize: '12px', color: '#64748B' }}>
-                        {doc.issue_date || 'N/A'}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={doc.status.toUpperCase()}
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: '10px',
-                            bgcolor: doc.status === 'issued' || doc.status === 'approved' ? '#ECFDF5' : '#FEF2F2',
-                            color: doc.status === 'issued' || doc.status === 'approved' ? '#059669' : '#DC2626',
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ textAlign: 'right' }}>
-                        <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            onClick={() => downloadDocumentFile(doc.id, `${doc.reference_number}.pdf`)}
-                            sx={{ textTransform: 'none', fontSize: '11px', py: 0.2 }}
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Internship Duration *</InputLabel>
+                          <Select
+                            label="Internship Duration *"
+                            value={formData.duration}
+                            onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                           >
-                            Download
-                          </Button>
-                          {doc.status !== 'revoked' && (
-                            <IconButton
+                            <MenuItem value="1 Month">1 Month</MenuItem>
+                            <MenuItem value="2 Months">2 Months</MenuItem>
+                            <MenuItem value="3 Months">3 Months (Standard)</MenuItem>
+                            <MenuItem value="6 Months">6 Months (Extended)</MenuItem>
+                            <MenuItem value="12 Months">12 Months (Full Academic Year)</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Reporting Mentor / Supervisor"
+                          value={formData.mentor_name}
+                          onChange={(e) => setFormData({ ...formData, mentor_name: e.target.value })}
+                          placeholder="e.g. Lead Software Architect"
+                        />
+                      </Grid>
+
+                      {/* Paid or Unpaid Toggle */}
+                      <Grid item xs={12}>
+                        <FormControl component="fieldset">
+                          <FormLabel component="legend" sx={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>
+                            Compensation / Stipend Status:
+                          </FormLabel>
+                          <RadioGroup
+                            row
+                            value={formData.is_paid ? 'paid' : 'unpaid'}
+                            onChange={(e) => setFormData({ ...formData, is_paid: e.target.value === 'paid' })}
+                          >
+                            <FormControlLabel
+                              value="paid"
+                              control={<Radio size="small" sx={{ color: '#7C3AED', '&.Mui-checked': { color: '#7C3AED' } }} />}
+                              label={<Typography sx={{ fontSize: '13px', fontWeight: 600 }}>Paid Internship</Typography>}
+                            />
+                            <FormControlLabel
+                              value="unpaid"
+                              control={<Radio size="small" sx={{ color: '#7C3AED', '&.Mui-checked': { color: '#7C3AED' } }} />}
+                              label={<Typography sx={{ fontSize: '13px', fontWeight: 600 }}>Unpaid (Academic Experience & Training)</Typography>}
+                            />
+                          </RadioGroup>
+                        </FormControl>
+                      </Grid>
+
+                      {/* If Paid: Stipend Amount & Frequency */}
+                      {formData.is_paid && (
+                        <>
+                          <Grid item xs={12} sm={6}>
+                            <TextField
+                              fullWidth
                               size="small"
-                              color="error"
-                              onClick={() => {
-                                setRevokingDocId(doc.id);
-                                setRevokeModalOpen(true);
-                              }}
-                            >
-                              <RevokeIcon fontSize="small" />
-                            </IconButton>
-                          )}
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                              label="Stipend Amount *"
+                              value={formData.stipend_amount}
+                              onChange={(e) => setFormData({ ...formData, stipend_amount: e.target.value })}
+                              error={Boolean(formErrors.stipend_amount)}
+                              helperText={formErrors.stipend_amount}
+                              placeholder="e.g. ₹20,000 or $1,500"
+                            />
+                          </Grid>
+
+                          <Grid item xs={12} sm={6}>
+                            <FormControl fullWidth size="small">
+                              <InputLabel>Disbursement Frequency</InputLabel>
+                              <Select
+                                label="Disbursement Frequency"
+                                value={formData.stipend_frequency}
+                                onChange={(e) => setFormData({ ...formData, stipend_frequency: e.target.value })}
+                              >
+                                <MenuItem value="Per Month">Per Month</MenuItem>
+                                <MenuItem value="Bi-Weekly">Bi-Weekly</MenuItem>
+                                <MenuItem value="Lump Sum (Upon Completion)">Lump Sum (Upon Completion)</MenuItem>
+                              </Select>
+                            </FormControl>
+                          </Grid>
+                        </>
+                      )}
+                    </Grid>
+                  </Card>
                 ) : (
-                  <TableRow>
-                    <TableCell colSpan={7} sx={{ textAlign: 'center', py: 4, color: '#94A3B8' }}>
-                      No documents found in repository.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Card>
-      )}
+                  // EMPLOYEE FIELDS
+                  <Card
+                    elevation={0}
+                    sx={{
+                      p: 2.5,
+                      borderRadius: '10px',
+                      border: '1px solid #BAE6FD',
+                      bgcolor: '#F0F9FF',
+                      mb: 3,
+                    }}
+                  >
+                    <Typography sx={{ fontSize: '14.5px', fontWeight: 700, color: '#0369A1', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <EmployeeIcon fontSize="small" /> Employee Specific Terms
+                    </Typography>
 
-      {/* ========================================================= */}
-      {/* TAB 4: DOCUMENT REQUESTS TRIAGE */}
-      {/* ========================================================= */}
-      {activeTab === 4 && (
-        <Card sx={{ p: 3, borderRadius: '14px', border: '1px solid #EEF2F6', display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              {['', 'submitted', 'under_review', 'approved', 'ready_for_download', 'completed', 'rejected'].map((st) => (
-                <Chip
-                  key={st}
-                  label={st ? st.replace(/_/g, ' ').toUpperCase() : 'ALL REQUESTS'}
-                  clickable
-                  onClick={() => setReqStatusFilter(st)}
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: '11px',
-                    bgcolor: reqStatusFilter === st ? '#0F172A' : '#F1F5F9',
-                    color: reqStatusFilter === st ? '#FFFFFF' : '#475569',
-                  }}
-                />
-              ))}
-            </Box>
-
-            <TextField
-              size="small"
-              placeholder="Search requests..."
-              value={reqSearch}
-              onChange={(e) => setReqSearch(e.target.value)}
-              sx={{ width: 240 }}
-            />
-          </Box>
-
-          <TableContainer>
-            <Table size="small">
-              <TableHead sx={{ bgcolor: '#F8FAFC' }}>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B' }}>REF NO</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B' }}>EMPLOYEE</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B' }}>DOCUMENT</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B' }}>PURPOSE</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B' }}>SUBMITTED</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B' }}>STATUS</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B', textAlign: 'right' }}>ACTION</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {adminRequests.length > 0 ? (
-                  adminRequests.map((req) => (
-                    <TableRow key={req.id} hover>
-                      <TableCell sx={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '12px', color: '#0284C7' }}>
-                        {req.reference_number}
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 600, fontSize: '13px', color: '#0F172A' }}>
-                        {req.employee?.first_name} {req.employee?.last_name}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: '13px', color: '#334155' }}>
-                        {req.title || req.document_type.replace(/_/g, ' ')}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: '12px', color: '#64748B', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {req.purpose}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: '12px', color: '#64748B' }}>
-                        {new Date(req.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          fullWidth
                           size="small"
-                          label={req.status.replace(/_/g, ' ').toUpperCase()}
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: '10px',
-                            bgcolor: req.status === 'completed' || req.status === 'ready_for_download' ? '#ECFDF5' : '#FFFBEB',
-                            color: req.status === 'completed' || req.status === 'ready_for_download' ? '#059669' : '#D97706',
-                          }}
+                          label="Annual CTC / Compensation *"
+                          value={formData.salary}
+                          onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                          error={Boolean(formErrors.salary)}
+                          helperText={formErrors.salary}
+                          placeholder="e.g. ₹8,50,000 per annum"
                         />
-                      </TableCell>
-                      <TableCell sx={{ textAlign: 'right' }}>
-                        <Button
-                          size="small"
-                          variant="contained"
-                          onClick={() => {
-                            setSelectedRequest(req);
-                            setRequestDetailOpen(true);
-                          }}
-                          sx={{ textTransform: 'none', bgcolor: '#0F172A', fontSize: '11px', py: 0.3 }}
-                        >
-                          Review & Triage
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={7} sx={{ textAlign: 'center', py: 4, color: '#94A3B8' }}>
-                      No document requests found in queue.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Card>
-      )}
+                      </Grid>
 
-      {/* ========================================================= */}
-      {/* TAB 5: EMAIL HISTORY */}
-      {/* ========================================================= */}
-      {activeTab === 5 && (
-        <Card sx={{ p: 3, borderRadius: '14px', border: '1px solid #EEF2F6', display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              {['', 'sent', 'delivered', 'failed'].map((st) => (
-                <Chip
-                  key={st}
-                  label={st ? st.toUpperCase() : 'ALL STATUSES'}
-                  clickable
-                  onClick={() => setHistoryStatusFilter(st)}
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: '11px',
-                    bgcolor: historyStatusFilter === st ? '#0F172A' : '#F1F5F9',
-                    color: historyStatusFilter === st ? '#FFFFFF' : '#475569',
-                  }}
-                />
-              ))}
-            </Box>
-
-            <TextField
-              size="small"
-              placeholder="Search by recipient or subject..."
-              value={historySearch}
-              onChange={(e) => setHistorySearch(e.target.value)}
-              sx={{ width: 280 }}
-            />
-          </Box>
-
-          <TableContainer>
-            <Table size="small">
-              <TableHead sx={{ bgcolor: '#F8FAFC' }}>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B' }}>RECIPIENT</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B' }}>SUBJECT</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B' }}>SENDER</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B' }}>DISPATCHED</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B' }}>STATUS</TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#64748B', textAlign: 'right' }}>ACTION</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {emailHistoryLogs.length > 0 ? (
-                  emailHistoryLogs.map((log) => (
-                    <TableRow key={log.id} hover>
-                      <TableCell sx={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>
-                        {log.recipient_name ? `${log.recipient_name} (${log.recipient_email})` : log.recipient_email}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: '13px', color: '#334155', fontWeight: 500 }}>
-                        {log.subject}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: '12px', color: '#64748B' }}>
-                        {log.sender?.first_name} {log.sender?.last_name}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: '12px', color: '#64748B' }}>
-                        {new Date(log.created_at).toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={log.status.toUpperCase()}
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: '10px',
-                            bgcolor: log.status === 'sent' || log.status === 'delivered' ? '#ECFDF5' : '#FEF2F2',
-                            color: log.status === 'sent' || log.status === 'delivered' ? '#059669' : '#DC2626',
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ textAlign: 'right' }}>
-                        {log.status === 'failed' && (
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            color="error"
-                            startIcon={<RetryIcon />}
-                            onClick={() => retryEmailMutate(log.id)}
-                            sx={{ textTransform: 'none', fontSize: '11px', py: 0.2 }}
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Probation Period</InputLabel>
+                          <Select
+                            label="Probation Period"
+                            value={formData.probation_period}
+                            onChange={(e) => setFormData({ ...formData, probation_period: e.target.value })}
                           >
-                            Retry
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} sx={{ textAlign: 'center', py: 4, color: '#94A3B8' }}>
-                      No email history records found.
-                    </TableCell>
-                  </TableRow>
+                            <MenuItem value="None (Direct Permanent)">None (Direct Permanent)</MenuItem>
+                            <MenuItem value="1 Month">1 Month</MenuItem>
+                            <MenuItem value="3 Months">3 Months (Standard)</MenuItem>
+                            <MenuItem value="6 Months">6 Months</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Reporting Manager / Department Head"
+                          value={formData.reporting_manager}
+                          onChange={(e) => setFormData({ ...formData, reporting_manager: e.target.value })}
+                          placeholder="e.g. Elena Rostova (Director of Engineering)"
+                        />
+                      </Grid>
+                    </Grid>
+                  </Card>
                 )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Card>
-      )}
 
-      {/* ========================================================= */}
-      {/* TAB 6: SETTINGS & PLACEHOLDERS GUIDE */}
-      {/* ========================================================= */}
-      {activeTab === 6 && (
-        <Card sx={{ p: 3, borderRadius: '14px', border: '1px solid #EEF2F6', display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <Typography sx={{ fontSize: '16px', fontWeight: 800, color: '#0F172A' }}>
-            Email Provider & Template Settings
-          </Typography>
+                {/* Additional Instructions */}
+                <Box sx={{ mb: 3 }}>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={3}
+                    size="small"
+                    label="Special Joining Instructions / Enclosure Notes"
+                    value={formData.additional_instructions}
+                    onChange={(e) => setFormData({ ...formData, additional_instructions: e.target.value })}
+                    placeholder="Provide any custom instructions or onboarding submission requirements..."
+                  />
+                </Box>
 
-          <Box sx={{ p: 2, bgcolor: '#F0FDF4', borderRadius: '10px', border: '1px solid #BBF7D0' }}>
-            <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#166534' }}>
-              ✓ Email Delivery Service Status: Active
-            </Typography>
-            <Typography sx={{ fontSize: '12px', color: '#15803D', mt: 0.5 }}>
-              Provider: {settingsData?.data?.provider || 'Nodemailer Gmail SMTP (SmartOps-Pay)'} &middot; Sender: {settingsData?.data?.senderEmail}
-            </Typography>
-          </Box>
+                {/* Action Buttons */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Button
+                    variant="outlined"
+                    onClick={handleOpenPreview}
+                    startIcon={<ViewIcon />}
+                    sx={{
+                      borderColor: '#CBD5E1',
+                      color: '#334155',
+                      fontWeight: 700,
+                      textTransform: 'none',
+                      px: 3,
+                      py: 1,
+                      '&:hover': { bgcolor: '#F8FAFC', borderColor: '#94A3B8' },
+                    }}
+                  >
+                    Preview Offer & Email
+                  </Button>
 
-          <Box>
-            <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', mb: 1 }}>
-              Supported Dynamic Placeholders Reference
-            </Typography>
-            <Typography sx={{ fontSize: '12px', color: '#64748B', mb: 2 }}>
-              Insert any of the following tags in email subjects, HTML bodies, or document templates. Values are resolved dynamically from real employee records:
-            </Typography>
-            <Grid container spacing={1.5}>
-              {(settingsData?.data?.supportedPlaceholders || []).map((ph) => (
-                <Grid item xs={12} sm={6} md={4} key={ph}>
-                  <Box sx={{ p: 1.5, border: '1px solid #E2E8F0', borderRadius: '8px', bgcolor: '#F8FAFC' }}>
-                    <Typography sx={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '12px', color: '#0284C7' }}>
-                      {ph}
+                  <Button
+                    variant="contained"
+                    onClick={handleSendOfferEmail}
+                    disabled={isSendingOffer}
+                    startIcon={isSendingOffer ? <CircularProgress size={18} color="inherit" /> : <SendIcon />}
+                    sx={{
+                      bgcolor: '#0284C7',
+                      color: '#FFFFFF',
+                      fontWeight: 700,
+                      textTransform: 'none',
+                      px: 3.5,
+                      py: 1,
+                      boxShadow: '0 2px 6px rgba(2, 132, 199, 0.3)',
+                      '&:hover': { bgcolor: '#0369A1' },
+                    }}
+                  >
+                    {isSendingOffer ? 'Generating PDFs & Sending...' : 'Send Offer Email with 2 PDFs'}
+                  </Button>
+                </Box>
+              </Grid>
+
+              {/* Right Column: Automated Enclosure Summary Card */}
+              <Grid item xs={12} lg={4}>
+                <Card
+                  elevation={0}
+                  sx={{
+                    p: 2.5,
+                    borderRadius: '12px',
+                    border: '1px solid #E2E8F0',
+                    bgcolor: '#F8FAFC',
+                    position: 'sticky',
+                    top: 24,
+                  }}
+                >
+                  <Typography sx={{ fontSize: '14.5px', fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <AttachIcon sx={{ color: '#0284C7', fontSize: 20 }} />
+                    Automated Enclosures
+                  </Typography>
+
+                  <Typography sx={{ fontSize: '12.5px', color: '#64748B', lineHeight: 1.5, mb: 2 }}>
+                    Upon dispatch, staffEase dynamically generates and attaches 2 verified PDF documents to this email:
+                  </Typography>
+
+                  {/* Attachment 1 */}
+                  <Box
+                    sx={{
+                      p: 1.8,
+                      bgcolor: '#FFFFFF',
+                      borderRadius: '8px',
+                      border: '1px solid #BAE6FD',
+                      mb: 2,
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                      <PdfIcon sx={{ color: '#EF4444', fontSize: 26 }} />
+                      <Box sx={{ flexGrow: 1 }}>
+                        <Typography sx={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A' }}>
+                          PDF 1: Offer Letter
+                        </Typography>
+                        <Typography sx={{ fontSize: '11px', color: '#64748B' }}>
+                          Ref: SE-OFR-2026-XXXX
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Typography sx={{ fontSize: '11px', color: '#475569', mt: 1, pl: 0.5 }}>
+                      Personalized letterhead with candidate terms, role details, compensation/stipend, and digital signatory block.
                     </Typography>
                   </Box>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-        </Card>
-      )}
 
-      {/* ========================================================= */}
-      {/* MODALS & DRAWERS */}
-      {/* ========================================================= */}
+                  {/* Attachment 2 */}
+                  <Box
+                    sx={{
+                      p: 1.8,
+                      bgcolor: '#FFFFFF',
+                      borderRadius: '8px',
+                      border: '1px solid #DDD6FE',
+                      mb: 2,
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                      <PdfIcon sx={{ color: '#7C3AED', fontSize: 26 }} />
+                      <Box sx={{ flexGrow: 1 }}>
+                        <Typography sx={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A' }}>
+                          PDF 2: Company Policies
+                        </Typography>
+                        <Typography sx={{ fontSize: '11px', color: '#64748B' }}>
+                          Ref: SE-POL-2026-V2
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Typography sx={{ fontSize: '11px', color: '#475569', mt: 1, pl: 0.5 }}>
+                      Comprehensive workplace guidelines, NDA & IP confidentiality, IT security, and code of conduct.
+                    </Typography>
+                  </Box>
 
-      {/* Template Editor Modal */}
-      <TemplateEditorModal
-        open={editorModalOpen}
-        onClose={() => setEditorModalOpen(false)}
-        template={editingTemplate}
-        isLoading={isCreatingTpl || isUpdatingTpl}
-        onSave={(tplData) => {
-          if (editingTemplate) {
-            updateTemplateMutate({ id: editingTemplate.id, data: tplData });
-          } else {
-            createTemplateMutate(tplData);
-          }
-        }}
-      />
+                  <Divider sx={{ my: 2 }} />
 
-      {/* Email Preview Modal */}
-      <EmailPreviewModal
-        open={previewModalOpen}
-        onClose={() => setPreviewModalOpen(false)}
-        subject={previewData.subject}
-        html={previewData.html}
-        missingFields={previewData.missingFields}
-      />
-
-      {/* Generate Document Modal */}
-      <GenerateDocumentModal
-        open={generateDocModalOpen}
-        onClose={() => setGenerateDocModalOpen(false)}
-        employees={employees}
-        isLoading={isGeneratingDoc}
-        onGenerate={(genData) => generateDocMutate(genData)}
-      />
-
-      {/* Upload Document Modal */}
-      <UploadDocumentModal
-        open={uploadDocModalOpen}
-        onClose={() => setUploadDocModalOpen(false)}
-        employees={employees}
-        isLoading={isUploadingDoc}
-        onUpload={(formData) => uploadDocMutate(formData)}
-      />
-
-      {/* Revoke Document Dialog */}
-      <Dialog open={revokeModalOpen} onClose={() => setRevokeModalOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 800, color: '#0F172A' }}>Revoke Issued Document</DialogTitle>
-        <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Typography sx={{ fontSize: '13px', color: '#475569' }}>
-            Are you sure you want to revoke this official document? Please record an audit reason:
-          </Typography>
-          <TextField
-            size="small"
-            label="Revocation Audit Reason *"
-            fullWidth
-            multiline
-            rows={2}
-            value={revocationReason}
-            onChange={(e) => setRevocationReason(e.target.value)}
-            required
-          />
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setRevokeModalOpen(false)} sx={{ textTransform: 'none' }}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={() => revokeDocMutate({ id: revokingDocId, reason: revocationReason })}
-            disabled={!revocationReason.trim()}
-            sx={{ textTransform: 'none', fontWeight: 700 }}
-          >
-            Revoke Document
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Confirm Send Email Dialog */}
-      <Dialog open={confirmSendOpen} onClose={() => setConfirmSendOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 800, color: '#0F172A' }}>Confirm Communication Dispatch</DialogTitle>
-        <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Typography sx={{ fontSize: '14px', color: '#334155' }}>
-            You are about to dispatch this message to <strong>{recipientType.toUpperCase()}</strong> audience.
-          </Typography>
-          <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-            <Typography sx={{ fontSize: '12px', color: '#64748B' }}>Subject Snapshot:</Typography>
-            <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', mt: 0.5 }}>
-              {composeSubject}
-            </Typography>
-          </Box>
-          <Typography sx={{ fontSize: '12px', color: '#64748B' }}>
-            Recipient privacy is strictly preserved. Bulk emails are delivered individually.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setConfirmSendOpen(false)} sx={{ textTransform: 'none' }}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleExecuteSend}
-            disabled={isSending}
-            sx={{
-              bgcolor: '#0F172A',
-              color: '#FFFFFF',
-              textTransform: 'none',
-              fontWeight: 700,
-              '&:hover': { bgcolor: '#1E293B' },
-            }}
-          >
-            {isSending ? 'Sending...' : 'Confirm & Send'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Document Request Triage Detail Dialog */}
-      {selectedRequest && (
-        <Dialog open={requestDetailOpen} onClose={() => setRequestDetailOpen(false)} maxWidth="md" fullWidth>
-          <DialogTitle sx={{ fontWeight: 800, color: '#0F172A' }}>
-            Triage Document Request: {selectedRequest.reference_number}
-          </DialogTitle>
-          <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <Typography sx={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>EMPLOYEE</Typography>
-                <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>
-                  {selectedRequest.employee?.first_name} {selectedRequest.employee?.last_name} ({selectedRequest.employee?.email})
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography sx={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>REQUESTED DOCUMENT</Typography>
-                <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#0284C7' }}>
-                  {selectedRequest.title || selectedRequest.document_type.replace(/_/g, ' ')}
-                </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                    <CheckIcon sx={{ color: '#10B981', fontSize: 18, mt: 0.2 }} />
+                    <Typography sx={{ fontSize: '11.5px', color: '#475569', lineHeight: 1.4 }}>
+                      Recipient audit logs and delivery status are recorded in the system for tracking and retry management.
+                    </Typography>
+                  </Box>
+                </Card>
               </Grid>
             </Grid>
+          </Box>
+        )}
 
-            <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-              <Typography sx={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>PURPOSE OF REQUEST:</Typography>
-              <Typography sx={{ fontSize: '13px', color: '#334155', mt: 0.5 }}>{selectedRequest.purpose}</Typography>
-              {selectedRequest.additional_notes && (
-                <>
-                  <Typography sx={{ fontSize: '12px', color: '#64748B', fontWeight: 600, mt: 1 }}>ADDITIONAL NOTES:</Typography>
-                  <Typography sx={{ fontSize: '13px', color: '#334155', mt: 0.5 }}>{selectedRequest.additional_notes}</Typography>
-                </>
-              )}
-            </Box>
-
-            <Divider />
-
-            {/* Actions: Assign, Change Status, Issue Document */}
-            <Typography sx={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>
-              HR Actions & Status Transition
-            </Typography>
-
-            <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-              <FormControl size="small" fullWidth>
-                <InputLabel>Assign HR Handler</InputLabel>
-                <Select
-                  value={assignHandlerId || selectedRequest.assigned_to || ''}
-                  label="Assign HR Handler"
-                  onChange={(e) => {
-                    setAssignHandlerId(e.target.value);
-                    assignRequestMutate({ requestId: selectedRequest.id, assigned_to: e.target.value });
-                  }}
-                >
-                  {employees.filter((x) => x.role_id === 1).map((admin) => (
-                    <MenuItem key={admin.id} value={admin.id}>
-                      {admin.first_name} {admin.last_name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <FormControl size="small" fullWidth>
-                <InputLabel>Update Status</InputLabel>
-                <Select
-                  value={statusUpdateVal}
-                  label="Update Status"
-                  onChange={(e) => setStatusUpdateVal(e.target.value)}
-                >
-                  <MenuItem value="under_review">Under Review</MenuItem>
-                  <MenuItem value="more_info_required">More Information Required</MenuItem>
-                  <MenuItem value="approved">Approved</MenuItem>
-                  <MenuItem value="rejected">Rejected</MenuItem>
-                  <MenuItem value="completed">Completed</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-
-            <TextField
-              size="small"
-              label="Feedback / Employee Visible Response"
-              fullWidth
-              multiline
-              rows={2}
-              value={employeeResponseText}
-              onChange={(e) => setEmployeeResponseText(e.target.value)}
-              placeholder="e.g. Approved. Document is being signed and issued."
-            />
-
-            {statusUpdateVal === 'rejected' && (
-              <TextField
-                size="small"
-                label="Rejection Reason *"
-                fullWidth
-                multiline
-                rows={2}
-                value={rejectionReasonText}
-                onChange={(e) => setRejectionReasonText(e.target.value)}
-                required
-                placeholder="State why this document cannot be issued at this time."
-              />
-            )}
-
-            {/* Direct Issue Button */}
-            <Box sx={{ p: 2, bgcolor: '#EFF6FF', borderRadius: '10px', border: '1px solid #BFDBFE', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* Tab 1: Email History Table */}
+        {activeTab === 1 && (
+          <Box sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5, flexWrap: 'wrap', gap: 2 }}>
               <Box>
-                <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#1E40AF' }}>
-                  Generate & Issue Document to Employee Portal
+                <Typography sx={{ fontSize: '16px', fontWeight: 700, color: '#0F172A' }}>
+                  Dispatch History & Outbox Audit
                 </Typography>
-                <Typography sx={{ fontSize: '11px', color: '#1D4ED8' }}>
-                  Automatically renders letterhead PDF, uploads to repository, and marks request ready.
+                <Typography sx={{ fontSize: '12.5px', color: '#64748B' }}>
+                  Review all dispatched emails, delivery statuses, and retry any failed messages.
                 </Typography>
               </Box>
-              <Button
-                variant="contained"
-                startIcon={<PdfIcon />}
-                disabled={isIssuingDoc}
-                onClick={() => {
-                  issueFromRequestMutate({
-                    requestId: selectedRequest.id,
-                    notes: employeeResponseText,
-                  });
-                }}
-                sx={{ bgcolor: '#0284C7', textTransform: 'none', fontWeight: 700, '&:hover': { bgcolor: '#0369A1' } }}
-              >
-                {isIssuingDoc ? 'Issuing...' : 'Issue Document'}
-              </Button>
+
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <TextField
+                  size="small"
+                  placeholder="Search by recipient or subject..."
+                  value={historySearch}
+                  onChange={(e) => {
+                    setHistorySearch(e.target.value);
+                    setHistoryPage(1);
+                  }}
+                  sx={{ width: 250 }}
+                />
+
+                <FormControl size="small" sx={{ width: 140 }}>
+                  <InputLabel>Status</InputLabel>
+                  <Select
+                    label="Status"
+                    value={historyStatus}
+                    onChange={(e) => {
+                      setHistoryStatus(e.target.value);
+                      setHistoryPage(1);
+                    }}
+                  >
+                    <MenuItem value="">All Statuses</MenuItem>
+                    <MenuItem value="sent">Sent</MenuItem>
+                    <MenuItem value="delivered">Delivered</MenuItem>
+                    <MenuItem value="failed">Failed</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => refetchHistory()}
+                  startIcon={<RetryIcon />}
+                  sx={{ textTransform: 'none', fontWeight: 600 }}
+                >
+                  Refresh
+                </Button>
+              </Box>
             </Box>
-          </DialogContent>
-          <DialogActions sx={{ p: 2 }}>
-            <Button onClick={() => setRequestDetailOpen(false)} sx={{ textTransform: 'none' }}>
-              Close
-            </Button>
-            <Button
-              variant="contained"
-              onClick={() => {
-                updateReqStatusMutate({
-                  requestId: selectedRequest.id,
-                  payload: {
-                    status: statusUpdateVal,
-                    employee_response: employeeResponseText,
-                    rejection_reason: rejectionReasonText,
-                  },
-                });
-              }}
-              sx={{ bgcolor: '#0F172A', textTransform: 'none', fontWeight: 700, '&:hover': { bgcolor: '#1E293B' } }}
-            >
-              Save Status Update
-            </Button>
-          </DialogActions>
-        </Dialog>
-      )}
+
+            <TableContainer sx={{ border: '1px solid #E2E8F0', borderRadius: '8px' }}>
+              <Table size="small">
+                <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '12px' }}>Recipient</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '12px' }}>Subject</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '12px' }}>Attachments</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '12px' }}>Sent Date</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '12px' }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: '12px', textAlign: 'right' }}>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {isHistoryLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                        <CircularProgress size={24} />
+                      </TableCell>
+                    </TableRow>
+                  ) : emailLogs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 4, color: '#94A3B8' }}>
+                        No email dispatch records found.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    emailLogs.map((log) => (
+                      <TableRow key={log.id} hover>
+                        <TableCell>
+                          <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>
+                            {log.recipient_name || 'N/A'}
+                          </Typography>
+                          <Typography sx={{ fontSize: '11px', color: '#64748B' }}>
+                            {log.recipient_email}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ fontSize: '12.5px', color: '#334155', maxWidth: 280, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                          {log.subject}
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <PdfIcon sx={{ fontSize: 16, color: '#EF4444' }} />
+                            <Typography sx={{ fontSize: '11.5px', color: '#0F172A', fontWeight: 600 }}>
+                              2 PDFs
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell sx={{ fontSize: '12px', color: '#64748B' }}>
+                          {log.created_at ? new Date(log.created_at).toLocaleString() : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            label={log.status?.toUpperCase() || 'SENT'}
+                            sx={{
+                              height: 22,
+                              fontSize: '10.5px',
+                              fontWeight: 700,
+                              bgcolor:
+                                log.status === 'sent' || log.status === 'delivered'
+                                  ? '#DCFCE7'
+                                  : log.status === 'failed'
+                                  ? '#FEE2E2'
+                                  : '#F1F5F9',
+                              color:
+                                log.status === 'sent' || log.status === 'delivered'
+                                  ? '#15803D'
+                                  : log.status === 'failed'
+                                  ? '#B91C1C'
+                                  : '#475569',
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          {log.status === 'failed' ? (
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              color="error"
+                              onClick={() => retryMutate(log.id)}
+                              disabled={isRetrying}
+                              startIcon={<RetryIcon />}
+                              sx={{ textTransform: 'none', fontSize: '11px', py: 0.2 }}
+                            >
+                              Retry
+                            </Button>
+                          ) : (
+                            <Chip size="small" label="Delivered" variant="outlined" sx={{ fontSize: '10px' }} />
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            {/* Pagination Controls */}
+            {historyPagination.totalPages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+                <Button
+                  size="small"
+                  disabled={historyPage <= 1}
+                  onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                  sx={{ textTransform: 'none' }}
+                >
+                  Previous
+                </Button>
+                <Typography sx={{ alignSelf: 'center', fontSize: '12px', color: '#64748B' }}>
+                  Page {historyPage} of {historyPagination.totalPages}
+                </Typography>
+                <Button
+                  size="small"
+                  disabled={historyPage >= historyPagination.totalPages}
+                  onClick={() => setHistoryPage((p) => p + 1)}
+                  sx={{ textTransform: 'none' }}
+                >
+                  Next
+                </Button>
+              </Box>
+            )}
+          </Box>
+        )}
+      </Card>
+
+      {/* Live Preview Modal */}
+      <OfferLetterPreviewModal
+        open={previewModalOpen}
+        onClose={() => setPreviewModalOpen(false)}
+        formData={formData}
+        onConfirmSend={handleSendOfferEmail}
+        isSending={isSendingOffer}
+      />
     </Box>
   );
 }

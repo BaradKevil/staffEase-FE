@@ -29,6 +29,7 @@ import LeaveCalendarAdmin from './pages/admin/LeaveCalendarAdmin';
 import ReportsAndAudit from './pages/admin/ReportsAndAudit';
 import TimeTrackingAdmin from './pages/admin/TimeTrackingAdmin';
 import CommunicationsCenter from './pages/admin/CommunicationsCenter';
+import EmployeeDocumentsAdmin from './pages/admin/EmployeeDocumentsAdmin';
 import StaffChat from './pages/chat/StaffChat';
 
 // Employee Pages
@@ -213,7 +214,7 @@ function App() {
           path: '/admin/employee-documents',
           element: (
             <RoleGuard allowedRoles={['admin']}>
-              <CommunicationsCenter />
+              <EmployeeDocumentsAdmin />
             </RoleGuard>
           )
         },
@@ -221,7 +222,7 @@ function App() {
           path: '/admin/document-requests',
           element: (
             <RoleGuard allowedRoles={['admin']}>
-              <CommunicationsCenter />
+              <EmployeeDocumentsAdmin />
             </RoleGuard>
           )
         },

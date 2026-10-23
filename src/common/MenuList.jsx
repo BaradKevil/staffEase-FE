@@ -69,13 +69,6 @@ export const adminMenuList = [
     roles: ['admin'],
   },
   {
-    id: 'admin-document-requests',
-    title: 'Document Requests',
-    path: '/admin/document-requests',
-    iconName: 'Assignment',
-    roles: ['admin'],
-  },
-  {
     id: 'admin-reports',
     title: 'Reports & Audit Logs',
     path: '/admin/reports',
