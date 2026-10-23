@@ -901,7 +901,7 @@ export default function TimeTrackingAdmin() {
                         <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#475569' }}>STATUS</TableCell>
                         <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#475569' }}>CLOSURE</TableCell>
                         <TableCell sx={{ fontWeight: 700, fontSize: '11px', color: '#475569' }}>NOTES</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 700, fontSize: '11px', color: '#475569' }}>ACTION</TableCell>
+                        
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -1002,17 +1002,7 @@ export default function TimeTrackingAdmin() {
                               '--'
                             )}
                           </TableCell>
-                          <TableCell align="right">
-                            <Tooltip title="Correct Session Time">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleOpenCorrection(sess)}
-                                sx={{ color: '#23A4E8' }}
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </TableCell>
+                          
                         </TableRow>
                       ))}
                     </TableBody>
