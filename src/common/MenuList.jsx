@@ -55,6 +55,27 @@ export const adminMenuList = [
     roles: ['admin'],
   },
   {
+    id: 'admin-communications',
+    title: 'Communications',
+    path: '/admin/communications',
+    iconName: 'Email',
+    roles: ['admin'],
+  },
+  {
+    id: 'admin-employee-documents',
+    title: 'Employee Documents',
+    path: '/admin/employee-documents',
+    iconName: 'FolderShared',
+    roles: ['admin'],
+  },
+  {
+    id: 'admin-document-requests',
+    title: 'Document Requests',
+    path: '/admin/document-requests',
+    iconName: 'Assignment',
+    roles: ['admin'],
+  },
+  {
     id: 'admin-reports',
     title: 'Reports & Audit Logs',
     path: '/admin/reports',
@@ -104,6 +125,13 @@ export const employeeMenuList = [
     title: 'Team Calendar',
     path: '/employee/calendar',
     iconName: 'CalendarMonth',
+    roles: ['employee'],
+  },
+  {
+    id: 'employee-documents',
+    title: 'My Documents',
+    path: '/employee/documents',
+    iconName: 'FolderShared',
     roles: ['employee'],
   },
   {

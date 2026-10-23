@@ -28,6 +28,7 @@ import LeavePolicies from './pages/admin/LeavePolicies';
 import LeaveCalendarAdmin from './pages/admin/LeaveCalendarAdmin';
 import ReportsAndAudit from './pages/admin/ReportsAndAudit';
 import TimeTrackingAdmin from './pages/admin/TimeTrackingAdmin';
+import CommunicationsCenter from './pages/admin/CommunicationsCenter';
 import StaffChat from './pages/chat/StaffChat';
 
 // Employee Pages
@@ -37,6 +38,7 @@ import LeaveTracker from './pages/employee/LeaveTracker';
 import LeaveCalendar from './pages/employee/LeaveCalendar';
 import MyProfile from './pages/employee/MyProfile';
 import TimeTracking from './pages/employee/TimeTracking';
+import EmployeeDocuments from './pages/employee/EmployeeDocuments';
 
 // Error Page
 import NotFound from './pages/NotFound';
@@ -199,6 +201,30 @@ function App() {
             </RoleGuard>
           )
         },
+        {
+          path: '/admin/communications',
+          element: (
+            <RoleGuard allowedRoles={['admin']}>
+              <CommunicationsCenter />
+            </RoleGuard>
+          )
+        },
+        {
+          path: '/admin/employee-documents',
+          element: (
+            <RoleGuard allowedRoles={['admin']}>
+              <CommunicationsCenter />
+            </RoleGuard>
+          )
+        },
+        {
+          path: '/admin/document-requests',
+          element: (
+            <RoleGuard allowedRoles={['admin']}>
+              <CommunicationsCenter />
+            </RoleGuard>
+          )
+        },
 
         // Employee Routes (Admins can also view employee profile and leaves)
         {
@@ -254,6 +280,14 @@ function App() {
           element: (
             <RoleGuard allowedRoles={['employee', 'admin']}>
               <MyProfile />
+            </RoleGuard>
+          )
+        },
+        {
+          path: '/employee/documents',
+          element: (
+            <RoleGuard allowedRoles={['employee', 'admin']}>
+              <EmployeeDocuments />
             </RoleGuard>
           )
         }

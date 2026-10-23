@@ -33,6 +33,9 @@ import {
   AccessTimeOutlined as AccessTimeOutlinedIcon,
   ForumOutlined as ChatOutlinedIcon,
   LogoutOutlined as LogoutOutlinedIcon,
+  EmailOutlined as EmailOutlinedIcon,
+  FolderSharedOutlined as FolderSharedOutlinedIcon,
+  AssignmentOutlined as AssignmentOutlinedIcon,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { adminMenuList, employeeMenuList } from './MenuList';
@@ -50,6 +53,9 @@ const iconMap = {
   Person: <PersonOutlineOutlinedIcon sx={{ fontSize: 20 }} />,
   DateRange: <DateRangeOutlinedIcon sx={{ fontSize: 20 }} />,
   AccessTime: <AccessTimeOutlinedIcon sx={{ fontSize: 20 }} />,
+  Email: <EmailOutlinedIcon sx={{ fontSize: 20 }} />,
+  FolderShared: <FolderSharedOutlinedIcon sx={{ fontSize: 20 }} />,
+  Assignment: <AssignmentOutlinedIcon sx={{ fontSize: 20 }} />,
 };
 
 const Sidebar = ({

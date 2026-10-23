@@ -1074,3 +1074,438 @@ export const useUploadChatAttachment = (onSuccess, onError) => {
   });
 };
 
+// -------------------------------------------------
+//  Employee Communications & Email Templates Hooks
+// -------------------------------------------------
+
+export const useCommunicationOverview = () => {
+  return useQuery({
+    queryKey: ['communication-overview'],
+    queryFn: async () => {
+      const res = await apiClient.get('/communications/overview');
+      return unwrap(res);
+    },
+    refetchInterval: 15000,
+  });
+};
+
+export const useEmailTemplates = (category = '', status = '') => {
+  return useQuery({
+    queryKey: ['email-templates', category, status],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (category) params.append('category', category);
+      if (status) params.append('status', status);
+      const res = await apiClient.get(`/communications/templates?${params.toString()}`);
+      return unwrap(res);
+    },
+  });
+};
+
+export const useEmailTemplate = (templateId) => {
+  return useQuery({
+    queryKey: ['email-template', templateId],
+    queryFn: async () => {
+      const res = await apiClient.get(`/communications/templates/${templateId}`);
+      return unwrap(res);
+    },
+    enabled: !!templateId,
+  });
+};
+
+export const useCreateEmailTemplate = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data) => {
+      const res = await apiClient.post('/communications/templates', data);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['email-templates'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useUpdateEmailTemplate = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }) => {
+      const res = await apiClient.patch(`/communications/templates/${id}`, data);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['email-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['email-template', variables.id] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useDuplicateEmailTemplate = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id) => {
+      const res = await apiClient.post(`/communications/templates/${id}/duplicate`);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['email-templates'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const usePreviewEmail = () => {
+  return useMutation({
+    mutationFn: async (payload) => {
+      const res = await apiClient.post('/communications/preview', payload);
+      return unwrap(res);
+    },
+  });
+};
+
+export const useSendCommunication = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload) => {
+      const res = await apiClient.post('/communications/send', payload);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['communication-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['email-history'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useEmailHistory = (params = {}) => {
+  return useQuery({
+    queryKey: ['email-history', params],
+    queryFn: async () => {
+      const searchParams = new URLSearchParams();
+      if (params.page) searchParams.append('page', params.page);
+      if (params.limit) searchParams.append('limit', params.limit);
+      if (params.search) searchParams.append('search', params.search);
+      if (params.status) searchParams.append('status', params.status);
+      if (params.startDate) searchParams.append('startDate', params.startDate);
+      if (params.endDate) searchParams.append('endDate', params.endDate);
+      const res = await apiClient.get(`/communications/history?${searchParams.toString()}`);
+      return unwrap(res);
+    },
+  });
+};
+
+export const useRetryEmail = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (emailId) => {
+      const res = await apiClient.post(`/communications/retry/${emailId}`);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['email-history'] });
+      queryClient.invalidateQueries({ queryKey: ['communication-overview'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useCommunicationSettings = () => {
+  return useQuery({
+    queryKey: ['communication-settings'],
+    queryFn: async () => {
+      const res = await apiClient.get('/communications/settings');
+      return unwrap(res);
+    },
+  });
+};
+
+// -------------------------------------------------
+//  Employee Documents & PDF Generation Hooks
+// -------------------------------------------------
+
+export const useEmployeeDocuments = (params = {}) => {
+  return useQuery({
+    queryKey: ['employee-documents', params],
+    queryFn: async () => {
+      const searchParams = new URLSearchParams();
+      if (params.employee_id) searchParams.append('employee_id', params.employee_id);
+      if (params.category) searchParams.append('category', params.category);
+      if (params.status) searchParams.append('status', params.status);
+      if (params.search) searchParams.append('search', params.search);
+      if (params.page) searchParams.append('page', params.page);
+      if (params.limit) searchParams.append('limit', params.limit);
+      const res = await apiClient.get(`/documents?${searchParams.toString()}`);
+      return unwrap(res);
+    },
+  });
+};
+
+export const downloadDocumentFile = async (documentId, filename = 'document.pdf') => {
+  const res = await apiClient.get(`/documents/${documentId}/download`, {
+    responseType: 'blob',
+  });
+  const blob = new Blob([res.data], { type: 'application/pdf' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+  return true;
+};
+
+export const useGenerateDocument = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload) => {
+      const res = await apiClient.post('/documents/generate', payload);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['employee-documents'] });
+      queryClient.invalidateQueries({ queryKey: ['communication-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-document-requests'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useUploadDocument = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (formData) => {
+      const res = await apiClient.post('/documents/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['employee-documents'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useRevokeDocument = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, reason }) => {
+      const res = await apiClient.post(`/documents/${id}/revoke`, { reason });
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['employee-documents'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useDocumentTemplates = (category = '') => {
+  return useQuery({
+    queryKey: ['document-templates', category],
+    queryFn: async () => {
+      const url = category ? `/documents/templates/all?category=${encodeURIComponent(category)}` : '/documents/templates/all';
+      const res = await apiClient.get(url);
+      return unwrap(res);
+    },
+  });
+};
+
+export const useCompanyPolicies = () => {
+  return useQuery({
+    queryKey: ['company-policies'],
+    queryFn: async () => {
+      const res = await apiClient.get('/documents/policies');
+      return unwrap(res);
+    },
+  });
+};
+
+export const useAcknowledgePolicy = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (policyId) => {
+      const res = await apiClient.post(`/documents/policies/${policyId}/acknowledge`);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['company-policies'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+// -------------------------------------------------
+//  Document Requests & Onboarding Checklist Hooks
+// -------------------------------------------------
+
+export const useSubmitDocumentRequest = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload) => {
+      const res = await apiClient.post('/document-requests', payload);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['my-document-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['communication-overview'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useMyDocumentRequests = () => {
+  return useQuery({
+    queryKey: ['my-document-requests'],
+    queryFn: async () => {
+      const res = await apiClient.get('/document-requests/my-requests');
+      return unwrap(res);
+    },
+  });
+};
+
+export const useCancelDocumentRequest = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (requestId) => {
+      const res = await apiClient.post(`/document-requests/${requestId}/cancel`);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['my-document-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-document-requests'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useAdminDocumentRequests = (params = {}) => {
+  return useQuery({
+    queryKey: ['admin-document-requests', params],
+    queryFn: async () => {
+      const searchParams = new URLSearchParams();
+      if (params.page) searchParams.append('page', params.page);
+      if (params.limit) searchParams.append('limit', params.limit);
+      if (params.status) searchParams.append('status', params.status);
+      if (params.department_id) searchParams.append('department_id', params.department_id);
+      if (params.assigned_to) searchParams.append('assigned_to', params.assigned_to);
+      if (params.search) searchParams.append('search', params.search);
+      const res = await apiClient.get(`/document-requests/admin?${searchParams.toString()}`);
+      return unwrap(res);
+    },
+  });
+};
+
+export const useAssignDocumentRequest = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ requestId, assigned_to }) => {
+      const res = await apiClient.post(`/document-requests/${requestId}/assign`, { assigned_to });
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-document-requests'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useUpdateDocumentRequestStatus = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ requestId, payload }) => {
+      const res = await apiClient.patch(`/document-requests/${requestId}/status`, payload);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-document-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['communication-overview'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useIssueDocumentFromRequest = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ requestId, payload }) => {
+      const res = await apiClient.post(`/document-requests/${requestId}/issue`, payload);
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-document-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-documents'] });
+      queryClient.invalidateQueries({ queryKey: ['communication-overview'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useEmployeeDocumentChecklist = (employeeId) => {
+  return useQuery({
+    queryKey: ['employee-document-checklist', employeeId],
+    queryFn: async () => {
+      const url = employeeId ? `/document-requests/checklist?employee_id=${employeeId}` : '/document-requests/checklist';
+      const res = await apiClient.get(url);
+      return unwrap(res);
+    },
+  });
+};
+
+export const useUploadChecklistDocument = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (formData) => {
+      const res = await apiClient.post('/document-requests/checklist/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['employee-document-checklist'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-documents'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+export const useReviewChecklistDocument = (onSuccess, onError) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, action, rejection_reason }) => {
+      const res = await apiClient.post(`/document-requests/checklist/${id}/review`, {
+        action,
+        rejection_reason,
+      });
+      return unwrap(res);
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['employee-document-checklist'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-documents'] });
+      if (onSuccess) onSuccess(data, variables, context);
+    },
+    onError,
+  });
+};
+
+
