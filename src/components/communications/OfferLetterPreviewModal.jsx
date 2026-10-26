@@ -373,52 +373,132 @@ export default function OfferLetterPreviewModal({
             </Box>
 
             {/* Email Body */}
-            <Box sx={{ p: 3 }}>
-              <Typography sx={{ fontSize: '14px', color: '#0F172A', fontWeight: 700, mb: 1.5 }}>
+            <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+              <Typography sx={{ fontSize: '15px', color: '#0F172A', fontWeight: 700, mb: 2 }}>
                 Dear {candidateName},
               </Typography>
-              <Typography sx={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.6, mb: 2 }}>
-                {isInternship
-                  ? `We are delighted to extend this formal offer of internship engagement for the position of ${roleTitle} within our ${dept} department. Congratulations on your selection!`
-                  : `On behalf of staffEase Technologies, we are thrilled to formally extend this offer of employment for the position of ${roleTitle}. We were thoroughly impressed with your profile.`}
-              </Typography>
 
-              {/* Attachments Highlight */}
+              {isInternship ? (
+                <>
+                  <Typography sx={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.7, mb: 2 }}>
+                    On behalf of <strong>staffEase Technologies Inc.</strong>, we are delighted to formally offer you an internship engagement as <strong>{roleTitle}</strong> within our <strong>{dept}</strong> department. Congratulations on your selection!
+                  </Typography>
+
+                  <Typography sx={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.7, mb: 2 }}>
+                    Your internship will officially commence on <strong>{joiningDate}</strong> for a duration of <strong>{formData.duration || '3 Months'}</strong>, operating in our <strong>{formData.work_location || 'Hybrid'}</strong> arrangement. You will receive dedicated technical mentorship and project guidance under <strong>{formData.mentor_name || 'Designated Mentor'}</strong>, collaborating directly on core software systems.
+                  </Typography>
+
+                  <Typography sx={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.7, mb: 2 }}>
+                    {formData.is_paid
+                      ? `You will be entitled to a designated stipend of ${formData.stipend_amount || 'Stipend'} (${formData.stipend_frequency || 'Per Month'}), disbursed in accordance with standard payroll cycles based on active project participation.`
+                      : `This internship is structured as an educational skill development and practical industry experience program designed to equip you with real-world enterprise engineering expertise.`}
+                  </Typography>
+
+                  <Typography sx={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.7, mb: 2.5 }}>
+                    Your engagement is governed by our corporate guidelines, Non-Disclosure Agreement (NDA), and Information Security policies. Enclosed with this email are your official <strong>Internship Offer Letter</strong> and the complete <strong>staffEase Company Policies & Code of Conduct</strong>.
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <Typography sx={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.7, mb: 2 }}>
+                    On behalf of <strong>staffEase Technologies Inc.</strong>, we are thrilled to formally extend this offer of employment for the position of <strong>{roleTitle}</strong> within our <strong>{dept}</strong> department. Following your interviews and evaluation, we are convinced that your expertise and dedication make you a strong fit for our growing organization.
+                  </Typography>
+
+                  <Typography sx={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.7, mb: 2 }}>
+                    Your employment will officially commence on <strong>{joiningDate}</strong>. In this role, you will report directly to <strong>{formData.reporting_manager || 'Department Head'}</strong> and operate primarily in our <strong>{formData.work_location || 'Hybrid'}</strong> work setup. Your gross annual compensation package (CTC) will be <strong>{formData.salary || 'As specified in compensation schedule'}</strong>, payable in accordance with the standard monthly corporate payroll schedule.
+                  </Typography>
+
+                  <Typography sx={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.7, mb: 2 }}>
+                    You will serve an initial probation period of <strong>{formData.probation_period || '3 Months'}</strong> from your commencement date, during which your progress and milestones will be evaluated toward formal permanent confirmation.
+                  </Typography>
+
+                  <Typography sx={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.7, mb: 2.5 }}>
+                    Your employment is subject to standard company policies, including confidentiality, Non-Disclosure Agreements (NDA), intellectual property assignment, and professional workplace conduct. Enclosed with this email are your official <strong>Offer Letter</strong> and the complete <strong>staffEase Company Policies & Code of Conduct</strong>.
+                  </Typography>
+                </>
+              )}
+
+              {/* PDF Access Buttons Box */}
               <Box
                 sx={{
-                  p: 2,
-                  bgcolor: '#F0F9FF',
-                  border: '1px solid #BAE6FD',
-                  borderRadius: '8px',
-                  mb: 2.5,
+                  p: 2.5,
+                  bgcolor: '#F8FAFC',
+                  border: '1.5px solid #E2E8F0',
+                  borderRadius: '10px',
+                  textAlign: 'center',
+                  mb: 3,
                 }}
               >
-                <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#0369A1', display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <AttachIcon fontSize="small" /> 2 Official PDF Documents Attached to this Email:
+                <Typography sx={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A', mb: 0.5 }}>
+                  Official PDF Documents (Attached & Available to View)
                 </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, pl: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <PdfIcon sx={{ color: '#EF4444', fontSize: 20 }} />
-                    <Typography sx={{ fontSize: '12.5px', color: '#0F172A', fontWeight: 600 }}>
-                      staffEase_Offer_Letter_{candidateName.replace(/\s+/g, '_')}.pdf
-                    </Typography>
-                    <Chip size="small" label="Auto-Generated" sx={{ height: 20, fontSize: '10px', bgcolor: '#E0F2FE', color: '#0284C7' }} />
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <PdfIcon sx={{ color: '#EF4444', fontSize: 20 }} />
-                    <Typography sx={{ fontSize: '12.5px', color: '#0F172A', fontWeight: 600 }}>
-                      staffEase_Company_Policies_and_Code_of_Conduct.pdf
-                    </Typography>
-                    <Chip size="small" label="Enclosed Standard" sx={{ height: 20, fontSize: '10px', bgcolor: '#EDE9FE', color: '#7C3AED' }} />
-                  </Box>
-                </Box>
+                <Typography sx={{ fontSize: '12px', color: '#64748B', mb: 2 }}>
+                  Click below to open and review each verified document directly in your browser:
+                </Typography>
+
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="center">
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<PdfIcon />}
+                    sx={{
+                      bgcolor: '#0284C7',
+                      color: '#FFFFFF',
+                      fontWeight: 700,
+                      textTransform: 'none',
+                      py: 1,
+                      px: 2.5,
+                      boxShadow: '0 2px 4px rgba(2, 132, 199, 0.25)',
+                      '&:hover': { bgcolor: '#0369A1' },
+                    }}
+                  >
+                    Open Official Offer Letter (PDF)
+                  </Button>
+
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<DocumentIcon />}
+                    sx={{
+                      bgcolor: '#FFFFFF',
+                      borderColor: '#CBD5E1',
+                      color: '#0F172A',
+                      fontWeight: 700,
+                      textTransform: 'none',
+                      py: 1,
+                      px: 2.5,
+                      '&:hover': { bgcolor: '#F8FAFC', borderColor: '#94A3B8' },
+                    }}
+                  >
+                    Open Company Policies (PDF)
+                  </Button>
+                </Stack>
+
+                <Typography sx={{ fontSize: '11px', color: '#64748B', mt: 1.5 }}>
+                  Ref ID: <strong>{refNumber}</strong> • Both PDF files are also attached to this email message.
+                </Typography>
               </Box>
 
-              <Typography sx={{ fontSize: '13px', color: '#64748B', lineHeight: 1.6 }}>
-                Warm regards,<br />
-                <strong>People & Culture Operations Team</strong><br />
-                staffEase Technologies Inc.
+              {formData.additional_instructions && (
+                <Box sx={{ p: 1.8, bgcolor: '#FEF9C3', borderRadius: '8px', mb: 3, border: '1px solid #FDE047' }}>
+                  <Typography sx={{ fontSize: '11.5px', fontWeight: 700, color: '#854D0E', mb: 0.5 }}>
+                    Special Joining Instructions:
+                  </Typography>
+                  <Typography sx={{ fontSize: '12.5px', color: '#713F12', lineHeight: 1.5 }}>
+                    {formData.additional_instructions}
+                  </Typography>
+                </Box>
+              )}
+
+              <Typography sx={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.7, mb: 3 }}>
+                To confirm your acceptance, please review both documents, sign the duplicate copy of the Offer Letter, and return it along with your onboarding verification credentials (government ID proof, educational certificates, and banking details) prior to your commencement date.
               </Typography>
+
+              <Box sx={{ pt: 2, borderTop: '1px solid #E2E8F0', fontSize: '13px', color: '#64748B', lineHeight: 1.6 }}>
+                Warm regards,<br />
+                <strong style={{ color: '#0F172A' }}>People & Culture Operations Team</strong><br />
+                staffEase Technologies Inc. • hr@staffease.internal
+              </Box>
             </Box>
           </Paper>
         )}
