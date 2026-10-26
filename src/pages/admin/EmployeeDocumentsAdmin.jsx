@@ -406,7 +406,7 @@ export default function EmployeeDocumentsAdmin() {
                                 <IconButton
                                   size="small"
                                   color="success"
-                                  onClick={() => updateStatusMutate({ id: req.id, status: 'approved' })}
+                                  onClick={() => updateStatusMutate({ id: req.id, requestId: req.id, status: 'approved' })}
                                 >
                                   <ApproveIcon fontSize="small" />
                                 </IconButton>
@@ -432,7 +432,7 @@ export default function EmployeeDocumentsAdmin() {
                               <Button
                                 size="small"
                                 variant="contained"
-                                onClick={() => issueFromReqMutate({ id: req.id })}
+                                onClick={() => issueFromReqMutate({ id: req.id, requestId: req.id })}
                                 disabled={isIssuingFromReq}
                                 sx={{
                                   fontSize: '11px',
@@ -701,6 +701,7 @@ export default function EmployeeDocumentsAdmin() {
             onClick={() =>
               updateStatusMutate({
                 id: selectedRequest.id,
+                requestId: selectedRequest.id,
                 status: 'rejected',
                 rejection_reason: rejectReason.trim(),
               })

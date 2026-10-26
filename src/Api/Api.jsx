@@ -1399,7 +1399,8 @@ export const useMyDocumentRequests = () => {
 export const useCancelDocumentRequest = (onSuccess, onError) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (requestId) => {
+    mutationFn: async (vars) => {
+      const requestId = vars?.requestId ?? vars?.id ?? vars;
       const res = await apiClient.post(`/document-requests/${requestId}/cancel`);
       return unwrap(res);
     },
@@ -1432,7 +1433,9 @@ export const useAdminDocumentRequests = (params = {}) => {
 export const useAssignDocumentRequest = (onSuccess, onError) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ requestId, assigned_to }) => {
+    mutationFn: async (vars) => {
+      const requestId = vars?.requestId ?? vars?.id;
+      const assigned_to = vars?.assigned_to;
       const res = await apiClient.post(`/document-requests/${requestId}/assign`, { assigned_to });
       return unwrap(res);
     },
@@ -1447,7 +1450,14 @@ export const useAssignDocumentRequest = (onSuccess, onError) => {
 export const useUpdateDocumentRequestStatus = (onSuccess, onError) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ requestId, payload }) => {
+    mutationFn: async (vars) => {
+      const requestId = vars?.requestId ?? vars?.id;
+      const payload = vars?.payload ?? {
+        status: vars?.status,
+        rejection_reason: vars?.rejection_reason,
+        employee_response: vars?.employee_response,
+        internal_notes: vars?.internal_notes,
+      };
       const res = await apiClient.patch(`/document-requests/${requestId}/status`, payload);
       return unwrap(res);
     },
@@ -1463,7 +1473,13 @@ export const useUpdateDocumentRequestStatus = (onSuccess, onError) => {
 export const useIssueDocumentFromRequest = (onSuccess, onError) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ requestId, payload }) => {
+    mutationFn: async (vars) => {
+      const requestId = vars?.requestId ?? vars?.id ?? (typeof vars === 'number' || typeof vars === 'string' ? vars : null);
+      const payload = vars?.payload ?? {
+        template_id: vars?.template_id,
+        title: vars?.title,
+        notes: vars?.notes,
+      };
       const res = await apiClient.post(`/document-requests/${requestId}/issue`, payload);
       return unwrap(res);
     },
